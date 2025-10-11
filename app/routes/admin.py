@@ -25,7 +25,7 @@ def admin_required(f):
 @admin_required
 def dashboard():
     # Get statistics
-    total_members = Member.query.join(Member.user).filter(Member.user.has(is_approved=True)).count()
+    total_members = Member.query.join(User).filter(User.is_approved == True).count()
     pending_approvals = User.query.filter_by(role='student', is_approved=False).count()
     upcoming_events = Event.query.filter(Event.event_date >= datetime.utcnow()).count()
     newsletter_subscribers = Newsletter.query.filter_by(is_active=True).count()
@@ -323,7 +323,7 @@ def delete_gallery_item(item_id):
 @login_required
 @admin_required
 def leaders():
-    leaders = Leader.query.join(Member).order_by(Leader.display_order.asc()).all()
+    leaders = Leader.query.join(User).join(Member).order_by(Leader.display_order.asc()).all()
     return render_template('admin/leaders.html', leaders=leaders)
 
 @admin_bp.route('/leaders/add', methods=['GET', 'POST'])
@@ -355,8 +355,8 @@ def add_leader():
     
     # Get all approved members who are not already leaders
     existing_leader_ids = [l.user_id for l in Leader.query.all()]
-    members = Member.query.join(Member.user).filter(
-        Member.user.has(is_approved=True),
+    members = Member.query.join(User).filter(
+        User.is_approved == True,
         ~Member.user_id.in_(existing_leader_ids)
     ).all()
     
