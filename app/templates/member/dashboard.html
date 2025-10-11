@@ -1,0 +1,275 @@
+{% extends "base.html" %}
+
+{% block title %}Member Dashboard - Digital Club{% endblock %}
+
+{% block extra_head %}
+<style>
+    .member-dashboard {
+        background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+        min-height: 100vh;
+        padding: 2rem 0;
+    }
+    
+    .dashboard-header {
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        border: 1px solid var(--border-color);
+    }
+    
+    .profile-avatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid var(--primary-color);
+        margin-bottom: 1rem;
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+    
+    .status-student {
+        background: rgba(0, 255, 0, 0.2);
+        color: #00ff00;
+        border: 1px solid rgba(0, 255, 0, 0.3);
+    }
+    
+    .status-alumni {
+        background: rgba(255, 255, 0, 0.2);
+        color: var(--accent-color);
+        border: 1px solid rgba(255, 255, 0, 0.3);
+    }
+    
+    .dashboard-card {
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid var(--border-color);
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+    }
+    
+    .dashboard-card:hover {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 20px var(--shadow-color);
+    }
+    
+    .quick-action {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        background: rgba(0, 255, 255, 0.1);
+        border-radius: 10px;
+        text-decoration: none;
+        color: var(--text-primary);
+        transition: all 0.3s ease;
+        margin-bottom: 1rem;
+    }
+    
+    .quick-action:hover {
+        background: rgba(0, 255, 255, 0.2);
+        transform: translateY(-2px);
+        color: var(--primary-color);
+    }
+    
+    .quick-action i {
+        font-size: 1.5rem;
+        margin-right: 1rem;
+        color: var(--primary-color);
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        padding: 1.5rem;
+        text-align: center;
+    }
+    
+    .stat-number {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--primary-color);
+        display: block;
+    }
+    
+    .stat-label {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="member-dashboard">
+    <div class="container">
+        <!-- Dashboard Header -->
+        <div class="dashboard-header" data-aos="fade-up">
+            <div class="row align-items-center">
+                <div class="col-md-3 text-center">
+                    {% if member.profile_image %}
+                        <img src="{{ url_for('static', filename='uploads/profiles/' + member.profile_image) }}" 
+                             alt="{{ member.full_name }}" class="profile-avatar">
+                    {% else %}
+                        <div class="profile-avatar d-flex align-items-center justify-content-center" 
+                             style="background: var(--primary-color); color: var(--bg-primary); font-size: 3rem;">
+                            <i class="fas fa-user"></i>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-9">
+                    <h1 class="mb-2">{{ member.full_name }}</h1>
+                    {% if member.title %}
+                        <h4 class="text-primary mb-2">{{ member.title }}</h4>
+                    {% endif %}
+                    
+                    <span class="status-badge status-{{ member.status }}">
+                        <i class="fas fa-{{ 'graduation-cap' if member.status == 'alumni' else 'user-graduate' }}"></i>
+                        {{ member.status.title() }}
+                    </span>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            {% if member.course %}
+                                <p class="mb-1"><i class="fas fa-book text-primary"></i> {{ member.course }}</p>
+                            {% endif %}
+                            {% if member.year %}
+                                <p class="mb-1"><i class="fas fa-calendar text-primary"></i> {{ member.year }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            {% if member.phone %}
+                                <p class="mb-1"><i class="fas fa-phone text-primary"></i> {{ member.phone }}</p>
+                            {% endif %}
+                            {% if member.user.email %}
+                                <p class="mb-1"><i class="fas fa-envelope text-primary"></i> {{ member.user.email }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="row">
+            <div class="col-md-4">
+                <div class="dashboard-card" data-aos="fade-up" data-aos-delay="100">
+                    <h5 class="mb-3"><i class="fas fa-bolt text-primary"></i> Quick Actions</h5>
+                    
+                    <a href="{{ url_for('member.edit_profile') }}" class="quick-action">
+                        <i class="fas fa-edit"></i>
+                        <div>
+                            <strong>Edit Profile</strong>
+                            <small class="d-block text-muted">Update your information</small>
+                        </div>
+                    </a>
+                    
+                    <a href="{{ url_for('member.change_password') }}" class="quick-action">
+                        <i class="fas fa-key"></i>
+                        <div>
+                            <strong>Change Password</strong>
+                            <small class="d-block text-muted">Update your password</small>
+                        </div>
+                    </a>
+                    
+                    <a href="{{ url_for('member.profile') }}" class="quick-action">
+                        <i class="fas fa-eye"></i>
+                        <div>
+                            <strong>View Profile</strong>
+                            <small class="d-block text-muted">See your public profile</small>
+                        </div>
+                    </a>
+                </div>
+            </div>
+            
+            <div class="col-md-8">
+                <!-- Profile Stats -->
+                <div class="stats-grid" data-aos="fade-up" data-aos-delay="200">
+                    <div class="stat-card">
+                        <span class="stat-number">{{ member.get_projects()|length }}</span>
+                        <span class="stat-label">Projects</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">{{ member.get_areas_list()|length }}</span>
+                        <span class="stat-label">Areas of Interest</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">{{ member.created_at.strftime('%Y') if member.created_at else 'N/A' }}</span>
+                        <span class="stat-label">Joined Year</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">{{ member.status.title() }}</span>
+                        <span class="stat-label">Status</span>
+                    </div>
+                </div>
+                
+                <!-- Bio Section -->
+                {% if member.bio %}
+                <div class="dashboard-card" data-aos="fade-up" data-aos-delay="300">
+                    <h5 class="mb-3"><i class="fas fa-user-circle text-primary"></i> About Me</h5>
+                    <p class="text-secondary">{{ member.bio }}</p>
+                </div>
+                {% endif %}
+                
+                <!-- Areas of Interest -->
+                {% if member.areas_of_interest %}
+                <div class="dashboard-card" data-aos="fade-up" data-aos-delay="400">
+                    <h5 class="mb-3"><i class="fas fa-heart text-primary"></i> Areas of Interest</h5>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for area in member.get_areas_list() %}
+                        <span class="badge bg-primary">{{ area }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Social Links -->
+                {% if member.github or member.linkedin %}
+                <div class="dashboard-card" data-aos="fade-up" data-aos-delay="500">
+                    <h5 class="mb-3"><i class="fas fa-share-alt text-primary"></i> Social Links</h5>
+                    <div class="d-flex gap-3">
+                        {% if member.github %}
+                        <a href="{{ member.github }}" target="_blank" class="btn btn-outline-primary">
+                            <i class="fab fa-github"></i> GitHub
+                        </a>
+                        {% endif %}
+                        {% if member.linkedin %}
+                        <a href="{{ member.linkedin }}" target="_blank" class="btn btn-outline-primary">
+                            <i class="fab fa-linkedin"></i> LinkedIn
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Initialize AOS animations
+    AOS.init({
+        duration: 1000,
+        once: true,
+        offset: 100
+    });
+</script>
+{% endblock %}

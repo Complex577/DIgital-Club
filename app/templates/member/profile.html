@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+
+{% block title %}{{ member.full_name }} - Digital Club{% endblock %}
+
+{% block extra_head %}
+<style>
+    .profile-page {
+        background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+        min-height: 100vh;
+        padding: 2rem 0;
+    }
+    
+    .profile-header {
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 15px;
+        padding: 3rem;
+        margin-bottom: 2rem;
+        border: 1px solid var(--border-color);
+        text-align: center;
+    }
+    
+    .profile-avatar-large {
+        width: 200px;
+        height: 200px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid var(--primary-color);
+        margin: 0 auto 2rem;
+        display: block;
+    }
+    
+    .status-badge-large {
+        display: inline-block;
+        padding: 0.8rem 2rem;
+        border-radius: 25px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+    
+    .status-student {
+        background: rgba(0, 255, 0, 0.2);
+        color: #00ff00;
+        border: 2px solid rgba(0, 255, 0, 0.3);
+    }
+    
+    .status-alumni {
+        background: rgba(255, 255, 0, 0.2);
+        color: var(--accent-color);
+        border: 2px solid rgba(255, 255, 0, 0.3);
+    }
+    
+    .profile-content {
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid var(--border-color);
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    
+    .info-item {
+        display: flex;
+        align-items: center;
+        padding: 1rem 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .info-item:last-child {
+        border-bottom: none;
+    }
+    
+    .info-icon {
+        width: 40px;
+        height: 40px;
+        background: rgba(0, 255, 255, 0.1);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        color: var(--primary-color);
+    }
+    
+    .info-content {
+        flex: 1;
+    }
+    
+    .info-label {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        margin-bottom: 0.25rem;
+    }
+    
+    .info-value {
+        font-size: 1.1rem;
+        color: var(--text-primary);
+        font-weight: 500;
+    }
+    
+    .projects-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin-top: 1rem;
+    }
+    
+    .project-item {
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+    }
+    
+    .project-item:hover {
+        border-color: var(--primary-color);
+        transform: translateY(-2px);
+    }
+    
+    .social-links {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-top: 2rem;
+    }
+    
+    .social-link {
+        display: flex;
+        align-items: center;
+        padding: 1rem 2rem;
+        background: rgba(0, 255, 255, 0.1);
+        border: 1px solid var(--border-color);
+        border-radius: 25px;
+        text-decoration: none;
+        color: var(--text-primary);
+        transition: all 0.3s ease;
+    }
+    
+    .social-link:hover {
+        background: rgba(0, 255, 255, 0.2);
+        border-color: var(--primary-color);
+        color: var(--primary-color);
+        transform: translateY(-2px);
+    }
+    
+    .social-link i {
+        font-size: 1.5rem;
+        margin-right: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-page">
+    <div class="container">
+        <!-- Profile Header -->
+        <div class="profile-header" data-aos="fade-up">
+            {% if member.profile_image %}
+                <img src="{{ url_for('static', filename='uploads/profiles/' + member.profile_image) }}" 
+                     alt="{{ member.full_name }}" class="profile-avatar-large">
+            {% else %}
+                <div class="profile-avatar-large d-flex align-items-center justify-content-center" 
+                     style="background: var(--primary-color); color: var(--bg-primary); font-size: 5rem;">
+                    <i class="fas fa-user"></i>
+                </div>
+            {% endif %}
+            
+            <h1 class="mb-2">{{ member.full_name }}</h1>
+            {% if member.title %}
+                <h3 class="text-primary mb-3">{{ member.title }}</h3>
+            {% endif %}
+            
+            <span class="status-badge-large status-{{ member.status }}">
+                <i class="fas fa-{{ 'graduation-cap' if member.status == 'alumni' else 'user-graduate' }}"></i>
+                {{ member.status.title() }}
+            </span>
+            
+            {% if member.bio %}
+                <p class="lead text-secondary mt-3">{{ member.bio }}</p>
+            {% endif %}
+        </div>
+
+        <div class="row">
+            <!-- Personal Information -->
+            <div class="col-md-6">
+                <div class="profile-content" data-aos="fade-up" data-aos-delay="100">
+                    <h4 class="mb-3"><i class="fas fa-info-circle text-primary"></i> Personal Information</h4>
+                    
+                    {% if member.course %}
+                    <div class="info-item">
+                        <div class="info-icon">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <div class="info-content">
+                            <div class="info-label">Course</div>
+                            <div class="info-value">{{ member.course }}</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if member.year %}
+                    <div class="info-item">
+                        <div class="info-icon">
+                            <i class="fas fa-calendar"></i>
+                        </div>
+                        <div class="info-content">
+                            <div class="info-label">Year</div>
+                            <div class="info-value">{{ member.year }}</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if member.phone %}
+                    <div class="info-item">
+                        <div class="info-icon">
+                            <i class="fas fa-phone"></i>
+                        </div>
+                        <div class="info-content">
+                            <div class="info-label">Phone</div>
+                            <div class="info-value">{{ member.phone }}</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if member.user.email %}
+                    <div class="info-item">
+                        <div class="info-icon">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div class="info-content">
+                            <div class="info-label">Email</div>
+                            <div class="info-value">{{ member.user.email }}</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="info-item">
+                        <div class="info-icon">
+                            <i class="fas fa-calendar-plus"></i>
+                        </div>
+                        <div class="info-content">
+                            <div class="info-label">Member Since</div>
+                            <div class="info-value">{{ member.created_at.strftime('%B %Y') if member.created_at else 'N/A' }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Areas of Interest & Projects -->
+            <div class="col-md-6">
+                {% if member.areas_of_interest %}
+                <div class="profile-content" data-aos="fade-up" data-aos-delay="200">
+                    <h4 class="mb-3"><i class="fas fa-heart text-primary"></i> Areas of Interest</h4>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for area in member.get_areas_list() %}
+                        <span class="badge bg-primary" style="font-size: 0.9rem; padding: 0.5rem 1rem;">{{ area }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if member.get_projects() %}
+                <div class="profile-content" data-aos="fade-up" data-aos-delay="300">
+                    <h4 class="mb-3"><i class="fas fa-project-diagram text-primary"></i> Personal Projects</h4>
+                    <div class="projects-grid">
+                        {% for project in member.get_projects() %}
+                        <div class="project-item">
+                            <h6 class="text-primary mb-2">{{ project.get('name', 'Untitled Project') }}</h6>
+                            {% if project.get('description') %}
+                                <p class="text-secondary small mb-2">{{ project.description[:100] }}{% if project.description|length > 100 %}...{% endif %}</p>
+                            {% endif %}
+                            {% if project.get('technologies') %}
+                                <div class="d-flex flex-wrap gap-1">
+                                    {% for tech in project.technologies[:3] %}
+                                    <span class="badge bg-secondary" style="font-size: 0.7rem;">{{ tech }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Social Links -->
+        {% if member.github or member.linkedin %}
+        <div class="text-center" data-aos="fade-up" data-aos-delay="400">
+            <div class="social-links">
+                {% if member.github %}
+                <a href="{{ member.github }}" target="_blank" class="social-link">
+                    <i class="fab fa-github"></i>
+                    <span>GitHub</span>
+                </a>
+                {% endif %}
+                {% if member.linkedin %}
+                <a href="{{ member.linkedin }}" target="_blank" class="social-link">
+                    <i class="fab fa-linkedin"></i>
+                    <span>LinkedIn</span>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Initialize AOS animations
+    AOS.init({
+        duration: 1000,
+        once: true,
+        offset: 100
+    });
+</script>
+{% endblock %}

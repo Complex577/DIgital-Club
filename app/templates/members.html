@@ -12,6 +12,12 @@
         <!-- Filters -->
         <div style="display: flex; gap: 1rem; justify-content: center; margin-bottom: 3rem; flex-wrap: wrap;" data-aos="fade-up">
             <form method="GET" style="display: flex; gap: 1rem; align-items: center;">
+                <select name="status" class="form-control" style="width: auto;">
+                    <option value="">All Members</option>
+                    <option value="student" {% if request.args.get('status') == 'student' %}selected{% endif %}>Students</option>
+                    <option value="alumni" {% if request.args.get('status') == 'alumni' %}selected{% endif %}>Alumni</option>
+                </select>
+                
                 <select name="course" class="form-control" style="width: auto;">
                     <option value="">All Courses</option>
                     {% for course in courses %}
@@ -30,7 +36,7 @@
                     <i class="fas fa-filter"></i> Filter
                 </button>
                 
-                {% if request.args.get('course') or request.args.get('year') %}
+                {% if request.args.get('course') or request.args.get('year') or request.args.get('status') %}
                 <a href="{{ url_for('main.members') }}" class="btn-secondary">
                     <i class="fas fa-times"></i> Clear
                 </a>

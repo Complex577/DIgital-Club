@@ -38,14 +38,70 @@ def leaders():
         leaders = []
     return render_template('leaders.html', leaders=leaders)
 
+@main_bp.route('/alumni')
+def alumni():
+    try:
+        page = request.args.get('page', 1, type=int)
+        course_filter = request.args.get('course', '')
+        year_filter = request.args.get('year', '')
+        
+        # Query only alumni members
+        query = Member.query.join(Member.user).filter(
+            Member.user.has(is_approved=True),
+            Member.status == 'alumni'
+        )
+        
+        if course_filter:
+            query = query.filter(Member.course.ilike(f'%{course_filter}%'))
+        if year_filter:
+            query = query.filter(Member.year.ilike(f'%{year_filter}%'))
+        
+        alumni = query.paginate(page=page, per_page=12, error_out=False)
+        
+        # Get unique courses and years for filter dropdowns
+        courses = db.session.query(Member.course).filter(Member.status == 'alumni').distinct().all()
+        years = db.session.query(Member.year).filter(Member.status == 'alumni').distinct().all()
+        
+        # Calculate statistics
+        alumni_count = Member.query.filter(Member.status == 'alumni').count()
+        companies_count = len(set([m.title for m in Member.query.filter(Member.status == 'alumni', Member.title.isnot(None)).all() if m.title]))
+        countries_count = 1  # Default to 1, can be enhanced later
+        current_year = datetime.now().year
+        
+        return render_template('alumni.html', 
+                             alumni=alumni,
+                             courses=[c[0] for c in courses if c[0]],
+                             years=[y[0] for y in years if y[0]],
+                             alumni_count=alumni_count,
+                             companies_count=companies_count,
+                             countries_count=countries_count,
+                             current_year=current_year)
+    except Exception as e:
+        # Return empty results if database is not ready
+        from flask import make_response
+        return make_response(render_template('alumni.html', 
+                                           alumni=None,
+                                           courses=[],
+                                           years=[],
+                                           alumni_count=0,
+                                           companies_count=0,
+                                           countries_count=0,
+                                           current_year=datetime.now().year), 200)
+
 @main_bp.route('/members')
 def members():
     try:
         page = request.args.get('page', 1, type=int)
         course_filter = request.args.get('course', '')
         year_filter = request.args.get('year', '')
+        status_filter = request.args.get('status', '')
         
+        # Query all approved members
         query = Member.query.join(Member.user).filter(Member.user.has(is_approved=True))
+        
+        # Apply status filter if specified
+        if status_filter:
+            query = query.filter(Member.status == status_filter)
         
         if course_filter:
             query = query.filter(Member.course.ilike(f'%{course_filter}%'))
@@ -61,12 +117,50 @@ def members():
         return render_template('members.html', 
                              members=members,
                              courses=[c[0] for c in courses if c[0]],
-                             years=[y[0] for y in years if y[0]])
+                             years=[y[0] for y in years if y[0]],
+                             current_status=status_filter)
     except Exception as e:
         # Return empty results if database is not ready
         from flask import make_response
         return make_response(render_template('members.html', 
                                            members=None,
+                                           courses=[],
+                                           years=[],
+                                           current_status=''), 200)
+
+@main_bp.route('/students')
+def students():
+    try:
+        page = request.args.get('page', 1, type=int)
+        course_filter = request.args.get('course', '')
+        year_filter = request.args.get('year', '')
+        
+        # Query only student members
+        query = Member.query.join(Member.user).filter(
+            Member.user.has(is_approved=True),
+            Member.status == 'student'
+        )
+        
+        if course_filter:
+            query = query.filter(Member.course.ilike(f'%{course_filter}%'))
+        if year_filter:
+            query = query.filter(Member.year.ilike(f'%{year_filter}%'))
+        
+        students = query.paginate(page=page, per_page=12, error_out=False)
+        
+        # Get unique courses and years for filter dropdowns
+        courses = db.session.query(Member.course).filter(Member.status == 'student').distinct().all()
+        years = db.session.query(Member.year).filter(Member.status == 'student').distinct().all()
+        
+        return render_template('students.html', 
+                             students=students,
+                             courses=[c[0] for c in courses if c[0]],
+                             years=[y[0] for y in years if y[0]])
+    except Exception as e:
+        # Return empty results if database is not ready
+        from flask import make_response
+        return make_response(render_template('students.html', 
+                                           students=None,
                                            courses=[],
                                            years=[]), 200)
 

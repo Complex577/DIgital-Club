@@ -1,11 +1,13 @@
 from flask import render_template, request, flash, redirect, url_for, current_app
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
+from werkzeug.security import check_password_hash, generate_password_hash
 from app.routes import member_bp
-from app.models import Member, Project
+from app.models import Member, Project, User
 from app import db
 import os
 import json
+from datetime import datetime
 
 @member_bp.route('/')
 @login_required
@@ -87,3 +89,34 @@ def edit_profile():
         return redirect(url_for('member.dashboard'))
     
     return render_template('member/edit_profile.html', member=member)
+
+@member_bp.route('/change-password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    if request.method == 'POST':
+        current_password = request.form.get('current_password')
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+        
+        # Validate current password
+        if not current_user.check_password(current_password):
+            flash('Current password is incorrect.', 'error')
+            return render_template('member/change_password.html')
+        
+        # Validate new password
+        if not new_password or len(new_password) < 6:
+            flash('New password must be at least 6 characters long.', 'error')
+            return render_template('member/change_password.html')
+        
+        if new_password != confirm_password:
+            flash('New passwords do not match.', 'error')
+            return render_template('member/change_password.html')
+        
+        # Update password
+        current_user.set_password(new_password)
+        db.session.commit()
+        
+        flash('Password updated successfully!', 'success')
+        return redirect(url_for('member.dashboard'))
+    
+    return render_template('member/change_password.html')
