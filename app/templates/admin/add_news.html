@@ -1,0 +1,59 @@
+{% extends "admin/admin_base.html" %}
+
+{% block admin_title %}Add News Article{% endblock %}
+{% block page_title %}Add News Article{% endblock %}
+{% block breadcrumb %}<span class="breadcrumb-separator">/</span> <a href="{{ url_for('admin.news') }}">News Management</a><span class="breadcrumb-separator">/</span> <span>Add Article</span>{% endblock %}
+
+{% block admin_content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="admin-form">
+            <div class="d-flex align-items-center mb-4">
+                <div class="admin-activity-icon primary me-3">
+                    <i class="fas fa-plus"></i>
+                </div>
+                <div>
+                    <h2 class="mb-1">Add News Article</h2>
+                    <p class="text-muted mb-0">Create a new news article or announcement</p>
+                </div>
+            </div>
+            
+            <form method="POST">
+                <div class="admin-form-group">
+                    <label for="title" class="admin-form-label">Article Title</label>
+                    <input type="text" class="admin-form-control" id="title" name="title" required 
+                           placeholder="Enter a compelling title for your article">
+                </div>
+                
+                <div class="admin-form-group">
+                    <label for="category" class="admin-form-label">Category</label>
+                    <select class="admin-form-control" id="category" name="category" required>
+                        <option value="">Select a category</option>
+                        <option value="general">General</option>
+                        <option value="hackathon">Hackathon</option>
+                        <option value="achievement">Achievement</option>
+                        <option value="workshop">Workshop</option>
+                        <option value="event">Event</option>
+                    </select>
+                </div>
+                
+                <div class="admin-form-group">
+                    <label for="content" class="admin-form-label">Article Content</label>
+                    <textarea class="admin-form-control" id="content" name="content" rows="10" required 
+                              placeholder="Write your article content here. You can use basic HTML formatting like &lt;strong&gt;, &lt;em&gt;, &lt;p&gt;, etc."></textarea>
+                    <small class="text-muted">You can use basic HTML tags for formatting.</small>
+                </div>
+                
+                <div class="d-flex gap-3">
+                    <button type="submit" class="admin-btn admin-btn-primary">
+                        <i class="fas fa-save"></i> Save News Article
+                    </button>
+                    <a href="{{ url_for('admin.news') }}" class="admin-btn admin-btn-outline">
+                        <i class="fas fa-arrow-left"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

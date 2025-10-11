@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block title %}{{ blog.title }} - Digital Club Blog{% endblock %}
+
+{% block content %}
+<section style="padding: 5rem 0;">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8">
+                <article style="background: var(--bg-secondary); border-radius: 0.5rem; padding: 2rem; border: 1px solid var(--border-color);" data-aos="fade-up">
+                    <!-- Blog Header -->
+                    <header class="mb-4">
+                        <div class="mb-3">
+                            <span class="badge" style="background: var(--primary-color); color: var(--bg-primary);">
+                                {{ blog.category|title }}
+                            </span>
+                            {% if blog.tags %}
+                            <div class="mt-2">
+                                {% for tag in blog.get_tags_list() %}
+                                <span class="badge me-1" style="background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-color);">
+                                    #{{ tag }}
+                                </span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <h1 style="color: var(--text-primary); font-size: 2.5rem; margin-bottom: 1rem;">
+                            {{ blog.title }}
+                        </h1>
+                        
+                        <div class="d-flex align-items-center text-muted mb-3">
+                            <i class="fas fa-user me-2"></i>
+                            <span class="me-3">{{ blog.author.email }}</span>
+                            <i class="fas fa-calendar me-2"></i>
+                            <span class="me-3">{{ blog.published_date.strftime('%B %d, %Y') }}</span>
+                            <i class="fas fa-eye me-2"></i>
+                            <span>{{ blog.views }} views</span>
+                        </div>
+                        
+                        {% if blog.excerpt %}
+                        <div class="alert" style="background: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-secondary);">
+                            <i class="fas fa-quote-left me-2"></i>
+                            {{ blog.excerpt }}
+                        </div>
+                        {% endif %}
+                    </header>
+                    
+                    <!-- Blog Content -->
+                    <div class="blog-content" style="color: var(--text-primary); line-height: 1.8;">
+                        {{ blog.content|safe }}
+                    </div>
+                    
+                    <!-- Blog Footer -->
+                    <footer class="mt-5 pt-4" style="border-top: 1px solid var(--border-color);">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 style="color: var(--text-primary);">Share this post:</h6>
+                                <div class="d-flex gap-2">
+                                    <a href="https://twitter.com/intent/tweet?text={{ blog.title|urlencode }}&url={{ request.url|urlencode }}" 
+                                       target="_blank" class="btn btn-sm" 
+                                       style="background: #1da1f2; color: white; border: none;">
+                                        <i class="fab fa-twitter"></i> Twitter
+                                    </a>
+                                    <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.url|urlencode }}" 
+                                       target="_blank" class="btn btn-sm" 
+                                       style="background: #1877f2; color: white; border: none;">
+                                        <i class="fab fa-facebook"></i> Facebook
+                                    </a>
+                                    <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ request.url|urlencode }}" 
+                                       target="_blank" class="btn btn-sm" 
+                                       style="background: #0077b5; color: white; border: none;">
+                                        <i class="fab fa-linkedin"></i> LinkedIn
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="col-md-6 text-md-end">
+                                <a href="{{ url_for('main.blogs') }}" class="btn" 
+                                   style="background: var(--primary-color); color: var(--bg-primary); border: none;">
+                                    <i class="fas fa-arrow-left"></i> Back to Blog
+                                </a>
+                            </div>
+                        </div>
+                    </footer>
+                </article>
+            </div>
+            
+            <div class="col-lg-4">
+                <!-- Author Info -->
+                <div class="card mb-4" style="background: var(--bg-secondary); border: 1px solid var(--border-color);" data-aos="fade-left">
+                    <div class="card-header" style="background: var(--bg-tertiary); border-bottom: 1px solid var(--border-color);">
+                        <h5 style="color: var(--text-primary); margin: 0;">
+                            <i class="fas fa-user"></i> About the Author
+                        </h5>
+                    </div>
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <div class="rounded-circle mx-auto d-flex align-items-center justify-content-center" 
+                                 style="width: 80px; height: 80px; background: var(--primary-color);">
+                                <i class="fas fa-user text-white" style="font-size: 2rem;"></i>
+                            </div>
+                        </div>
+                        <h6 style="color: var(--text-primary);">{{ blog.author.email }}</h6>
+                        <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                            Digital Club Member
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Related Posts -->
+                {% if related_posts %}
+                <div class="card" style="background: var(--bg-secondary); border: 1px solid var(--border-color);" data-aos="fade-left" data-aos-delay="200">
+                    <div class="card-header" style="background: var(--bg-tertiary); border-bottom: 1px solid var(--border-color);">
+                        <h5 style="color: var(--text-primary); margin: 0;">
+                            <i class="fas fa-bookmark"></i> Related Posts
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% for post in related_posts %}
+                        <div class="mb-3 pb-3" style="border-bottom: 1px solid var(--border-color);">
+                            <h6 style="color: var(--text-primary); margin-bottom: 0.5rem;">
+                                <a href="{{ url_for('main.blog_post', slug=post.slug) }}" 
+                                   style="color: inherit; text-decoration: none;">
+                                    {{ post.title }}
+                                </a>
+                            </h6>
+                            <small class="text-muted">
+                                {{ post.published_date.strftime('%B %d, %Y') }}
+                            </small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Back to Home -->
+                <div class="card mt-4" style="background: var(--bg-secondary); border: 1px solid var(--border-color);" data-aos="fade-left" data-aos-delay="300">
+                    <div class="card-body text-center">
+                        <a href="{{ url_for('main.index') }}" class="btn" 
+                           style="background: var(--primary-color); color: var(--bg-primary); border: none;">
+                            <i class="fas fa-home"></i> Back to Home
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+.blog-content h1, .blog-content h2, .blog-content h3, .blog-content h4, .blog-content h5, .blog-content h6 {
+    color: var(--text-primary);
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+}
+
+.blog-content p {
+    margin-bottom: 1.5rem;
+}
+
+.blog-content ul, .blog-content ol {
+    margin-bottom: 1.5rem;
+    padding-left: 2rem;
+}
+
+.blog-content li {
+    margin-bottom: 0.5rem;
+}
+
+.blog-content blockquote {
+    border-left: 4px solid var(--primary-color);
+    padding-left: 1rem;
+    margin: 2rem 0;
+    font-style: italic;
+    color: var(--text-secondary);
+}
+
+.blog-content code {
+    background: var(--bg-tertiary);
+    padding: 0.2rem 0.4rem;
+    border-radius: 0.25rem;
+    color: var(--primary-color);
+}
+
+.blog-content pre {
+    background: var(--bg-tertiary);
+    padding: 1rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    margin: 1.5rem 0;
+}
+
+.blog-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+    margin: 1.5rem 0;
+}
+</style>
+{% endblock %}

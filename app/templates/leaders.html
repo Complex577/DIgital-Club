@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Leaders - Digital Club{% endblock %}
+
+{% block content %}
+<section style="padding: 5rem 0;">
+    <div class="container">
+        <h1 style="text-align: center; font-size: 3rem; margin-bottom: 3rem; color: var(--primary-color);" data-aos="fade-up">
+            Our Leadership Team
+        </h1>
+        
+        {% if leaders %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+            {% for leader in leaders %}
+            <div class="card" data-aos="fade-up" data-aos-delay="{{ loop.index * 100 }}">
+                <div style="text-align: center;">
+                    {% if leader.member.profile_image %}
+                    <img src="{{ url_for('static', filename='uploads/profiles/' + leader.member.profile_image) }}" 
+                         alt="{{ leader.member.full_name }}" 
+                         style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; margin-bottom: 1.5rem; border: 3px solid var(--primary-color);">
+                    {% else %}
+                    <div style="width: 150px; height: 150px; border-radius: 50%; background: linear-gradient(45deg, var(--primary-color), var(--secondary-color)); margin: 0 auto 1.5rem; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-user" style="font-size: 3rem; color: var(--bg-primary);"></i>
+                    </div>
+                    {% endif %}
+                    
+                    <h3 style="color: var(--text-primary); margin-bottom: 0.5rem;">{{ leader.member.full_name }}</h3>
+                    <p style="color: var(--primary-color); font-weight: 600; margin-bottom: 1rem;">{{ leader.position }}</p>
+                    
+                    {% if leader.member.title %}
+                    <p style="color: var(--text-secondary); margin-bottom: 1rem;">{{ leader.member.title }}</p>
+                    {% endif %}
+                    
+                    {% if leader.member.bio %}
+                    <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.5rem;">{{ leader.member.bio }}</p>
+                    {% endif %}
+                    
+                    <div style="display: flex; gap: 1rem; justify-content: center;">
+                        {% if leader.member.github %}
+                        <a href="{{ leader.member.github }}" target="_blank" class="social-link">
+                            <i class="fab fa-github"></i>
+                        </a>
+                        {% endif %}
+                        {% if leader.member.linkedin %}
+                        <a href="{{ leader.member.linkedin }}" target="_blank" class="social-link">
+                            <i class="fab fa-linkedin"></i>
+                        </a>
+                        {% endif %}
+                        {% if leader.member.phone %}
+                        <a href="tel:{{ leader.member.phone }}" class="social-link">
+                            <i class="fas fa-phone"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 3rem;">
+            <i class="fas fa-users" style="font-size: 4rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+            <h3 style="color: var(--text-secondary); margin-bottom: 1rem;">Leadership Team Coming Soon</h3>
+            <p style="color: var(--text-muted);">Our leadership positions are currently being filled. Check back soon!</p>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

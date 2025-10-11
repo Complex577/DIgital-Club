@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Digital Club - KIUT{% endblock %}</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- AOS Animation Library -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <!-- Admin CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+    
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="{{ url_for('main.index') }}">
+                    <i class="fas fa-code"></i>
+                    <span>Digital Club</span>
+                </a>
+            </div>
+            
+            <div class="nav-menu" id="nav-menu">
+                <!-- Main Navigation -->
+                <div class="nav-main">
+                    <a href="{{ url_for('main.index') }}" class="nav-link">Home</a>
+                    
+                    <!-- About Dropdown -->
+                    <div class="nav-dropdown">
+                        <a href="#" class="nav-link dropdown-toggle">
+                            <span>About</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </a>
+                        <div class="dropdown-menu">
+                            <a href="{{ url_for('main.about') }}" class="dropdown-item">
+                                <i class="fas fa-info-circle"></i>
+                                <span>About Us</span>
+                            </a>
+                            <a href="{{ url_for('main.leaders') }}" class="dropdown-item">
+                                <i class="fas fa-users"></i>
+                                <span>Leadership</span>
+                            </a>
+                            <a href="{{ url_for('main.members') }}" class="dropdown-item">
+                                <i class="fas fa-user-friends"></i>
+                                <span>Members</span>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Activities Dropdown -->
+                    <div class="nav-dropdown">
+                        <a href="#" class="nav-link dropdown-toggle">
+                            <span>Activities</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </a>
+                        <div class="dropdown-menu">
+                            <a href="{{ url_for('main.events') }}" class="dropdown-item">
+                                <i class="fas fa-calendar-alt"></i>
+                                <span>Events</span>
+                            </a>
+                            <a href="{{ url_for('main.projects') }}" class="dropdown-item">
+                                <i class="fas fa-project-diagram"></i>
+                                <span>Projects</span>
+                            </a>
+                            <a href="{{ url_for('main.topics') }}" class="dropdown-item">
+                                <i class="fas fa-book"></i>
+                                <span>Learning Topics</span>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Content Dropdown -->
+                    <div class="nav-dropdown">
+                        <a href="#" class="nav-link dropdown-toggle">
+                            <span>Content</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </a>
+                        <div class="dropdown-menu">
+                            <a href="{{ url_for('main.news') }}" class="dropdown-item">
+                                <i class="fas fa-newspaper"></i>
+                                <span>News</span>
+                            </a>
+                            <a href="{{ url_for('main.blogs') }}" class="dropdown-item">
+                                <i class="fas fa-blog"></i>
+                                <span>Blog</span>
+                            </a>
+                            <a href="{{ url_for('main.gallery') }}" class="dropdown-item">
+                                <i class="fas fa-images"></i>
+                                <span>Gallery</span>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <a href="{{ url_for('main.contact') }}" class="nav-link">Contact</a>
+                </div>
+                
+                <!-- User Actions -->
+                <div class="nav-user">
+                    {% if current_user.is_authenticated %}
+                        <!-- User Profile Dropdown -->
+                        <div class="nav-dropdown user-dropdown">
+                            <a href="#" class="nav-link user-action dropdown-toggle">
+                                <i class="fas fa-user-circle"></i>
+                                <span>{{ current_user.email.split('@')[0] }}</span>
+                                <i class="fas fa-chevron-down"></i>
+                            </a>
+                            <div class="dropdown-menu user-menu">
+                                {% if current_user.role == 'admin' %}
+                                    <a href="{{ url_for('admin.dashboard') }}" class="dropdown-item admin">
+                                        <i class="fas fa-cog"></i>
+                                        <span>Admin Panel</span>
+                                    </a>
+                                {% else %}
+                                    <a href="{{ url_for('member.dashboard') }}" class="dropdown-item profile">
+                                        <i class="fas fa-user"></i>
+                                        <span>My Profile</span>
+                                    </a>
+                                {% endif %}
+                                <div class="dropdown-divider"></div>
+                                <a href="{{ url_for('auth.logout') }}" class="dropdown-item logout">
+                                    <i class="fas fa-sign-out-alt"></i>
+                                    <span>Logout</span>
+                                </a>
+                            </div>
+                        </div>
+                    {% else %}
+                        <a href="{{ url_for('auth.login') }}" class="nav-link user-action login">
+                            <i class="fas fa-sign-in-alt"></i>
+                            <span>Login</span>
+                        </a>
+                        <a href="{{ url_for('auth.register') }}" class="nav-link user-action register">
+                            <i class="fas fa-user-plus"></i>
+                            <span>Join</span>
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="nav-toggle" id="nav-toggle">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                    <div class="flash-message flash-{{ category }}">
+                        <span>{{ message }}</span>
+                        <button class="flash-close" onclick="this.parentElement.remove()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Main Content -->
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-section">
+                <h3>Digital Club</h3>
+                <p>Empowering students through technology and innovation at Kampala International University in Tanzania.</p>
+                <div class="social-links">
+                    <a href="#" class="social-link"><i class="fab fa-facebook"></i></a>
+                    <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
+                    <a href="#" class="social-link"><i class="fab fa-linkedin"></i></a>
+                    <a href="#" class="social-link"><i class="fab fa-github"></i></a>
+                </div>
+            </div>
+            
+            <div class="footer-section">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="{{ url_for('main.about') }}">About Us</a></li>
+                    <li><a href="{{ url_for('main.events') }}">Events</a></li>
+                    <li><a href="{{ url_for('main.projects') }}">Projects</a></li>
+                    <li><a href="{{ url_for('main.topics') }}">Topics</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-section">
+                <h4>Resources</h4>
+                <ul>
+                    <li><a href="https://kiut.ac.tz/" target="_blank">KIUT Website</a></li>
+                    <li><a href="{{ url_for('main.news') }}">News & Updates</a></li>
+                    <li><a href="{{ url_for('main.gallery') }}">Gallery</a></li>
+                    <li><a href="{{ url_for('main.contact') }}">Contact</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-section">
+                <h4>Newsletter</h4>
+                <p>Stay updated with our latest activities and events.</p>
+                <form class="newsletter-form" id="newsletter-form">
+                    <input type="email" placeholder="Your email" name="email" required>
+                    <button type="submit">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="footer-bottom">
+            <p>&copy; 2024 Digital Club - KIUT. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

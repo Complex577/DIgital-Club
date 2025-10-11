@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Topics - Digital Club{% endblock %}
+
+{% block content %}
+<section style="padding: 5rem 0;">
+    <div class="container">
+        <h1 style="text-align: center; font-size: 3rem; margin-bottom: 3rem; color: var(--primary-color);" data-aos="fade-up">
+            Topics We Cover
+        </h1>
+        
+        <p style="text-align: center; font-size: 1.2rem; color: var(--text-secondary); margin-bottom: 4rem; max-width: 800px; margin-left: auto; margin-right: auto;" data-aos="fade-up" data-aos-delay="200">
+            Explore the wide range of technologies and skills we teach and practice in Digital Club
+        </p>
+        
+        {% if topics %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+            {% for topic in topics %}
+            <div class="card" data-aos="fade-up" data-aos-delay="{{ loop.index * 100 }}">
+                <div style="text-align: center;">
+                    <div style="width: 80px; height: 80px; background: linear-gradient(45deg, var(--primary-color), var(--secondary-color)); border-radius: 50%; margin: 0 auto 1.5rem; display: flex; align-items: center; justify-content: center;">
+                        <i class="{{ topic.icon }}" style="font-size: 2rem; color: var(--bg-primary);"></i>
+                    </div>
+                    
+                    <h3 style="color: var(--text-primary); margin-bottom: 1rem;">{{ topic.name }}</h3>
+                    
+                    {% if topic.description %}
+                    <p style="color: var(--text-secondary); line-height: 1.6;">
+                        {{ topic.description }}
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 3rem;">
+            <i class="fas fa-book" style="font-size: 4rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+            <h3 style="color: var(--text-secondary); margin-bottom: 1rem;">Topics Coming Soon</h3>
+            <p style="color: var(--text-muted);">We're preparing comprehensive learning materials for various technologies.</p>
+        </div>
+        {% endif %}
+        
+        <!-- Call to Action -->
+        <div style="text-align: center; margin-top: 5rem;" data-aos="fade-up">
+            <div style="background: rgba(255, 255, 255, 0.05); border-radius: 15px; padding: 3rem; border: 1px solid var(--border-color);">
+                <h2 style="color: var(--text-primary); margin-bottom: 1rem;">Want to Learn More?</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 2rem; font-size: 1.1rem;">
+                    Join our workshops and hands-on sessions to dive deeper into these technologies
+                </p>
+                <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                    <a href="{{ url_for('auth.register') }}" class="btn-primary">
+                        <i class="fas fa-user-plus"></i> Join Digital Club
+                    </a>
+                    <a href="{{ url_for('main.events') }}" class="btn-secondary">
+                        <i class="fas fa-calendar"></i> View Events
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

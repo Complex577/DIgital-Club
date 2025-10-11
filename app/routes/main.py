@@ -1,0 +1,203 @@
+from flask import render_template, request, flash, redirect, url_for, jsonify
+from app.routes import main_bp
+from app.models import News, Event, Project, Gallery, Topic, Member, Leader, Newsletter, Blog
+from app import db
+from datetime import datetime
+
+@main_bp.route('/')
+def index():
+    try:
+        # Get latest news (limit to 3)
+        latest_news = News.query.order_by(News.published_date.desc()).limit(3).all()
+        
+        # Get upcoming events (next 3)
+        upcoming_events = Event.query.filter(Event.event_date >= datetime.utcnow()).order_by(Event.event_date.asc()).limit(3).all()
+        
+        # Get featured projects (limit to 3)
+        featured_projects = Project.query.order_by(Project.created_at.desc()).limit(3).all()
+    except Exception as e:
+        # If database is not ready, use empty lists
+        latest_news = []
+        upcoming_events = []
+        featured_projects = []
+    
+    return render_template('index.html', 
+                         latest_news=latest_news,
+                         upcoming_events=upcoming_events,
+                         featured_projects=featured_projects)
+
+@main_bp.route('/about')
+def about():
+    return render_template('about.html')
+
+@main_bp.route('/leaders')
+def leaders():
+    try:
+        leaders = Leader.query.join(Member).order_by(Leader.display_order.asc()).all()
+    except:
+        leaders = []
+    return render_template('leaders.html', leaders=leaders)
+
+@main_bp.route('/members')
+def members():
+    try:
+        page = request.args.get('page', 1, type=int)
+        course_filter = request.args.get('course', '')
+        year_filter = request.args.get('year', '')
+        
+        query = Member.query.join(Member.user).filter(Member.user.has(is_approved=True))
+        
+        if course_filter:
+            query = query.filter(Member.course.ilike(f'%{course_filter}%'))
+        if year_filter:
+            query = query.filter(Member.year.ilike(f'%{year_filter}%'))
+        
+        members = query.paginate(page=page, per_page=12, error_out=False)
+        
+        # Get unique courses and years for filter dropdowns
+        courses = db.session.query(Member.course).distinct().all()
+        years = db.session.query(Member.year).distinct().all()
+        
+        return render_template('members.html', 
+                             members=members,
+                             courses=[c[0] for c in courses if c[0]],
+                             years=[y[0] for y in years if y[0]])
+    except Exception as e:
+        # Return empty results if database is not ready
+        from flask import make_response
+        return make_response(render_template('members.html', 
+                                           members=None,
+                                           courses=[],
+                                           years=[]), 200)
+
+@main_bp.route('/news')
+def news():
+    try:
+        page = request.args.get('page', 1, type=int)
+        category_filter = request.args.get('category', '')
+        
+        query = News.query.order_by(News.published_date.desc())
+        
+        if category_filter:
+            query = query.filter(News.category == category_filter)
+        
+        news_items = query.paginate(page=page, per_page=6, error_out=False)
+    except:
+        news_items = None
+    return render_template('news.html', news_items=news_items)
+
+@main_bp.route('/news/<int:news_id>')
+def news_detail(news_id):
+    news_item = News.query.get_or_404(news_id)
+    return render_template('news_detail.html', news_item=news_item)
+
+@main_bp.route('/events')
+def events():
+    try:
+        events = Event.query.order_by(Event.event_date.asc()).all()
+    except:
+        events = []
+    return render_template('events.html', events=events)
+
+@main_bp.route('/projects')
+def projects():
+    try:
+        projects = Project.query.order_by(Project.created_at.desc()).all()
+    except:
+        projects = []
+    return render_template('projects.html', projects=projects)
+
+@main_bp.route('/gallery')
+def gallery():
+    try:
+        gallery_items = Gallery.query.order_by(Gallery.uploaded_at.desc()).all()
+    except:
+        gallery_items = []
+    return render_template('gallery.html', gallery_items=gallery_items)
+
+@main_bp.route('/topics')
+def topics():
+    try:
+        topics = Topic.query.all()
+    except:
+        topics = []
+    return render_template('topics.html', topics=topics)
+
+@main_bp.route('/contact', methods=['GET', 'POST'])
+def contact():
+    if request.method == 'POST':
+        # Handle contact form submission
+        name = request.form.get('name')
+        email = request.form.get('email')
+        subject = request.form.get('subject')
+        message = request.form.get('message')
+        
+        # Here you could save to database or send email
+        flash('Thank you for your message! We will get back to you soon.', 'success')
+        return redirect(url_for('main.contact'))
+    
+    return render_template('contact.html')
+
+@main_bp.route('/newsletter/subscribe', methods=['POST'])
+def newsletter_subscribe():
+    try:
+        email = request.form.get('email')
+        phone = request.form.get('phone')
+        
+        if not email and not phone:
+            return jsonify({'success': False, 'message': 'Please provide email or phone number'})
+        
+        # Check if already subscribed
+        existing = Newsletter.query.filter(
+            (Newsletter.email == email) | (Newsletter.phone == phone)
+        ).first()
+        
+        if existing:
+            return jsonify({'success': False, 'message': 'Already subscribed to newsletter'})
+        
+        # Add new subscription
+        subscription = Newsletter(email=email, phone=phone)
+        db.session.add(subscription)
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Successfully subscribed to newsletter!'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': 'Database error. Please try again later.'})
+
+# Blog Routes
+@main_bp.route('/blogs')
+def blogs():
+    page = request.args.get('page', 1, type=int)
+    category = request.args.get('category', '')
+    
+    query = Blog.query.filter_by(is_published=True)
+    
+    if category:
+        query = query.filter_by(category=category)
+    
+    blogs = query.order_by(Blog.published_date.desc()).paginate(
+        page=page, per_page=6, error_out=False
+    )
+    
+    # Get categories for filter
+    categories = db.session.query(Blog.category).filter_by(is_published=True).distinct().all()
+    categories = [cat[0] for cat in categories if cat[0]]
+    
+    return render_template('blogs.html', blogs=blogs, categories=categories, current_category=category)
+
+@main_bp.route('/blogs/<slug>')
+def blog_post(slug):
+    blog = Blog.query.filter_by(slug=slug, is_published=True).first_or_404()
+    
+    # Increment view count
+    blog.views += 1
+    db.session.commit()
+    
+    # Get related posts
+    related_posts = Blog.query.filter(
+        Blog.category == blog.category,
+        Blog.id != blog.id,
+        Blog.is_published == True
+    ).order_by(Blog.published_date.desc()).limit(3).all()
+    
+    return render_template('blog_post.html', blog=blog, related_posts=related_posts)

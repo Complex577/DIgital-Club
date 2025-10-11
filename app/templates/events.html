@@ -1,0 +1,641 @@
+{% extends "base.html" %}
+
+{% block title %}Events - Digital Club{% endblock %}
+
+{% block extra_head %}
+<style>
+    .events-header {
+        background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+        padding: 5rem 0;
+        text-align: center;
+    }
+    
+    .events-nav {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-bottom: 3rem;
+        flex-wrap: wrap;
+    }
+    
+    .nav-tab {
+        padding: 1rem 2rem;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(0, 255, 255, 0.2);
+        border-radius: 25px;
+        color: var(--text-secondary);
+        text-decoration: none;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .nav-tab.active {
+        background: var(--primary-color);
+        color: var(--bg-primary);
+        border-color: var(--primary-color);
+    }
+    
+    .nav-tab:hover {
+        border-color: var(--primary-color);
+        color: var(--primary-color);
+    }
+    
+    .events-content {
+        display: none;
+    }
+    
+    .events-content.active {
+        display: block;
+    }
+    
+    .calendar-container {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 15px;
+        padding: 2rem;
+        border: 1px solid rgba(0, 255, 255, 0.2);
+        margin-bottom: 3rem;
+    }
+    
+    .calendar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+    
+    .calendar-nav {
+        background: none;
+        border: none;
+        color: var(--primary-color);
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: 50%;
+        transition: all 0.3s ease;
+    }
+    
+    .calendar-nav:hover {
+        background: rgba(0, 255, 255, 0.1);
+    }
+    
+    .calendar-title {
+        font-size: 1.5rem;
+        color: var(--text-primary);
+        font-weight: 600;
+    }
+    
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 0.5rem;
+    }
+    
+    .calendar-day-header {
+        text-align: center;
+        padding: 1rem 0.5rem;
+        color: var(--text-muted);
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    
+    .calendar-day {
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+    
+    .calendar-day:hover {
+        background: rgba(0, 255, 255, 0.1);
+    }
+    
+    .calendar-day.has-event {
+        background: rgba(0, 255, 255, 0.2);
+        color: var(--primary-color);
+        font-weight: 600;
+    }
+    
+    .calendar-day.has-event::after {
+        content: '';
+        position: absolute;
+        bottom: 2px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 4px;
+        height: 4px;
+        background: var(--primary-color);
+        border-radius: 50%;
+    }
+    
+    .calendar-day.today {
+        background: var(--primary-color);
+        color: var(--bg-primary);
+    }
+    
+    .calendar-day.other-month {
+        color: var(--text-muted);
+        opacity: 0.5;
+    }
+    
+    .event-category {
+        display: inline-block;
+        padding: 0.3rem 0.8rem;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    
+    .category-workshop {
+        background: rgba(0, 255, 255, 0.2);
+        color: var(--primary-color);
+    }
+    
+    .category-hackathon {
+        background: rgba(255, 0, 255, 0.2);
+        color: var(--secondary-color);
+    }
+    
+    .category-talk {
+        background: rgba(255, 255, 0, 0.2);
+        color: var(--accent-color);
+    }
+    
+    .category-social {
+        background: rgba(0, 255, 0, 0.2);
+        color: #00ff00;
+    }
+    
+    .event-status {
+        display: inline-block;
+        padding: 0.3rem 0.8rem;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-left: 1rem;
+    }
+    
+    .status-upcoming {
+        background: rgba(0, 255, 0, 0.2);
+        color: #00ff00;
+    }
+    
+    .status-ongoing {
+        background: rgba(255, 255, 0, 0.2);
+        color: var(--accent-color);
+    }
+    
+    .status-completed {
+        background: rgba(128, 128, 128, 0.2);
+        color: #808080;
+    }
+    
+    .countdown-timer {
+        background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+        color: var(--bg-primary);
+        padding: 2rem;
+        border-radius: 15px;
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+    
+    .countdown-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .countdown-item {
+        text-align: center;
+    }
+    
+    .countdown-number {
+        font-size: 2rem;
+        font-weight: 700;
+        display: block;
+    }
+    
+    .countdown-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Events Header -->
+<section class="events-header">
+    <div class="container">
+        <h1 style="font-size: 3rem; margin-bottom: 1rem; color: var(--primary-color);" data-aos="fade-up">
+            Events Calendar
+        </h1>
+        <p style="font-size: 1.2rem; color: var(--text-secondary); max-width: 600px; margin: 0 auto;" data-aos="fade-up" data-aos-delay="200">
+            Join our exciting workshops, hackathons, tech talks, and networking events
+        </p>
+    </div>
+</section>
+
+<!-- Events Navigation -->
+<section style="padding: 3rem 0;">
+    <div class="container">
+        <div class="events-nav" data-aos="fade-up">
+            <div class="nav-tab active" data-tab="upcoming">Upcoming Events</div>
+            <div class="nav-tab" data-tab="calendar">Calendar View</div>
+            <div class="nav-tab" data-tab="past">Past Events</div>
+            <div class="nav-tab" data-tab="categories">By Category</div>
+        </div>
+        
+        <!-- Countdown Timer for Next Major Event -->
+        <div class="countdown-timer" data-aos="fade-up" data-aos-delay="200">
+            <h3 style="margin-bottom: 1rem;">Next Major Event</h3>
+            <h4 style="margin-bottom: 0.5rem;">Tanzania Tech Summit 2024</h4>
+            <p style="opacity: 0.9; margin-bottom: 1rem;">March 15-17, 2024 • Dar es Salaam</p>
+            <div class="countdown-grid" id="countdown-timer">
+                <div class="countdown-item">
+                    <span class="countdown-number" id="days">00</span>
+                    <span class="countdown-label">Days</span>
+                </div>
+                <div class="countdown-item">
+                    <span class="countdown-number" id="hours">00</span>
+                    <span class="countdown-label">Hours</span>
+                </div>
+                <div class="countdown-item">
+                    <span class="countdown-number" id="minutes">00</span>
+                    <span class="countdown-label">Minutes</span>
+                </div>
+                <div class="countdown-item">
+                    <span class="countdown-number" id="seconds">00</span>
+                    <span class="countdown-label">Seconds</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Upcoming Events Content -->
+        <div class="events-content active" id="upcoming-events">
+            {% if events %}
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 2rem;">
+                {% for event in events %}
+                <div class="card" data-aos="fade-up" data-aos-delay="{{ loop.index * 100 }}">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                        <div>
+                            <span class="event-category category-{{ event.category or 'workshop' }}">
+                                {{ (event.category or 'workshop').title() }}
+                            </span>
+                            <span class="event-status status-upcoming">Upcoming</span>
+                            <h3 style="color: var(--text-primary); margin: 0.5rem 0;">{{ event.title }}</h3>
+                            <p style="color: var(--primary-color); font-weight: 600; margin-bottom: 0.5rem;">
+                                <i class="fas fa-calendar-alt"></i> {{ event.event_date.strftime('%B %d, %Y at %I:%M %p') }}
+                            </p>
+                            {% if event.location %}
+                            <p style="color: var(--text-secondary); margin-bottom: 0;">
+                                <i class="fas fa-map-marker-alt"></i> {{ event.location }}
+                            </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    {% if event.description %}
+                    <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.5rem;">
+                        {{ event.description }}
+                    </p>
+                    {% endif %}
+                    
+                    <div style="display: flex; gap: 1rem;">
+                        <button class="btn-primary" style="flex: 1;">
+                            <i class="fas fa-calendar-plus"></i> RSVP
+                        </button>
+                        <button class="btn-secondary" style="flex: 1;">
+                            <i class="fas fa-share"></i> Share
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: 3rem;">
+                <i class="fas fa-calendar-alt" style="font-size: 4rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+                <h3 style="color: var(--text-secondary); margin-bottom: 1rem;">No Upcoming Events</h3>
+                <p style="color: var(--text-muted);">Check back soon for exciting workshops and events!</p>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Calendar View Content -->
+        <div class="events-content" id="calendar-events">
+            <div class="calendar-container" data-aos="fade-up">
+                <div class="calendar-header">
+                    <button class="calendar-nav" id="prev-month">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <h3 class="calendar-title" id="calendar-title">March 2024</h3>
+                    <button class="calendar-nav" id="next-month">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+                <div class="calendar-grid" id="calendar-grid">
+                    <!-- Calendar will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Past Events Content -->
+        <div class="events-content" id="past-events">
+            <h2 style="text-align: center; margin-bottom: 3rem; color: var(--text-primary);" data-aos="fade-up">
+                Past Events Archive
+            </h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2rem;">
+                <!-- Sample Past Events -->
+                <div class="card" data-aos="fade-up" data-aos-delay="100">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                        <div>
+                            <span class="event-category category-hackathon">Hackathon</span>
+                            <span class="event-status status-completed">Completed</span>
+                            <h3 style="color: var(--text-primary); margin: 0.5rem 0;">AI Innovation Challenge</h3>
+                            <p style="color: var(--text-muted); font-size: 0.9rem;">
+                                <i class="fas fa-calendar-alt"></i> February 20, 2024
+                            </p>
+                        </div>
+                    </div>
+                    <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 1rem;">
+                        24-hour hackathon focused on AI solutions for healthcare. 15 teams participated with innovative projects.
+                    </p>
+                    <div style="display: flex; gap: 1rem;">
+                        <button class="btn-secondary" style="flex: 1;">
+                            <i class="fas fa-images"></i> Gallery
+                        </button>
+                        <button class="btn-secondary" style="flex: 1;">
+                            <i class="fas fa-trophy"></i> Winners
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="card" data-aos="fade-up" data-aos-delay="200">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                        <div>
+                            <span class="event-category category-workshop">Workshop</span>
+                            <span class="event-status status-completed">Completed</span>
+                            <h3 style="color: var(--text-primary); margin: 0.5rem 0;">React Masterclass</h3>
+                            <p style="color: var(--text-muted); font-size: 0.9rem;">
+                                <i class="fas fa-calendar-alt"></i> February 15, 2024
+                            </p>
+                        </div>
+                    </div>
+                    <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 1rem;">
+                        Hands-on workshop covering React hooks, state management, and modern development practices.
+                    </p>
+                    <div style="display: flex; gap: 1rem;">
+                        <button class="btn-secondary" style="flex: 1;">
+                            <i class="fas fa-download"></i> Materials
+                        </button>
+                        <button class="btn-secondary" style="flex: 1;">
+                            <i class="fas fa-video"></i> Recording
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="card" data-aos="fade-up" data-aos-delay="300">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                        <div>
+                            <span class="event-category category-talk">Tech Talk</span>
+                            <span class="event-status status-completed">Completed</span>
+                            <h3 style="color: var(--text-primary); margin: 0.5rem 0;">Future of Web Development</h3>
+                            <p style="color: var(--text-muted); font-size: 0.9rem;">
+                                <i class="fas fa-calendar-alt"></i> February 10, 2024
+                            </p>
+                        </div>
+                    </div>
+                    <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 1rem;">
+                        Guest speaker from Google discussed emerging trends in web development and career opportunities.
+                    </p>
+                    <div style="display: flex; gap: 1rem;">
+                        <button class="btn-secondary" style="flex: 1;">
+                            <i class="fas fa-video"></i> Recording
+                        </button>
+                        <button class="btn-secondary" style="flex: 1;">
+                            <i class="fas fa-file-pdf"></i> Slides
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Categories Content -->
+        <div class="events-content" id="categories-events">
+            <h2 style="text-align: center; margin-bottom: 3rem; color: var(--text-primary);" data-aos="fade-up">
+                Events by Category
+            </h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+                <div class="card" data-aos="fade-up" data-aos-delay="100">
+                    <div style="text-align: center;">
+                        <i class="fas fa-code" style="font-size: 3rem; color: var(--primary-color); margin-bottom: 1rem;"></i>
+                        <h3 style="color: var(--text-primary); margin-bottom: 1rem;">Workshops</h3>
+                        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+                            Hands-on learning sessions covering various technologies and programming languages.
+                        </p>
+                        <div style="background: rgba(0, 255, 255, 0.1); padding: 1rem; border-radius: 10px; margin-bottom: 1rem;">
+                            <div style="font-size: 2rem; font-weight: 700; color: var(--primary-color);">25+</div>
+                            <div style="color: var(--text-secondary);">Workshops This Year</div>
+                        </div>
+                        <button class="btn-primary">
+                            <i class="fas fa-calendar"></i> View Workshops
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="card" data-aos="fade-up" data-aos-delay="200">
+                    <div style="text-align: center;">
+                        <i class="fas fa-trophy" style="font-size: 3rem; color: var(--secondary-color); margin-bottom: 1rem;"></i>
+                        <h3 style="color: var(--text-primary); margin-bottom: 1rem;">Hackathons</h3>
+                        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+                            Intensive coding competitions where teams build innovative solutions in limited time.
+                        </p>
+                        <div style="background: rgba(255, 0, 255, 0.1); padding: 1rem; border-radius: 10px; margin-bottom: 1rem;">
+                            <div style="font-size: 2rem; font-weight: 700; color: var(--secondary-color);">8+</div>
+                            <div style="color: var(--text-secondary);">Hackathons This Year</div>
+                        </div>
+                        <button class="btn-primary">
+                            <i class="fas fa-calendar"></i> View Hackathons
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="card" data-aos="fade-up" data-aos-delay="300">
+                    <div style="text-align: center;">
+                        <i class="fas fa-microphone" style="font-size: 3rem; color: var(--accent-color); margin-bottom: 1rem;"></i>
+                        <h3 style="color: var(--text-primary); margin-bottom: 1rem;">Tech Talks</h3>
+                        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+                            Inspiring presentations by industry experts and successful alumni sharing their experiences.
+                        </p>
+                        <div style="background: rgba(255, 255, 0, 0.1); padding: 1rem; border-radius: 10px; margin-bottom: 1rem;">
+                            <div style="font-size: 2rem; font-weight: 700; color: var(--accent-color);">15+</div>
+                            <div style="color: var(--text-secondary);">Tech Talks This Year</div>
+                        </div>
+                        <button class="btn-primary">
+                            <i class="fas fa-calendar"></i> View Tech Talks
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="card" data-aos="fade-up" data-aos-delay="400">
+                    <div style="text-align: center;">
+                        <i class="fas fa-users" style="font-size: 3rem; color: #00ff00; margin-bottom: 1rem;"></i>
+                        <h3 style="color: var(--text-primary); margin-bottom: 1rem;">Social Events</h3>
+                        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+                            Networking events, game nights, and social gatherings to build community connections.
+                        </p>
+                        <div style="background: rgba(0, 255, 0, 0.1); padding: 1rem; border-radius: 10px; margin-bottom: 1rem;">
+                            <div style="font-size: 2rem; font-weight: 700; color: #00ff00;">12+</div>
+                            <div style="color: var(--text-secondary);">Social Events This Year</div>
+                        </div>
+                        <button class="btn-primary">
+                            <i class="fas fa-calendar"></i> View Social Events
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Initialize AOS animations
+    AOS.init({
+        duration: 1000,
+        once: true,
+        offset: 100
+    });
+
+    // Events Navigation Tabs
+    const navTabs = document.querySelectorAll('.nav-tab');
+    const eventContents = document.querySelectorAll('.events-content');
+
+    navTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const targetTab = tab.getAttribute('data-tab');
+            
+            // Remove active class from all tabs and contents
+            navTabs.forEach(t => t.classList.remove('active'));
+            eventContents.forEach(c => c.classList.remove('active'));
+            
+            // Add active class to clicked tab and corresponding content
+            tab.classList.add('active');
+            document.getElementById(targetTab + '-events').classList.add('active');
+        });
+    });
+
+    // Countdown Timer
+    function updateCountdown() {
+        const eventDate = new Date('2024-03-15T09:00:00').getTime();
+        const now = new Date().getTime();
+        const distance = eventDate - now;
+
+        if (distance > 0) {
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            document.getElementById('days').textContent = days.toString().padStart(2, '0');
+            document.getElementById('hours').textContent = hours.toString().padStart(2, '0');
+            document.getElementById('minutes').textContent = minutes.toString().padStart(2, '0');
+            document.getElementById('seconds').textContent = seconds.toString().padStart(2, '0');
+        } else {
+            document.getElementById('countdown-timer').innerHTML = '<h3>Event Started!</h3>';
+        }
+    }
+
+    // Update countdown every second
+    setInterval(updateCountdown, 1000);
+    updateCountdown(); // Initial call
+
+    // Calendar Functionality
+    let currentDate = new Date();
+    const monthNames = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    function generateCalendar() {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        
+        document.getElementById('calendar-title').textContent = `${monthNames[month]} ${year}`;
+        
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const daysInMonth = lastDay.getDate();
+        const startingDayOfWeek = firstDay.getDay();
+        
+        const calendarGrid = document.getElementById('calendar-grid');
+        calendarGrid.innerHTML = '';
+        
+        // Add day headers
+        dayNames.forEach(day => {
+            const dayHeader = document.createElement('div');
+            dayHeader.className = 'calendar-day-header';
+            dayHeader.textContent = day;
+            calendarGrid.appendChild(dayHeader);
+        });
+        
+        // Add empty cells for days before the first day of the month
+        for (let i = 0; i < startingDayOfWeek; i++) {
+            const emptyDay = document.createElement('div');
+            emptyDay.className = 'calendar-day other-month';
+            emptyDay.textContent = new Date(year, month, -startingDayOfWeek + i + 1).getDate();
+            calendarGrid.appendChild(emptyDay);
+        }
+        
+        // Add days of the month
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dayElement = document.createElement('div');
+            dayElement.className = 'calendar-day';
+            dayElement.textContent = day;
+            
+            // Mark today
+            const today = new Date();
+            if (year === today.getFullYear() && month === today.getMonth() && day === today.getDate()) {
+                dayElement.classList.add('today');
+            }
+            
+            // Mark days with events (sample data)
+            const eventDays = [5, 12, 15, 20, 25, 28];
+            if (eventDays.includes(day)) {
+                dayElement.classList.add('has-event');
+            }
+            
+            calendarGrid.appendChild(dayElement);
+        }
+        
+        // Add empty cells for days after the last day of the month
+        const remainingCells = 42 - (startingDayOfWeek + daysInMonth);
+        for (let i = 1; i <= remainingCells; i++) {
+            const emptyDay = document.createElement('div');
+            emptyDay.className = 'calendar-day other-month';
+            emptyDay.textContent = i;
+            calendarGrid.appendChild(emptyDay);
+        }
+    }
+
+    // Calendar navigation
+    document.getElementById('prev-month').addEventListener('click', () => {
+        currentDate.setMonth(currentDate.getMonth() - 1);
+        generateCalendar();
+    });
+
+    document.getElementById('next-month').addEventListener('click', () => {
+        currentDate.setMonth(currentDate.getMonth() + 1);
+        generateCalendar();
+    });
+
+    // Initialize calendar
+    generateCalendar();
+</script>
+{% endblock %}

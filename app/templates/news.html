@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}News & Updates - Digital Club{% endblock %}
+
+{% block content %}
+<section style="padding: 5rem 0;">
+    <div class="container">
+        <h1 style="text-align: center; font-size: 3rem; margin-bottom: 3rem; color: var(--primary-color);" data-aos="fade-up">
+            News & Updates
+        </h1>
+        
+        <!-- Category Filter -->
+        <div style="text-align: center; margin-bottom: 3rem;" data-aos="fade-up">
+            <div style="display: inline-flex; gap: 1rem; background: rgba(255, 255, 255, 0.05); padding: 0.5rem; border-radius: 25px; border: 1px solid var(--border-color);">
+                <a href="{{ url_for('main.news') }}" 
+                   class="{% if not request.args.get('category') %}active{% endif %}" 
+                   style="padding: 0.8rem 1.5rem; border-radius: 20px; text-decoration: none; color: var(--text-secondary); transition: all 0.3s ease;">
+                    All
+                </a>
+                <a href="{{ url_for('main.news', category='hackathon') }}" 
+                   class="{% if request.args.get('category') == 'hackathon' %}active{% endif %}" 
+                   style="padding: 0.8rem 1.5rem; border-radius: 20px; text-decoration: none; color: var(--text-secondary); transition: all 0.3s ease;">
+                    Hackathons
+                </a>
+                <a href="{{ url_for('main.news', category='workshop') }}" 
+                   class="{% if request.args.get('category') == 'workshop' %}active{% endif %}" 
+                   style="padding: 0.8rem 1.5rem; border-radius: 20px; text-decoration: none; color: var(--text-secondary); transition: all 0.3s ease;">
+                    Workshops
+                </a>
+                <a href="{{ url_for('main.news', category='achievement') }}" 
+                   class="{% if request.args.get('category') == 'achievement' %}active{% endif %}" 
+                   style="padding: 0.8rem 1.5rem; border-radius: 20px; text-decoration: none; color: var(--text-secondary); transition: all 0.3s ease;">
+                    Achievements
+                </a>
+            </div>
+        </div>
+        
+        {% if news_items and news_items.items %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2rem;">
+            {% for news in news_items.items %}
+            <div class="card" data-aos="fade-up" data-aos-delay="{{ loop.index * 100 }}">
+                <div style="margin-bottom: 1rem;">
+                    <span style="background: linear-gradient(45deg, var(--primary-color), var(--secondary-color)); color: var(--bg-primary); padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">
+                        {{ news.category.title() }}
+                    </span>
+                    <span style="color: var(--text-muted); font-size: 0.9rem; margin-left: 1rem;">
+                        {{ news.published_date.strftime('%B %d, %Y') }}
+                    </span>
+                </div>
+                
+                <h3 style="color: var(--text-primary); margin-bottom: 1rem; line-height: 1.4;">
+                    <a href="{{ url_for('main.news_detail', news_id=news.id) }}" 
+                       style="color: inherit; text-decoration: none; transition: color 0.3s ease;">
+                        {{ news.title }}
+                    </a>
+                </h3>
+                
+                <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.5rem;">
+                    {{ news.content[:200] }}{% if news.content|length > 200 %}...{% endif %}
+                </p>
+                
+                <a href="{{ url_for('main.news_detail', news_id=news.id) }}" 
+                   class="btn-secondary" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+                    Read More <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Pagination -->
+        {% if news_items.pages > 1 %}
+        <div style="display: flex; justify-content: center; margin-top: 3rem;">
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                {% if news_items.has_prev %}
+                <a href="{{ url_for('main.news', page=news_items.prev_num, category=request.args.get('category')) }}" 
+                   class="btn-secondary">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+                {% endif %}
+                
+                {% for page_num in news_items.iter_pages() %}
+                    {% if page_num %}
+                        {% if page_num != news_items.page %}
+                        <a href="{{ url_for('main.news', page=page_num, category=request.args.get('category')) }}" 
+                           class="btn-secondary">{{ page_num }}</a>
+                        {% else %}
+                        <span class="btn-primary">{{ page_num }}</span>
+                        {% endif %}
+                    {% else %}
+                    <span style="color: var(--text-muted);">...</span>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if news_items.has_next %}
+                <a href="{{ url_for('main.news', page=news_items.next_num, category=request.args.get('category')) }}" 
+                   class="btn-secondary">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        
+        {% else %}
+        <div style="text-align: center; padding: 3rem;">
+            <i class="fas fa-newspaper" style="font-size: 4rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+            <h3 style="color: var(--text-secondary); margin-bottom: 1rem;">No News Found</h3>
+            <p style="color: var(--text-muted);">Check back later for updates and announcements.</p>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+    .nav-link.active {
+        background: var(--primary-color) !important;
+        color: var(--bg-primary) !important;
+    }
+</style>
+{% endblock %}

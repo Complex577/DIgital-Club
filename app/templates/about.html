@@ -1,0 +1,455 @@
+{% extends "base.html" %}
+
+{% block title %}About Us - Digital Club{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* FAQ Styles */
+    .faq-item {
+        margin-bottom: 1rem;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+        border: 1px solid rgba(0, 255, 255, 0.2);
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .faq-item:hover {
+        border-color: var(--primary-color);
+        box-shadow: 0 5px 15px rgba(0, 255, 255, 0.1);
+    }
+    
+    .faq-question {
+        padding: 1.5rem;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.02);
+        transition: all 0.3s ease;
+    }
+    
+    .faq-question:hover {
+        background: rgba(0, 255, 255, 0.05);
+    }
+    
+    .faq-question h4 {
+        color: var(--text-primary);
+        margin: 0;
+        font-size: 1.1rem;
+    }
+    
+    .faq-question i {
+        color: var(--primary-color);
+        transition: transform 0.3s ease;
+    }
+    
+    .faq-item.active .faq-question i {
+        transform: rotate(180deg);
+    }
+    
+    .faq-answer {
+        padding: 0 1.5rem;
+        max-height: 0;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .faq-item.active .faq-answer {
+        padding: 0 1.5rem 1.5rem;
+        max-height: 200px;
+    }
+    
+    .faq-answer p {
+        color: var(--text-secondary);
+        line-height: 1.6;
+        margin: 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section style="background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%); padding: 5rem 0; text-align: center;">
+    <div class="container">
+        <h1 style="font-size: 3rem; margin-bottom: 1rem; color: var(--primary-color);" data-aos="fade-up">
+            About Digital Club
+        </h1>
+        <p style="font-size: 1.3rem; color: var(--text-secondary); max-width: 800px; margin: 0 auto;" data-aos="fade-up" data-aos-delay="200">
+            Empowering students through technology, innovation, and collaboration at Kampala International University in Tanzania.
+        </p>
+    </div>
+</section>
+
+<!-- Mission & Vision -->
+<section style="padding: 5rem 0;">
+    <div class="container">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 3rem; margin-bottom: 5rem;">
+            <div class="card" data-aos="fade-right">
+                <div style="text-align: center; margin-bottom: 2rem;">
+                    <i class="fas fa-eye" style="font-size: 3rem; color: var(--primary-color); margin-bottom: 1rem;"></i>
+                    <h3 style="color: var(--primary-color); margin-bottom: 1rem;">Our Vision</h3>
+                </div>
+                <p style="color: var(--text-secondary); line-height: 1.8; font-size: 1.1rem;">
+                    To be the leading student technology community in Tanzania, fostering innovation, 
+                    creativity, and technical excellence that prepares students for the digital future 
+                    and contributes to technological advancement in East Africa.
+                </p>
+            </div>
+            
+            <div class="card" data-aos="fade-left">
+                <div style="text-align: center; margin-bottom: 2rem;">
+                    <i class="fas fa-rocket" style="font-size: 3rem; color: var(--secondary-color); margin-bottom: 1rem;"></i>
+                    <h3 style="color: var(--secondary-color); margin-bottom: 1rem;">Our Mission</h3>
+                </div>
+                <p style="color: var(--text-secondary); line-height: 1.8; font-size: 1.1rem;">
+                    To provide a collaborative platform where students can learn, innovate, and grow 
+                    in technology. We aim to bridge the gap between academic knowledge and practical 
+                    skills through hands-on projects, workshops, and industry partnerships.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- What We Do -->
+<section style="background: rgba(255, 255, 255, 0.02); padding: 5rem 0;">
+    <div class="container">
+        <h2 style="text-align: center; font-size: 2.5rem; margin-bottom: 3rem; color: var(--text-primary);" data-aos="fade-up">
+            What We Do
+        </h2>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+            <div class="card" data-aos="fade-up" data-aos-delay="100">
+                <div style="text-align: center;">
+                    <i class="fas fa-code" style="font-size: 2.5rem; color: var(--primary-color); margin-bottom: 1rem;"></i>
+                    <h4 style="color: var(--text-primary); margin-bottom: 1rem;">Programming Workshops</h4>
+                    <p style="color: var(--text-secondary);">
+                        Regular coding workshops covering various programming languages, frameworks, and development tools.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="card" data-aos="fade-up" data-aos-delay="200">
+                <div style="text-align: center;">
+                    <i class="fas fa-trophy" style="font-size: 2.5rem; color: var(--secondary-color); margin-bottom: 1rem;"></i>
+                    <h4 style="color: var(--text-primary); margin-bottom: 1rem;">Hackathons & Competitions</h4>
+                    <p style="color: var(--text-secondary);">
+                        Organize and participate in coding competitions, hackathons, and tech challenges.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="card" data-aos="fade-up" data-aos-delay="300">
+                <div style="text-align: center;">
+                    <i class="fas fa-users" style="font-size: 2.5rem; color: var(--accent-color); margin-bottom: 1rem;"></i>
+                    <h4 style="color: var(--text-primary); margin-bottom: 1rem;">Collaborative Projects</h4>
+                    <p style="color: var(--text-secondary);">
+                        Work together on real-world projects that solve problems and create innovative solutions.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="card" data-aos="fade-up" data-aos-delay="400">
+                <div style="text-align: center;">
+                    <i class="fas fa-graduation-cap" style="font-size: 2.5rem; color: var(--primary-color); margin-bottom: 1rem;"></i>
+                    <h4 style="color: var(--text-primary); margin-bottom: 1rem;">Skill Development</h4>
+                    <p style="color: var(--text-secondary);">
+                        Focus on developing both technical and soft skills essential for tech careers.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="card" data-aos="fade-up" data-aos-delay="500">
+                <div style="text-align: center;">
+                    <i class="fas fa-handshake" style="font-size: 2.5rem; color: var(--secondary-color); margin-bottom: 1rem;"></i>
+                    <h4 style="color: var(--text-primary); margin-bottom: 1rem;">Industry Connections</h4>
+                    <p style="color: var(--text-secondary);">
+                        Build relationships with tech companies and professionals for mentorship and opportunities.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="card" data-aos="fade-up" data-aos-delay="600">
+                <div style="text-align: center;">
+                    <i class="fas fa-lightbulb" style="font-size: 2.5rem; color: var(--accent-color); margin-bottom: 1rem;"></i>
+                    <h4 style="color: var(--text-primary); margin-bottom: 1rem;">Innovation Hub</h4>
+                    <p style="color: var(--text-secondary);">
+                        Create an environment that encourages creativity, experimentation, and breakthrough thinking.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Club History -->
+<section style="padding: 5rem 0;">
+    <div class="container">
+        <div style="max-width: 800px; margin: 0 auto; text-align: center;" data-aos="fade-up">
+            <h2 style="font-size: 2.5rem; margin-bottom: 2rem; color: var(--text-primary);">Our Story</h2>
+            <p style="color: var(--text-secondary); line-height: 1.8; font-size: 1.1rem; margin-bottom: 2rem;">
+                Founded in 2020 by a group of passionate computer science students at Kampala International University in Tanzania, 
+                Digital Club began as a small study group focused on sharing programming knowledge and collaborating on projects.
+            </p>
+            <p style="color: var(--text-secondary); line-height: 1.8; font-size: 1.1rem; margin-bottom: 2rem;">
+                Today, we have grown into one of the most active student organizations on campus, with over 200 members 
+                from various faculties including Computer Science, Information Technology, Engineering, and Business. 
+                Our impact extends beyond KIUT as we collaborate with other universities and tech communities across Tanzania.
+            </p>
+            <p style="color: var(--text-secondary); line-height: 1.8; font-size: 1.1rem;">
+                We believe that technology has the power to transform lives and communities. Through our programs and initiatives, 
+                we aim to equip students with the skills, knowledge, and mindset needed to thrive in the digital age and 
+                contribute meaningfully to Tanzania's technological development.
+            </p>
+        </div>
+    </div>
+</section>
+
+<!-- Core Values Section -->
+<section style="padding: 5rem 0;">
+    <div class="container">
+        <h2 style="text-align: center; font-size: 2.5rem; margin-bottom: 3rem; color: var(--text-primary);" data-aos="fade-up">
+            Our Core Values
+        </h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+            <div class="card" data-aos="fade-up" data-aos-delay="100">
+                <div style="text-align: center;">
+                    <i class="fas fa-handshake" style="font-size: 3rem; color: var(--primary-color); margin-bottom: 1rem;"></i>
+                    <h3 style="color: var(--text-primary); margin-bottom: 1rem;">Collaboration</h3>
+                    <p style="color: var(--text-secondary); line-height: 1.6;">
+                        We believe in the power of teamwork and collective intelligence. Every project is an opportunity to learn from each other and build something greater together.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="card" data-aos="fade-up" data-aos-delay="200">
+                <div style="text-align: center;">
+                    <i class="fas fa-lightbulb" style="font-size: 3rem; color: var(--secondary-color); margin-bottom: 1rem;"></i>
+                    <h3 style="color: var(--text-primary); margin-bottom: 1rem;">Innovation</h3>
+                    <p style="color: var(--text-secondary); line-height: 1.6;">
+                        We encourage creative thinking and embrace new technologies. Our members are always exploring cutting-edge solutions to real-world problems.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="card" data-aos="fade-up" data-aos-delay="300">
+                <div style="text-align: center;">
+                    <i class="fas fa-graduation-cap" style="font-size: 3rem; color: var(--accent-color); margin-bottom: 1rem;"></i>
+                    <h3 style="color: var(--text-primary); margin-bottom: 1rem;">Continuous Learning</h3>
+                    <p style="color: var(--text-secondary); line-height: 1.6;">
+                        Technology evolves rapidly, and so do we. We foster a culture of lifelong learning and skill development for all our members.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="card" data-aos="fade-up" data-aos-delay="400">
+                <div style="text-align: center;">
+                    <i class="fas fa-users" style="font-size: 3rem; color: var(--primary-color); margin-bottom: 1rem;"></i>
+                    <h3 style="color: var(--text-primary); margin-bottom: 1rem;">Inclusivity</h3>
+                    <p style="color: var(--text-secondary); line-height: 1.6;">
+                        We welcome students from all backgrounds and skill levels. Diversity in thought and experience makes our community stronger.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="card" data-aos="fade-up" data-aos-delay="500">
+                <div style="text-align: center;">
+                    <i class="fas fa-heart" style="font-size: 3rem; color: var(--secondary-color); margin-bottom: 1rem;"></i>
+                    <h3 style="color: var(--text-primary); margin-bottom: 1rem;">Community Impact</h3>
+                    <p style="color: var(--text-secondary); line-height: 1.6;">
+                        We use technology to solve problems that matter. Our projects aim to create positive change in our university and broader community.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="card" data-aos="fade-up" data-aos-delay="600">
+                <div style="text-align: center;">
+                    <i class="fas fa-shield-alt" style="font-size: 3rem; color: var(--accent-color); margin-bottom: 1rem;"></i>
+                    <h3 style="color: var(--text-primary); margin-bottom: 1rem;">Ethical Technology</h3>
+                    <p style="color: var(--text-secondary); line-height: 1.6;">
+                        We promote responsible technology development, considering privacy, security, and ethical implications in all our work.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Impact Statistics -->
+<section style="background: rgba(255, 255, 255, 0.02); padding: 5rem 0;">
+    <div class="container">
+        <h2 style="text-align: center; font-size: 2.5rem; margin-bottom: 3rem; color: var(--text-primary);" data-aos="fade-up">
+            Our Impact
+        </h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem;">
+            <div style="text-align: center; padding: 2rem;" data-aos="fade-up" data-aos-delay="100">
+                <div style="font-size: 3rem; color: var(--primary-color); margin-bottom: 1rem;">
+                    <i class="fas fa-code"></i>
+                </div>
+                <div style="font-size: 2.5rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">50+</div>
+                <div style="color: var(--text-secondary);">Projects Completed</div>
+            </div>
+            
+            <div style="text-align: center; padding: 2rem;" data-aos="fade-up" data-aos-delay="200">
+                <div style="font-size: 3rem; color: var(--secondary-color); margin-bottom: 1rem;">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div style="font-size: 2.5rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">200+</div>
+                <div style="color: var(--text-secondary);">Active Members</div>
+            </div>
+            
+            <div style="text-align: center; padding: 2rem;" data-aos="fade-up" data-aos-delay="300">
+                <div style="font-size: 3rem; color: var(--accent-color); margin-bottom: 1rem;">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <div style="font-size: 2.5rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">100+</div>
+                <div style="color: var(--text-secondary);">Workshops Conducted</div>
+            </div>
+            
+            <div style="text-align: center; padding: 2rem;" data-aos="fade-up" data-aos-delay="400">
+                <div style="font-size: 3rem; color: var(--primary-color); margin-bottom: 1rem;">
+                    <i class="fas fa-trophy"></i>
+                </div>
+                <div style="font-size: 2.5rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">20+</div>
+                <div style="color: var(--text-secondary);">Awards Won</div>
+            </div>
+            
+            <div style="text-align: center; padding: 2rem;" data-aos="fade-up" data-aos-delay="500">
+                <div style="font-size: 3rem; color: var(--secondary-color); margin-bottom: 1rem;">
+                    <i class="fas fa-briefcase"></i>
+                </div>
+                <div style="font-size: 2.5rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">85%</div>
+                <div style="color: var(--text-secondary);">Job Placement Rate</div>
+            </div>
+            
+            <div style="text-align: center; padding: 2rem;" data-aos="fade-up" data-aos-delay="600">
+                <div style="font-size: 3rem; color: var(--accent-color); margin-bottom: 1rem;">
+                    <i class="fas fa-globe"></i>
+                </div>
+                <div style="font-size: 2.5rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">15+</div>
+                <div style="color: var(--text-secondary);">Countries Represented</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FAQ Section -->
+<section style="padding: 5rem 0;">
+    <div class="container">
+        <h2 style="text-align: center; font-size: 2.5rem; margin-bottom: 3rem; color: var(--text-primary);" data-aos="fade-up">
+            Frequently Asked Questions
+        </h2>
+        <div style="max-width: 800px; margin: 0 auto;">
+            <div class="faq-item" data-aos="fade-up" data-aos-delay="100">
+                <div class="faq-question">
+                    <h4>How do I join Digital Club?</h4>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="faq-answer">
+                    <p>Simply click the "Join Us" button and fill out our registration form. You'll need to be a current KIUT student. Once approved, you'll receive access to all our events, workshops, and resources.</p>
+                </div>
+            </div>
+            
+            <div class="faq-item" data-aos="fade-up" data-aos-delay="200">
+                <div class="faq-question">
+                    <h4>Do I need programming experience to join?</h4>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="faq-answer">
+                    <p>Not at all! We welcome students of all skill levels. We offer beginner-friendly workshops and have experienced members who are happy to mentor newcomers. Our goal is to help everyone grow their technical skills.</p>
+                </div>
+            </div>
+            
+            <div class="faq-item" data-aos="fade-up" data-aos-delay="300">
+                <div class="faq-question">
+                    <h4>What activities does the club organize?</h4>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="faq-answer">
+                    <p>We organize coding workshops, hackathons, tech talks, project showcases, networking events, and collaborative coding sessions. We also participate in national and international competitions.</p>
+                </div>
+            </div>
+            
+            <div class="faq-item" data-aos="fade-up" data-aos-delay="400">
+                <div class="faq-question">
+                    <h4>Are there any membership fees?</h4>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="faq-answer">
+                    <p>Digital Club membership is completely free for all KIUT students. We're funded through university support and partnerships with tech companies, so you can participate in all activities without any cost.</p>
+                </div>
+            </div>
+            
+            <div class="faq-item" data-aos="fade-up" data-aos-delay="500">
+                <div class="faq-question">
+                    <h4>How can I get involved in projects?</h4>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="faq-answer">
+                    <p>We regularly announce new projects and opportunities through our newsletter and social media. You can also propose your own project ideas. We encourage collaboration and will help match you with team members.</p>
+                </div>
+            </div>
+            
+            <div class="faq-item" data-aos="fade-up" data-aos-delay="600">
+                <div class="faq-question">
+                    <h4>What technologies do you focus on?</h4>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="faq-answer">
+                    <p>We cover a wide range of technologies including web development, mobile apps, artificial intelligence, data science, cybersecurity, IoT, blockchain, and more. Check our Topics page for a complete list.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action -->
+<section style="background: linear-gradient(45deg, var(--primary-color), var(--secondary-color)); padding: 4rem 0; text-align: center;">
+    <div class="container">
+        <h2 style="color: var(--bg-primary); margin-bottom: 1rem; font-size: 2.5rem;" data-aos="fade-up">
+            Ready to Join Us?
+        </h2>
+        <p style="color: var(--bg-primary); font-size: 1.2rem; margin-bottom: 2rem; opacity: 0.9;" data-aos="fade-up" data-aos-delay="200">
+            Become part of Tanzania's most innovative student tech community
+        </p>
+        <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;" data-aos="fade-up" data-aos-delay="400">
+            <a href="{{ url_for('auth.register') }}" class="btn-secondary" style="background: var(--bg-primary); color: var(--primary-color); border-color: var(--bg-primary);">
+                <i class="fas fa-user-plus"></i> Join Digital Club
+            </a>
+            <a href="{{ url_for('main.contact') }}" class="btn-secondary" style="background: transparent; color: var(--bg-primary); border-color: var(--bg-primary);">
+                <i class="fas fa-envelope"></i> Contact Us
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Initialize AOS animations
+    AOS.init({
+        duration: 1000,
+        once: true,
+        offset: 100
+    });
+
+    // FAQ Toggle Functionality
+    document.querySelectorAll('.faq-question').forEach(question => {
+        question.addEventListener('click', () => {
+            const faqItem = question.parentElement;
+            const isActive = faqItem.classList.contains('active');
+            
+            // Close all FAQ items
+            document.querySelectorAll('.faq-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Open clicked item if it wasn't active
+            if (!isActive) {
+                faqItem.classList.add('active');
+            }
+        });
+    });
+</script>
+{% endblock %}

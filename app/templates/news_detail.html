@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}{{ news_item.title }} - Digital Club{% endblock %}
+
+{% block content %}
+<section style="padding: 5rem 0;">
+    <div class="container">
+        <div style="max-width: 800px; margin: 0 auto;">
+            <!-- Back Button -->
+            <div style="margin-bottom: 2rem;" data-aos="fade-up">
+                <a href="{{ url_for('main.news') }}" class="btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to News
+                </a>
+            </div>
+            
+            <!-- Article Header -->
+            <div style="text-align: center; margin-bottom: 3rem;" data-aos="fade-up">
+                <span style="background: linear-gradient(45deg, var(--primary-color), var(--secondary-color)); color: var(--bg-primary); padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.9rem; font-weight: 600; margin-bottom: 1rem; display: inline-block;">
+                    {{ news_item.category.title() }}
+                </span>
+                
+                <h1 style="font-size: 2.5rem; color: var(--text-primary); margin-bottom: 1rem; line-height: 1.3;">
+                    {{ news_item.title }}
+                </h1>
+                
+                <div style="display: flex; justify-content: center; align-items: center; gap: 2rem; color: var(--text-muted); font-size: 0.9rem;">
+                    <span>
+                        <i class="fas fa-calendar"></i> {{ news_item.published_date.strftime('%B %d, %Y') }}
+                    </span>
+                    <span>
+                        <i class="fas fa-clock"></i> {{ news_item.published_date.strftime('%I:%M %p') }}
+                    </span>
+                </div>
+            </div>
+            
+            <!-- Article Image -->
+            {% if news_item.image %}
+            <div style="margin-bottom: 3rem;" data-aos="fade-up">
+                <img src="{{ url_for('static', filename='uploads/gallery/' + news_item.image) }}" 
+                     alt="{{ news_item.title }}" 
+                     style="width: 100%; height: 400px; object-fit: cover; border-radius: 15px;">
+            </div>
+            {% endif %}
+            
+            <!-- Article Content -->
+            <div class="card" data-aos="fade-up">
+                <div style="color: var(--text-secondary); line-height: 1.8; font-size: 1.1rem;">
+                    {{ news_item.content|safe }}
+                </div>
+            </div>
+            
+            <!-- Share Buttons -->
+            <div style="margin-top: 3rem; text-align: center;" data-aos="fade-up">
+                <h3 style="color: var(--text-primary); margin-bottom: 1rem;">Share this article</h3>
+                <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                    <button class="btn-secondary" onclick="shareOnFacebook()">
+                        <i class="fab fa-facebook"></i> Facebook
+                    </button>
+                    <button class="btn-secondary" onclick="shareOnTwitter()">
+                        <i class="fab fa-twitter"></i> Twitter
+                    </button>
+                    <button class="btn-secondary" onclick="shareOnLinkedIn()">
+                        <i class="fab fa-linkedin"></i> LinkedIn
+                    </button>
+                    <button class="btn-secondary" onclick="copyLink()">
+                        <i class="fas fa-link"></i> Copy Link
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Related Articles -->
+            <div style="margin-top: 5rem;" data-aos="fade-up">
+                <h2 style="color: var(--text-primary); margin-bottom: 2rem; text-align: center;">Related Articles</h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+                    <!-- This would be populated with related articles in a real implementation -->
+                    <div class="card">
+                        <h4 style="color: var(--text-primary); margin-bottom: 0.5rem;">More News Coming Soon</h4>
+                        <p style="color: var(--text-secondary); font-size: 0.9rem;">Stay tuned for more exciting updates from Digital Club!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function shareOnFacebook() {
+        const url = encodeURIComponent(window.location.href);
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
+    }
+    
+    function shareOnTwitter() {
+        const url = encodeURIComponent(window.location.href);
+        const text = encodeURIComponent('{{ news_item.title }}');
+        window.open(`https://twitter.com/intent/tweet?url=${url}&text=${text}`, '_blank');
+    }
+    
+    function shareOnLinkedIn() {
+        const url = encodeURIComponent(window.location.href);
+        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`, '_blank');
+    }
+    
+    function copyLink() {
+        navigator.clipboard.writeText(window.location.href).then(() => {
+            alert('Link copied to clipboard!');
+        });
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,96 @@
+{% extends "admin/admin_base.html" %}
+
+{% block admin_title %}Leader Management{% endblock %}
+{% block page_title %}Leader Management{% endblock %}
+{% block breadcrumb %}<span class="breadcrumb-separator">/</span> <span>Leader Management</span>{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-1">Leader Management</h2>
+        <p class="text-muted mb-0">Manage club leadership positions</p>
+    </div>
+    <a href="{{ url_for('admin.add_leader') }}" class="admin-btn admin-btn-primary">
+        <i class="fas fa-plus"></i> Add Leader
+    </a>
+</div>
+
+{% if leaders %}
+<div class="admin-table-container">
+    <div class="admin-card-header">
+        <h5><i class="fas fa-crown"></i> Leadership Team ({{ leaders|length }})</h5>
+    </div>
+    <div class="table-responsive">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Order</th>
+                    <th>Name</th>
+                    <th>Position</th>
+                    <th>Email</th>
+                    <th>Course</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for leader in leaders %}
+                <tr>
+                    <td>
+                        <span class="admin-badge admin-badge-primary">{{ leader.display_order }}</span>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            {% if leader.member.profile_image %}
+                            <img src="{{ url_for('static', filename='uploads/profiles/' + leader.member.profile_image) }}" 
+                                 alt="{{ leader.member.full_name }}" 
+                                 class="rounded-circle me-2" 
+                                 style="width: 40px; height: 40px; object-fit: cover;">
+                            {% else %}
+                            <div class="rounded-circle me-2 d-flex align-items-center justify-content-center" 
+                                 style="width: 40px; height: 40px; background: var(--admin-gradient-primary);">
+                                <i class="fas fa-user text-white"></i>
+                            </div>
+                            {% endif %}
+                            <div>
+                                <div class="fw-bold">{{ leader.member.full_name }}</div>
+                                {% if leader.member.title %}
+                                <small class="text-muted">{{ leader.member.title }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="admin-badge admin-badge-success">{{ leader.position }}</span>
+                    </td>
+                    <td>{{ leader.member.user.email }}</td>
+                    <td>{{ leader.member.course or 'N/A' }}</td>
+                    <td>
+                        <div class="d-flex gap-2">
+                            <a href="{{ url_for('admin.edit_leader', leader_id=leader.id) }}" 
+                               class="admin-btn admin-btn-sm admin-btn-outline">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{{ url_for('admin.delete_leader', leader_id=leader.id) }}" 
+                               class="admin-btn admin-btn-sm admin-btn-danger"
+                               onclick="return confirm('Are you sure you want to remove this leader?')">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="admin-empty-state">
+    <i class="fas fa-crown"></i>
+    <h5>No Leaders Yet</h5>
+    <p>Start building your leadership team by adding club leaders.</p>
+    <a href="{{ url_for('admin.add_leader') }}" class="admin-btn admin-btn-primary">
+        <i class="fas fa-plus"></i> Add First Leader
+    </a>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,139 @@
+{% extends "admin/admin_base.html" %}
+
+{% block admin_title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block breadcrumb %}<span class="breadcrumb-separator">/</span> <span>Dashboard</span>{% endblock %}
+
+{% block admin_content %}
+<!-- Statistics Cards -->
+<div class="admin-stats-grid">
+    <div class="admin-stat-card primary">
+        <div class="admin-stat-icon">
+            <i class="fas fa-users"></i>
+        </div>
+        <h3 class="admin-stat-value">{{ total_members }}</h3>
+        <p class="admin-stat-label">Total Members</p>
+    </div>
+    
+    <div class="admin-stat-card warning">
+        <div class="admin-stat-icon">
+            <i class="fas fa-clock"></i>
+        </div>
+        <h3 class="admin-stat-value">{{ pending_approvals }}</h3>
+        <p class="admin-stat-label">Pending Approvals</p>
+    </div>
+    
+    <div class="admin-stat-card success">
+        <div class="admin-stat-icon">
+            <i class="fas fa-calendar"></i>
+        </div>
+        <h3 class="admin-stat-value">{{ upcoming_events }}</h3>
+        <p class="admin-stat-label">Upcoming Events</p>
+    </div>
+    
+    <div class="admin-stat-card info">
+        <div class="admin-stat-icon">
+            <i class="fas fa-envelope"></i>
+        </div>
+        <h3 class="admin-stat-value">{{ newsletter_subscribers }}</h3>
+        <p class="admin-stat-label">Newsletter Subscribers</p>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="admin-quick-actions">
+    <a href="{{ url_for('admin.users') }}" class="admin-quick-action">
+        <i class="fas fa-users"></i>
+        <h6>Manage Users</h6>
+    </a>
+    <a href="{{ url_for('admin.add_news') }}" class="admin-quick-action">
+        <i class="fas fa-plus"></i>
+        <h6>Add News</h6>
+    </a>
+    <a href="{{ url_for('admin.add_event') }}" class="admin-quick-action">
+        <i class="fas fa-calendar-plus"></i>
+        <h6>Add Event</h6>
+    </a>
+    <a href="{{ url_for('admin.add_project') }}" class="admin-quick-action">
+        <i class="fas fa-project-diagram"></i>
+        <h6>Add Project</h6>
+    </a>
+</div>
+
+<!-- Recent Activity -->
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h5><i class="fas fa-newspaper"></i> Recent News</h5>
+            </div>
+            <div class="admin-card-body">
+                {% if recent_news %}
+                    {% for news in recent_news %}
+                    <div class="admin-activity-item">
+                        <div class="admin-activity-icon primary">
+                            <i class="fas fa-newspaper"></i>
+                        </div>
+                        <div class="admin-activity-content">
+                            <h6 class="admin-activity-title">{{ news.title }}</h6>
+                            <p class="admin-activity-meta">{{ news.published_date.strftime('%Y-%m-%d %H:%M') }}</p>
+                        </div>
+                        <div>
+                            <a href="{{ url_for('admin.edit_news', news_id=news.id) }}" class="admin-btn admin-btn-sm admin-btn-outline">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="admin-empty-state">
+                        <i class="fas fa-newspaper"></i>
+                        <h5>No recent news articles</h5>
+                        <p>Start by adding your first news article.</p>
+                        <a href="{{ url_for('admin.add_news') }}" class="admin-btn admin-btn-primary">
+                            <i class="fas fa-plus"></i> Add News Article
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h5><i class="fas fa-user-clock"></i> Pending User Approvals</h5>
+            </div>
+            <div class="admin-card-body">
+                {% if pending_users %}
+                    {% for user in pending_users %}
+                    <div class="admin-activity-item">
+                        <div class="admin-activity-icon warning">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="admin-activity-content">
+                            <h6 class="admin-activity-title">{{ user.email }}</h6>
+                            <p class="admin-activity-meta">{{ user.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                        </div>
+                        <div class="btn-group">
+                            <a href="{{ url_for('admin.approve_user', user_id=user.id) }}" class="admin-btn admin-btn-sm admin-btn-success">
+                                <i class="fas fa-check"></i>
+                            </a>
+                            <a href="{{ url_for('admin.reject_user', user_id=user.id) }}" class="admin-btn admin-btn-sm admin-btn-danger">
+                                <i class="fas fa-times"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="admin-empty-state">
+                        <i class="fas fa-user-check"></i>
+                        <h5>No pending approvals</h5>
+                        <p>All user registrations have been processed.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

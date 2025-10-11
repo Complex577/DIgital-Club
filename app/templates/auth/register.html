@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Register - Digital Club{% endblock %}
+
+{% block content %}
+<div class="container" style="min-height: calc(100vh - 70px); display: flex; align-items: center; justify-content: center;">
+    <div class="card" style="max-width: 500px; width: 100%;">
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <h2 style="color: var(--primary-color); margin-bottom: 0.5rem;">Join Digital Club</h2>
+            <p style="color: var(--text-secondary);">Become a member of KIUT's premier tech community</p>
+        </div>
+        
+        <form method="POST">
+            <div class="form-group">
+                <label class="form-label">Email Address *</label>
+                <input type="email" name="email" class="form-control" placeholder="your.email@kiut.ac.tz" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Full Name *</label>
+                <input type="text" name="full_name" class="form-control" placeholder="Enter your full name" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Course</label>
+                <select name="course" class="form-control">
+                    <option value="">Select your course</option>
+                    <option value="Computer Science">Computer Science</option>
+                    <option value="Information Technology">Information Technology</option>
+                    <option value="Software Engineering">Software Engineering</option>
+                    <option value="Data Science">Data Science</option>
+                    <option value="Cybersecurity">Cybersecurity</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Year of Study</label>
+                <select name="year" class="form-control">
+                    <option value="">Select year</option>
+                    <option value="Year 1">Year 1</option>
+                    <option value="Year 2">Year 2</option>
+                    <option value="Year 3">Year 3</option>
+                    <option value="Year 4">Year 4</option>
+                    <option value="Graduate">Graduate</option>
+                    <option value="Alumni">Alumni</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Password *</label>
+                <input type="password" name="password" class="form-control" placeholder="Create a strong password" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Confirm Password *</label>
+                <input type="password" name="confirm_password" class="form-control" placeholder="Confirm your password" required>
+            </div>
+            
+            <button type="submit" class="btn-primary" style="width: 100%; margin-bottom: 1rem;">
+                <i class="fas fa-user-plus"></i> Join Digital Club
+            </button>
+        </form>
+        
+        <div style="text-align: center;">
+            <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                Already have an account? 
+                <a href="{{ url_for('auth.login') }}" style="color: var(--primary-color); text-decoration: none;">
+                    Sign In
+                </a>
+            </p>
+            
+            <div style="background: rgba(0, 255, 255, 0.1); border: 1px solid var(--border-color); border-radius: 10px; padding: 1rem; margin-top: 1rem;">
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0;">
+                    <i class="fas fa-info-circle" style="color: var(--primary-color);"></i>
+                    Your account will be reviewed by our admin team before activation.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

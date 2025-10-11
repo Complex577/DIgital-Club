@@ -1,0 +1,632 @@
+{% extends "base.html" %}
+
+{% block title %}Projects - Digital Club{% endblock %}
+
+{% block extra_head %}
+<style>
+    .projects-header {
+        background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+        padding: 5rem 0;
+        text-align: center;
+    }
+    
+    .projects-nav {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-bottom: 3rem;
+        flex-wrap: wrap;
+    }
+    
+    .nav-tab {
+        padding: 1rem 2rem;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(0, 255, 255, 0.2);
+        border-radius: 25px;
+        color: var(--text-secondary);
+        text-decoration: none;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .nav-tab.active {
+        background: var(--primary-color);
+        color: var(--bg-primary);
+        border-color: var(--primary-color);
+    }
+    
+    .nav-tab:hover {
+        border-color: var(--primary-color);
+        color: var(--primary-color);
+    }
+    
+    .projects-content {
+        display: none;
+    }
+    
+    .projects-content.active {
+        display: block;
+    }
+    
+    .featured-project {
+        background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+        color: var(--bg-primary);
+        padding: 3rem;
+        border-radius: 15px;
+        margin-bottom: 3rem;
+        text-align: center;
+    }
+    
+    .featured-project h2 {
+        margin-bottom: 1rem;
+        font-size: 2.5rem;
+    }
+    
+    .featured-project p {
+        font-size: 1.2rem;
+        margin-bottom: 2rem;
+        opacity: 0.9;
+    }
+    
+    .tech-stack {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        justify-content: center;
+        margin-bottom: 2rem;
+    }
+    
+    .tech-badge {
+        background: rgba(255, 255, 255, 0.2);
+        color: var(--bg-primary);
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+    
+    .project-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+    
+    .stat-item {
+        text-align: center;
+    }
+    
+    .stat-number {
+        font-size: 2rem;
+        font-weight: 700;
+        display: block;
+    }
+    
+    .stat-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+    
+    .project-card-enhanced {
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .project-card-enhanced::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+        transition: left 0.5s;
+    }
+    
+    .project-card-enhanced:hover::before {
+        left: 100%;
+    }
+    
+    .project-image {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        border-radius: 10px;
+        margin-bottom: 1.5rem;
+        transition: transform 0.3s ease;
+    }
+    
+    .project-card-enhanced:hover .project-image {
+        transform: scale(1.05);
+    }
+    
+    .project-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .project-card-enhanced:hover .project-overlay {
+        opacity: 1;
+    }
+    
+    .overlay-buttons {
+        display: flex;
+        gap: 1rem;
+    }
+    
+    .overlay-btn {
+        padding: 0.8rem 1.5rem;
+        background: var(--primary-color);
+        color: var(--bg-primary);
+        border: none;
+        border-radius: 25px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .overlay-btn:hover {
+        background: var(--secondary-color);
+        transform: translateY(-2px);
+    }
+    
+    .search-filter {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 3rem;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+    
+    .search-input {
+        flex: 1;
+        min-width: 300px;
+        padding: 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: 25px;
+        background: rgba(0, 0, 0, 0.3);
+        color: var(--text-primary);
+        outline: none;
+    }
+    
+    .search-input:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 20px var(--shadow-color);
+    }
+    
+    .filter-select {
+        padding: 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: 25px;
+        background: rgba(0, 0, 0, 0.3);
+        color: var(--text-primary);
+        outline: none;
+        min-width: 150px;
+    }
+    
+    .filter-select:focus {
+        border-color: var(--primary-color);
+    }
+    
+    .difficulty-badge {
+        display: inline-block;
+        padding: 0.3rem 0.8rem;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    
+    .difficulty-beginner {
+        background: rgba(0, 255, 0, 0.2);
+        color: #00ff00;
+    }
+    
+    .difficulty-intermediate {
+        background: rgba(255, 255, 0, 0.2);
+        color: var(--accent-color);
+    }
+    
+    .difficulty-advanced {
+        background: rgba(255, 0, 0, 0.2);
+        color: #ff0000;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Projects Header -->
+<section class="projects-header">
+    <div class="container">
+        <h1 style="font-size: 3rem; margin-bottom: 1rem; color: var(--primary-color);" data-aos="fade-up">
+            Our Projects
+        </h1>
+        <p style="font-size: 1.2rem; color: var(--text-secondary); max-width: 600px; margin: 0 auto;" data-aos="fade-up" data-aos-delay="200">
+            Explore innovative solutions built by our talented members
+        </p>
+    </div>
+</section>
+
+<!-- Projects Navigation -->
+<section style="padding: 3rem 0;">
+    <div class="container">
+        <div class="projects-nav" data-aos="fade-up">
+            <div class="nav-tab active" data-tab="featured">Featured</div>
+            <div class="nav-tab" data-tab="web">Web Development</div>
+            <div class="nav-tab" data-tab="mobile">Mobile Apps</div>
+            <div class="nav-tab" data-tab="ai">AI/ML</div>
+            <div class="nav-tab" data-tab="iot">IoT</div>
+            <div class="nav-tab" data-tab="data">Data Science</div>
+        </div>
+        
+        <!-- Featured Project -->
+        <div class="featured-project" data-aos="fade-up" data-aos-delay="200">
+            <h2>Project of the Month</h2>
+            <h3 style="font-size: 2rem; margin-bottom: 1rem;">Smart Campus Navigator</h3>
+            <p>A comprehensive mobile application that helps students navigate KIUT campus, find available study spaces, and discover campus events in real-time.</p>
+            
+            <div class="tech-stack">
+                <span class="tech-badge">React Native</span>
+                <span class="tech-badge">Node.js</span>
+                <span class="tech-badge">MongoDB</span>
+                <span class="tech-badge">Google Maps API</span>
+                <span class="tech-badge">Firebase</span>
+            </div>
+            
+            <div class="project-stats">
+                <div class="stat-item">
+                    <span class="stat-number">1.2k</span>
+                    <span class="stat-label">Downloads</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">4.8</span>
+                    <span class="stat-label">Rating</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">5</span>
+                    <span class="stat-label">Team Members</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">3</span>
+                    <span class="stat-label">Months</span>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 2rem;">
+                <a href="#" class="overlay-btn">
+                    <i class="fas fa-external-link-alt"></i> Live Demo
+                </a>
+                <a href="#" class="overlay-btn">
+                    <i class="fab fa-github"></i> Source Code
+                </a>
+            </div>
+        </div>
+        
+        <!-- Search and Filter -->
+        <div class="search-filter" data-aos="fade-up">
+            <input type="text" class="search-input" placeholder="Search projects..." id="project-search">
+            <select class="filter-select" id="difficulty-filter">
+                <option value="">All Difficulties</option>
+                <option value="beginner">Beginner</option>
+                <option value="intermediate">Intermediate</option>
+                <option value="advanced">Advanced</option>
+            </select>
+            <select class="filter-select" id="year-filter">
+                <option value="">All Years</option>
+                <option value="2024">2024</option>
+                <option value="2023">2023</option>
+                <option value="2022">2022</option>
+            </select>
+        </div>
+        
+        <!-- Featured Projects Content -->
+        <div class="projects-content active" id="featured-projects">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2rem;">
+                <!-- Sample Featured Projects -->
+                <div class="card project-card-enhanced" data-aos="fade-up" data-aos-delay="100">
+                    <img src="https://via.placeholder.com/400x200/00ffff/000000?text=E-Learning+Platform" alt="E-Learning Platform" class="project-image">
+                    <div class="project-overlay">
+                        <div class="overlay-buttons">
+                            <a href="#" class="overlay-btn">
+                                <i class="fas fa-external-link-alt"></i> Demo
+                            </a>
+                            <a href="#" class="overlay-btn">
+                                <i class="fab fa-github"></i> Code
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <span class="difficulty-badge difficulty-intermediate">Intermediate</span>
+                    <h3 style="color: var(--text-primary); margin-bottom: 1rem;">E-Learning Platform</h3>
+                <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.5rem;">
+                        A comprehensive online learning management system with video streaming, quizzes, and progress tracking.
+                </p>
+                
+                <div style="margin-bottom: 1.5rem;">
+                        <span style="background: rgba(0, 255, 255, 0.1); color: var(--primary-color); padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.8rem; margin-right: 0.5rem; margin-bottom: 0.5rem; display: inline-block;">React</span>
+                        <span style="background: rgba(0, 255, 255, 0.1); color: var(--primary-color); padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.8rem; margin-right: 0.5rem; margin-bottom: 0.5rem; display: inline-block;">Node.js</span>
+                        <span style="background: rgba(0, 255, 255, 0.1); color: var(--primary-color); padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.8rem; margin-right: 0.5rem; margin-bottom: 0.5rem; display: inline-block;">MongoDB</span>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: var(--text-muted); font-size: 0.9rem;">
+                            <i class="fas fa-users"></i> 4 members
+                        </span>
+                        <span style="color: var(--text-muted); font-size: 0.9rem;">
+                            <i class="fas fa-calendar"></i> 2024
+                    </span>
+                    </div>
+                </div>
+                
+                <div class="card project-card-enhanced" data-aos="fade-up" data-aos-delay="200">
+                    <img src="https://via.placeholder.com/400x200/ff00ff/ffffff?text=Health+Tracker" alt="Health Tracker" class="project-image">
+                    <div class="project-overlay">
+                        <div class="overlay-buttons">
+                            <a href="#" class="overlay-btn">
+                                <i class="fas fa-external-link-alt"></i> Demo
+                            </a>
+                            <a href="#" class="overlay-btn">
+                                <i class="fab fa-github"></i> Code
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <span class="difficulty-badge difficulty-beginner">Beginner</span>
+                    <h3 style="color: var(--text-primary); margin-bottom: 1rem;">Health Tracker App</h3>
+                    <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.5rem;">
+                        A mobile app for tracking daily health metrics, exercise routines, and medication reminders.
+                    </p>
+                    
+                    <div style="margin-bottom: 1.5rem;">
+                        <span style="background: rgba(255, 0, 255, 0.1); color: var(--secondary-color); padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.8rem; margin-right: 0.5rem; margin-bottom: 0.5rem; display: inline-block;">Flutter</span>
+                        <span style="background: rgba(255, 0, 255, 0.1); color: var(--secondary-color); padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.8rem; margin-right: 0.5rem; margin-bottom: 0.5rem; display: inline-block;">Firebase</span>
+                        <span style="background: rgba(255, 0, 255, 0.1); color: var(--secondary-color); padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.8rem; margin-right: 0.5rem; margin-bottom: 0.5rem; display: inline-block;">Dart</span>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: var(--text-muted); font-size: 0.9rem;">
+                            <i class="fas fa-users"></i> 3 members
+                        </span>
+                        <span style="color: var(--text-muted); font-size: 0.9rem;">
+                            <i class="fas fa-calendar"></i> 2024
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="card project-card-enhanced" data-aos="fade-up" data-aos-delay="300">
+                    <img src="https://via.placeholder.com/400x200/ffff00/000000?text=AI+Chatbot" alt="AI Chatbot" class="project-image">
+                    <div class="project-overlay">
+                        <div class="overlay-buttons">
+                            <a href="#" class="overlay-btn">
+                                <i class="fas fa-external-link-alt"></i> Demo
+                            </a>
+                            <a href="#" class="overlay-btn">
+                        <i class="fab fa-github"></i> Code
+                    </a>
+                        </div>
+                    </div>
+                    
+                    <span class="difficulty-badge difficulty-advanced">Advanced</span>
+                    <h3 style="color: var(--text-primary); margin-bottom: 1rem;">AI Student Assistant</h3>
+                    <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.5rem;">
+                        An intelligent chatbot that helps students with course information, scheduling, and academic guidance.
+                    </p>
+                    
+                    <div style="margin-bottom: 1.5rem;">
+                        <span style="background: rgba(255, 255, 0, 0.1); color: var(--accent-color); padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.8rem; margin-right: 0.5rem; margin-bottom: 0.5rem; display: inline-block;">Python</span>
+                        <span style="background: rgba(255, 255, 0, 0.1); color: var(--accent-color); padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.8rem; margin-right: 0.5rem; margin-bottom: 0.5rem; display: inline-block;">TensorFlow</span>
+                        <span style="background: rgba(255, 255, 0, 0.1); color: var(--accent-color); padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.8rem; margin-right: 0.5rem; margin-bottom: 0.5rem; display: inline-block;">OpenAI API</span>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: var(--text-muted); font-size: 0.9rem;">
+                            <i class="fas fa-users"></i> 6 members
+                        </span>
+                        <span style="color: var(--text-muted); font-size: 0.9rem;">
+                            <i class="fas fa-calendar"></i> 2024
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Web Development Projects -->
+        <div class="projects-content" id="web-projects">
+            <h2 style="text-align: center; margin-bottom: 3rem; color: var(--text-primary);" data-aos="fade-up">
+                Web Development Projects
+            </h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2rem;">
+                <!-- Additional web projects would go here -->
+                <div class="card project-card-enhanced" data-aos="fade-up" data-aos-delay="100">
+                    <img src="https://via.placeholder.com/400x200/00ffff/000000?text=E-Commerce+Site" alt="E-Commerce Site" class="project-image">
+                    <div class="project-overlay">
+                        <div class="overlay-buttons">
+                            <a href="#" class="overlay-btn">
+                        <i class="fas fa-external-link-alt"></i> Demo
+                    </a>
+                            <a href="#" class="overlay-btn">
+                                <i class="fab fa-github"></i> Code
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <span class="difficulty-badge difficulty-intermediate">Intermediate</span>
+                    <h3 style="color: var(--text-primary); margin-bottom: 1rem;">E-Commerce Platform</h3>
+                    <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.5rem;">
+                        A full-stack e-commerce solution with payment integration, inventory management, and admin dashboard.
+                    </p>
+                    
+                    <div style="margin-bottom: 1.5rem;">
+                        <span style="background: rgba(0, 255, 255, 0.1); color: var(--primary-color); padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.8rem; margin-right: 0.5rem; margin-bottom: 0.5rem; display: inline-block;">Vue.js</span>
+                        <span style="background: rgba(0, 255, 255, 0.1); color: var(--primary-color); padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.8rem; margin-right: 0.5rem; margin-bottom: 0.5rem; display: inline-block;">Express.js</span>
+                        <span style="background: rgba(0, 255, 255, 0.1); color: var(--primary-color); padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.8rem; margin-right: 0.5rem; margin-bottom: 0.5rem; display: inline-block;">PostgreSQL</span>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: var(--text-muted); font-size: 0.9rem;">
+                            <i class="fas fa-users"></i> 5 members
+                        </span>
+                        <span style="color: var(--text-muted); font-size: 0.9rem;">
+                            <i class="fas fa-calendar"></i> 2023
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Other category content sections would follow similar pattern -->
+        <div class="projects-content" id="mobile-projects">
+            <h2 style="text-align: center; margin-bottom: 3rem; color: var(--text-primary);" data-aos="fade-up">
+                Mobile App Projects
+            </h2>
+            <div style="text-align: center; padding: 3rem;">
+                <i class="fas fa-mobile-alt" style="font-size: 4rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+                <h3 style="color: var(--text-secondary); margin-bottom: 1rem;">Mobile Projects Coming Soon</h3>
+                <p style="color: var(--text-muted);">We're working on amazing mobile applications!</p>
+            </div>
+        </div>
+        
+        <div class="projects-content" id="ai-projects">
+            <h2 style="text-align: center; margin-bottom: 3rem; color: var(--text-primary);" data-aos="fade-up">
+                AI/ML Projects
+            </h2>
+            <div style="text-align: center; padding: 3rem;">
+                <i class="fas fa-brain" style="font-size: 4rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+                <h3 style="color: var(--text-secondary); margin-bottom: 1rem;">AI Projects Coming Soon</h3>
+                <p style="color: var(--text-muted);">Exciting artificial intelligence projects are in development!</p>
+            </div>
+        </div>
+        
+        <div class="projects-content" id="iot-projects">
+            <h2 style="text-align: center; margin-bottom: 3rem; color: var(--text-primary);" data-aos="fade-up">
+                IoT Projects
+            </h2>
+            <div style="text-align: center; padding: 3rem;">
+                <i class="fas fa-microchip" style="font-size: 4rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+                <h3 style="color: var(--text-secondary); margin-bottom: 1rem;">IoT Projects Coming Soon</h3>
+                <p style="color: var(--text-muted);">Innovative Internet of Things solutions are being developed!</p>
+            </div>
+        </div>
+        
+        <div class="projects-content" id="data-projects">
+            <h2 style="text-align: center; margin-bottom: 3rem; color: var(--text-primary);" data-aos="fade-up">
+                Data Science Projects
+            </h2>
+        <div style="text-align: center; padding: 3rem;">
+                <i class="fas fa-chart-bar" style="font-size: 4rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+                <h3 style="color: var(--text-secondary); margin-bottom: 1rem;">Data Science Projects Coming Soon</h3>
+                <p style="color: var(--text-muted);">Powerful data analysis projects are in the pipeline!</p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Initialize AOS animations
+    AOS.init({
+        duration: 1000,
+        once: true,
+        offset: 100
+    });
+
+    // Projects Navigation Tabs
+    const navTabs = document.querySelectorAll('.nav-tab');
+    const projectContents = document.querySelectorAll('.projects-content');
+
+    navTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const targetTab = tab.getAttribute('data-tab');
+            
+            // Remove active class from all tabs and contents
+            navTabs.forEach(t => t.classList.remove('active'));
+            projectContents.forEach(c => c.classList.remove('active'));
+            
+            // Add active class to clicked tab and corresponding content
+            tab.classList.add('active');
+            document.getElementById(targetTab + '-projects').classList.add('active');
+        });
+    });
+
+    // Search and Filter Functionality
+    const searchInput = document.getElementById('project-search');
+    const difficultyFilter = document.getElementById('difficulty-filter');
+    const yearFilter = document.getElementById('year-filter');
+
+    function filterProjects() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const difficultyValue = difficultyFilter.value;
+        const yearValue = yearFilter.value;
+        
+        const projectCards = document.querySelectorAll('.project-card-enhanced');
+        
+        projectCards.forEach(card => {
+            const title = card.querySelector('h3').textContent.toLowerCase();
+            const description = card.querySelector('p').textContent.toLowerCase();
+            const difficulty = card.querySelector('.difficulty-badge').textContent.toLowerCase();
+            const year = card.querySelector('.fa-calendar').parentElement.textContent;
+            
+            const matchesSearch = title.includes(searchTerm) || description.includes(searchTerm);
+            const matchesDifficulty = !difficultyValue || difficulty.includes(difficultyValue);
+            const matchesYear = !yearValue || year.includes(yearValue);
+            
+            if (matchesSearch && matchesDifficulty && matchesYear) {
+                card.style.display = 'block';
+                card.style.animation = 'fadeIn 0.5s ease-in-out';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
+    // Add event listeners for search and filter
+    searchInput.addEventListener('input', filterProjects);
+    difficultyFilter.addEventListener('change', filterProjects);
+    yearFilter.addEventListener('change', filterProjects);
+
+    // Add CSS animation for fade in effect
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    `;
+    document.head.appendChild(style);
+
+    // Project card hover effects
+    document.querySelectorAll('.project-card-enhanced').forEach(card => {
+        card.addEventListener('mouseenter', () => {
+            card.style.transform = 'translateY(-10px)';
+        });
+        
+        card.addEventListener('mouseleave', () => {
+            card.style.transform = 'translateY(0)';
+        });
+    });
+
+    // Smooth scrolling for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        });
+    });
+</script>
+{% endblock %}

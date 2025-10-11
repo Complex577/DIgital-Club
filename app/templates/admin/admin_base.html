@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+
+{% block title %}{% block admin_title %}Admin Panel{% endblock %} - Digital Club{% endblock %}
+
+{% block extra_head %}
+<style>
+    html, body {
+        background-color: #0a0a0a !important;
+        color: #ffffff !important;
+        margin: 0;
+        padding: 0;
+    }
+    
+    /* Ensure admin layout takes full height */
+    .admin-layout {
+        min-height: 100vh;
+        background-color: #0a0a0a !important;
+        color: #ffffff !important;
+    }
+    
+    /* Override any light mode styles */
+    .admin-layout * {
+        color: inherit !important;
+    }
+    
+    /* Force dark mode on all admin elements */
+    .admin-sidebar {
+        background-color: #1a1a2e !important;
+        color: #ffffff !important;
+    }
+    
+    .admin-header {
+        background-color: #1a1a2e !important;
+        color: #ffffff !important;
+    }
+    
+    .admin-content {
+        background-color: #0a0a0a !important;
+        color: #ffffff !important;
+    }
+    
+    /* Override Bootstrap defaults */
+    .card {
+        background-color: #1a1a2e !important;
+        color: #ffffff !important;
+        border-color: rgba(0, 255, 255, 0.2) !important;
+    }
+    
+    .table {
+        background-color: #1a1a2e !important;
+        color: #ffffff !important;
+    }
+    
+    .table thead th {
+        background-color: #16213e !important;
+        color: #ffffff !important;
+        border-color: rgba(0, 255, 255, 0.2) !important;
+    }
+    
+    .table tbody td {
+        background-color: #1a1a2e !important;
+        color: #cccccc !important;
+        border-color: rgba(0, 255, 255, 0.2) !important;
+    }
+    
+    .form-control {
+        background-color: #16213e !important;
+        color: #ffffff !important;
+        border-color: rgba(0, 255, 255, 0.2) !important;
+    }
+    
+    .form-control:focus {
+        background-color: #0f1419 !important;
+        color: #ffffff !important;
+        border-color: #00ffff !important;
+        box-shadow: 0 0 0 0.2rem rgba(0, 255, 255, 0.25) !important;
+    }
+    
+    .btn-outline-secondary {
+        background-color: transparent !important;
+        color: #cccccc !important;
+        border-color: rgba(0, 255, 255, 0.2) !important;
+    }
+    
+    .btn-outline-secondary:hover {
+        background-color: rgba(0, 255, 255, 0.1) !important;
+        color: #00ffff !important;
+        border-color: #00ffff !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-layout">
+    <!-- Admin Sidebar -->
+    <div class="admin-sidebar" id="adminSidebar">
+        <div class="admin-sidebar-header">
+            <h3><i class="fas fa-cog"></i> Admin Panel</h3>
+        </div>
+        
+        <nav class="admin-sidebar-nav">
+            <a href="{{ url_for('admin.dashboard') }}" class="admin-nav-item {% if request.endpoint == 'admin.dashboard' %}active{% endif %}">
+                <i class="fas fa-home"></i>
+                <span>Dashboard</span>
+            </a>
+            
+            <a href="{{ url_for('admin.users') }}" class="admin-nav-item {% if request.endpoint == 'admin.users' %}active{% endif %}">
+                <i class="fas fa-users"></i>
+                <span>User Management</span>
+            </a>
+            
+            <a href="{{ url_for('admin.leaders') }}" class="admin-nav-item {% if request.endpoint in ['admin.leaders', 'admin.add_leader', 'admin.edit_leader'] %}active{% endif %}">
+                <i class="fas fa-crown"></i>
+                <span>Leader Management</span>
+            </a>
+            
+            <a href="{{ url_for('admin.news') }}" class="admin-nav-item {% if request.endpoint in ['admin.news', 'admin.add_news', 'admin.edit_news'] %}active{% endif %}">
+                <i class="fas fa-newspaper"></i>
+                <span>News Management</span>
+            </a>
+            
+            <a href="{{ url_for('admin.blogs') }}" class="admin-nav-item {% if request.endpoint in ['admin.blogs', 'admin.add_blog', 'admin.edit_blog'] %}active{% endif %}">
+                <i class="fas fa-blog"></i>
+                <span>Blog Management</span>
+            </a>
+            
+            <a href="{{ url_for('admin.events') }}" class="admin-nav-item {% if request.endpoint in ['admin.events', 'admin.add_event', 'admin.edit_event'] %}active{% endif %}">
+                <i class="fas fa-calendar"></i>
+                <span>Events Management</span>
+            </a>
+            
+            <a href="{{ url_for('admin.projects') }}" class="admin-nav-item {% if request.endpoint in ['admin.projects', 'admin.add_project', 'admin.edit_project'] %}active{% endif %}">
+                <i class="fas fa-project-diagram"></i>
+                <span>Projects Management</span>
+            </a>
+            
+            <a href="{{ url_for('admin.gallery') }}" class="admin-nav-item {% if request.endpoint in ['admin.gallery', 'admin.add_gallery_item', 'admin.edit_gallery_item'] %}active{% endif %}">
+                <i class="fas fa-images"></i>
+                <span>Gallery Management</span>
+            </a>
+            
+            <a href="{{ url_for('admin.newsletter') }}" class="admin-nav-item {% if request.endpoint == 'admin.newsletter' %}active{% endif %}">
+                <i class="fas fa-envelope"></i>
+                <span>Newsletter</span>
+            </a>
+        </nav>
+    </div>
+    
+    <!-- Admin Main Content -->
+    <div class="admin-main" id="adminMain">
+        <!-- Admin Header -->
+        <div class="admin-header">
+            <div class="admin-header-content">
+                <div class="admin-header-left">
+                    <button class="admin-sidebar-toggle" id="sidebarToggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div>
+                        <h1 class="admin-page-title">{% block page_title %}Dashboard{% endblock %}</h1>
+                        <nav class="admin-breadcrumb">
+                            <a href="{{ url_for('admin.dashboard') }}">Admin</a>
+                            {% block breadcrumb %}{% endblock %}
+                        </nav>
+                    </div>
+                </div>
+                
+                <div class="admin-header-right">
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user"></i> {{ current_user.email }}
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('main.index') }}"><i class="fas fa-home"></i> View Site</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Admin Content -->
+        <div class="admin-content">
+            {% block admin_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Sidebar toggle functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const sidebar = document.getElementById('adminSidebar');
+    const main = document.getElementById('adminMain');
+    const toggle = document.getElementById('sidebarToggle');
+    
+    // Check for saved sidebar state
+    const sidebarCollapsed = localStorage.getItem('adminSidebarCollapsed') === 'true';
+    if (sidebarCollapsed) {
+        sidebar.classList.add('collapsed');
+        main.classList.add('sidebar-collapsed');
+    }
+    
+    toggle.addEventListener('click', function() {
+        sidebar.classList.toggle('collapsed');
+        main.classList.toggle('sidebar-collapsed');
+        
+        // Save state
+        localStorage.setItem('adminSidebarCollapsed', sidebar.classList.contains('collapsed'));
+    });
+    
+    // Mobile sidebar toggle
+    if (window.innerWidth <= 768) {
+        sidebar.classList.add('collapsed');
+        main.classList.add('sidebar-collapsed');
+    }
+    
+    // Handle window resize
+    window.addEventListener('resize', function() {
+        if (window.innerWidth <= 768) {
+            sidebar.classList.add('collapsed');
+            main.classList.add('sidebar-collapsed');
+        } else {
+            // Restore saved state on desktop
+            const savedState = localStorage.getItem('adminSidebarCollapsed') === 'true';
+            if (savedState) {
+                sidebar.classList.add('collapsed');
+                main.classList.add('sidebar-collapsed');
+            } else {
+                sidebar.classList.remove('collapsed');
+                main.classList.remove('sidebar-collapsed');
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

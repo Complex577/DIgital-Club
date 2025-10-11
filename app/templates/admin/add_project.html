@@ -1,0 +1,70 @@
+{% extends "admin/admin_base.html" %}
+
+{% block admin_title %}Add Project{% endblock %}
+{% block page_title %}Add Project{% endblock %}
+{% block breadcrumb %}<span class="breadcrumb-separator">/</span> <a href="{{ url_for('admin.projects') }}">Projects Management</a><span class="breadcrumb-separator">/</span> <span>Add Project</span>{% endblock %}
+
+{% block admin_content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="admin-form">
+            <div class="d-flex align-items-center mb-4">
+                <div class="admin-activity-icon primary me-3">
+                    <i class="fas fa-project-diagram"></i>
+                </div>
+                <div>
+                    <h2 class="mb-1">Add Project</h2>
+                    <p class="text-muted mb-0">Create a new project showcase</p>
+                </div>
+            </div>
+            
+            <form method="POST">
+                <div class="admin-form-group">
+                    <label for="title" class="admin-form-label">Project Title</label>
+                    <input type="text" class="admin-form-control" id="title" name="title" required 
+                           placeholder="Enter the project title">
+                </div>
+                
+                <div class="admin-form-group">
+                    <label for="description" class="admin-form-label">Project Description</label>
+                    <textarea class="admin-form-control" id="description" name="description" rows="5" 
+                              placeholder="Describe the project, its purpose, and key features"></textarea>
+                </div>
+                
+                <div class="admin-form-group">
+                    <label for="technologies" class="admin-form-label">Technologies Used</label>
+                    <input type="text" class="admin-form-control" id="technologies" name="technologies" 
+                           placeholder="e.g., Python, Flask, JavaScript, React (comma-separated)">
+                </div>
+                
+                <div class="admin-form-group">
+                    <label for="team_members" class="admin-form-label">Team Members</label>
+                    <input type="text" class="admin-form-control" id="team_members" name="team_members" 
+                           placeholder="e.g., John Doe, Jane Smith (comma-separated)">
+                </div>
+                
+                <div class="admin-form-group">
+                    <label for="github_link" class="admin-form-label">GitHub Link</label>
+                    <input type="url" class="admin-form-control" id="github_link" name="github_link" 
+                           placeholder="https://github.com/username/project-name">
+                </div>
+                
+                <div class="admin-form-group">
+                    <label for="demo_link" class="admin-form-label">Demo Link</label>
+                    <input type="url" class="admin-form-control" id="demo_link" name="demo_link" 
+                           placeholder="https://your-project-demo.com">
+                </div>
+                
+                <div class="d-flex gap-3">
+                    <button type="submit" class="admin-btn admin-btn-primary">
+                        <i class="fas fa-save"></i> Save Project
+                    </button>
+                    <a href="{{ url_for('admin.projects') }}" class="admin-btn admin-btn-outline">
+                        <i class="fas fa-arrow-left"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

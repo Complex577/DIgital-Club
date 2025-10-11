@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}Members - Digital Club{% endblock %}
+
+{% block content %}
+<section style="padding: 5rem 0;">
+    <div class="container">
+        <h1 style="text-align: center; font-size: 3rem; margin-bottom: 3rem; color: var(--primary-color);" data-aos="fade-up">
+            Our Members
+        </h1>
+        
+        <!-- Filters -->
+        <div style="display: flex; gap: 1rem; justify-content: center; margin-bottom: 3rem; flex-wrap: wrap;" data-aos="fade-up">
+            <form method="GET" style="display: flex; gap: 1rem; align-items: center;">
+                <select name="course" class="form-control" style="width: auto;">
+                    <option value="">All Courses</option>
+                    {% for course in courses %}
+                    <option value="{{ course }}" {% if request.args.get('course') == course %}selected{% endif %}>{{ course }}</option>
+                    {% endfor %}
+                </select>
+                
+                <select name="year" class="form-control" style="width: auto;">
+                    <option value="">All Years</option>
+                    {% for year in years %}
+                    <option value="{{ year }}" {% if request.args.get('year') == year %}selected{% endif %}>{{ year }}</option>
+                    {% endfor %}
+                </select>
+                
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-filter"></i> Filter
+                </button>
+                
+                {% if request.args.get('course') or request.args.get('year') %}
+                <a href="{{ url_for('main.members') }}" class="btn-secondary">
+                    <i class="fas fa-times"></i> Clear
+                </a>
+                {% endif %}
+            </form>
+        </div>
+        
+        {% if members and members.items %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem;">
+            {% for member in members.items %}
+            <div class="card" data-aos="fade-up" data-aos-delay="{{ loop.index * 50 }}">
+                <div style="text-align: center;">
+                    {% if member.profile_image %}
+                    <img src="{{ url_for('static', filename='uploads/profiles/' + member.profile_image) }}" 
+                         alt="{{ member.full_name }}" 
+                         style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; margin-bottom: 1rem; border: 2px solid var(--primary-color);">
+                    {% else %}
+                    <div style="width: 120px; height: 120px; border-radius: 50%; background: linear-gradient(45deg, var(--primary-color), var(--secondary-color)); margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-user" style="font-size: 2.5rem; color: var(--bg-primary);"></i>
+                    </div>
+                    {% endif %}
+                    
+                    <h3 style="color: var(--text-primary); margin-bottom: 0.5rem;">{{ member.full_name }}</h3>
+                    
+                    {% if member.title %}
+                    <p style="color: var(--primary-color); font-weight: 600; margin-bottom: 0.5rem;">{{ member.title }}</p>
+                    {% endif %}
+                    
+                    <div style="margin-bottom: 1rem;">
+                        {% if member.course %}
+                        <span style="background: rgba(0, 255, 255, 0.1); color: var(--primary-color); padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.8rem; margin-right: 0.5rem;">
+                            {{ member.course }}
+                        </span>
+                        {% endif %}
+                        {% if member.year %}
+                        <span style="background: rgba(255, 0, 255, 0.1); color: var(--secondary-color); padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.8rem;">
+                            {{ member.year }}
+                        </span>
+                        {% endif %}
+                    </div>
+                    
+                    {% if member.bio %}
+                    <p style="color: var(--text-secondary); line-height: 1.5; margin-bottom: 1rem; font-size: 0.9rem;">
+                        {{ member.bio[:100] }}{% if member.bio|length > 100 %}...{% endif %}
+                    </p>
+                    {% endif %}
+                    
+                    {% if member.areas_of_interest %}
+                    <div style="margin-bottom: 1rem;">
+                        {% for area in member.get_areas_list()[:3] %}
+                        <span style="background: rgba(255, 255, 0, 0.1); color: var(--accent-color); padding: 0.2rem 0.6rem; border-radius: 10px; font-size: 0.7rem; margin-right: 0.3rem; margin-bottom: 0.3rem; display: inline-block;">
+                            {{ area }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <div style="display: flex; gap: 0.5rem; justify-content: center;">
+                        {% if member.github %}
+                        <a href="{{ member.github }}" target="_blank" class="social-link" style="width: 35px; height: 35px;">
+                            <i class="fab fa-github"></i>
+                        </a>
+                        {% endif %}
+                        {% if member.linkedin %}
+                        <a href="{{ member.linkedin }}" target="_blank" class="social-link" style="width: 35px; height: 35px;">
+                            <i class="fab fa-linkedin"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Pagination -->
+        {% if members.pages > 1 %}
+        <div style="display: flex; justify-content: center; margin-top: 3rem;">
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                {% if members.has_prev %}
+                <a href="{{ url_for('main.members', page=members.prev_num, course=request.args.get('course'), year=request.args.get('year')) }}" 
+                   class="btn-secondary">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+                {% endif %}
+                
+                {% for page_num in members.iter_pages() %}
+                    {% if page_num %}
+                        {% if page_num != members.page %}
+                        <a href="{{ url_for('main.members', page=page_num, course=request.args.get('course'), year=request.args.get('year')) }}" 
+                           class="btn-secondary">{{ page_num }}</a>
+                        {% else %}
+                        <span class="btn-primary">{{ page_num }}</span>
+                        {% endif %}
+                    {% else %}
+                    <span style="color: var(--text-muted);">...</span>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if members.has_next %}
+                <a href="{{ url_for('main.members', page=members.next_num, course=request.args.get('course'), year=request.args.get('year')) }}" 
+                   class="btn-secondary">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        
+        {% else %}
+        <div style="text-align: center; padding: 3rem;">
+            <i class="fas fa-users" style="font-size: 4rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+            <h3 style="color: var(--text-secondary); margin-bottom: 1rem;">No Members Found</h3>
+            <p style="color: var(--text-muted);">Try adjusting your filters or check back later.</p>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

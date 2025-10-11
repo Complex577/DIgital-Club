@@ -1,0 +1,961 @@
+{% extends "base.html" %}
+
+{% block title %}Digital Club - KIUT | Empowering Students Through Technology{% endblock %}
+
+{% block extra_head %}
+<style>
+    .hero-section {
+        height: 100vh;
+        background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .hero-bg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="%2300ffff" stroke-width="0.5" opacity="0.3"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+        animation: grid-move 20s linear infinite;
+    }
+    
+    .particles {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        z-index: 1;
+    }
+    
+    .particle {
+        position: absolute;
+        background: var(--primary-color);
+        border-radius: 50%;
+        opacity: 0.6;
+        animation: float 6s ease-in-out infinite;
+    }
+    
+    .particle:nth-child(1) { width: 4px; height: 4px; left: 10%; animation-delay: 0s; }
+    .particle:nth-child(2) { width: 6px; height: 6px; left: 20%; animation-delay: 1s; }
+    .particle:nth-child(3) { width: 3px; height: 3px; left: 30%; animation-delay: 2s; }
+    .particle:nth-child(4) { width: 5px; height: 5px; left: 40%; animation-delay: 3s; }
+    .particle:nth-child(5) { width: 4px; height: 4px; left: 50%; animation-delay: 4s; }
+    .particle:nth-child(6) { width: 6px; height: 6px; left: 60%; animation-delay: 5s; }
+    .particle:nth-child(7) { width: 3px; height: 3px; left: 70%; animation-delay: 0.5s; }
+    .particle:nth-child(8) { width: 5px; height: 5px; left: 80%; animation-delay: 1.5s; }
+    .particle:nth-child(9) { width: 4px; height: 4px; left: 90%; animation-delay: 2.5s; }
+    
+    @keyframes float {
+        0%, 100% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+        10% { opacity: 0.6; }
+        90% { opacity: 0.6; }
+        100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+    }
+    
+    .typing-text {
+        border-right: 2px solid var(--primary-color);
+        animation: blink 1s infinite;
+    }
+    
+    @keyframes blink {
+        0%, 50% { border-color: var(--primary-color); }
+        51%, 100% { border-color: transparent; }
+    }
+    
+    @keyframes grid-move {
+        0% { transform: translate(0, 0); }
+        100% { transform: translate(10px, 10px); }
+    }
+    
+    .hero-content {
+        text-align: center;
+        z-index: 2;
+        position: relative;
+    }
+    
+    .hero-title {
+        font-size: 4rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        background: linear-gradient(45deg, #00ffff, #ff00ff, #ffff00);
+        background-size: 200% 200%;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: gradient-shift 3s ease-in-out infinite;
+    }
+    
+    @keyframes gradient-shift {
+        0%, 100% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+    }
+    
+    .hero-subtitle {
+        font-size: 1.5rem;
+        color: #cccccc;
+        margin-bottom: 2rem;
+        font-family: 'Inter', sans-serif;
+    }
+    
+    .hero-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(45deg, #00ffff, #0080ff);
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: 50px;
+        color: #000;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(0, 255, 255, 0.3);
+    }
+    
+    .btn-secondary {
+        background: transparent;
+        border: 2px solid #00ffff;
+        padding: 1rem 2rem;
+        border-radius: 50px;
+        color: #00ffff;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-secondary:hover {
+        background: #00ffff;
+        color: #000;
+        transform: translateY(-2px);
+    }
+    
+    .section {
+        padding: 5rem 0;
+    }
+    
+    .section-title {
+        text-align: center;
+        font-size: 2.5rem;
+        margin-bottom: 3rem;
+        color: #ffffff;
+    }
+    
+    .news-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-top: 3rem;
+    }
+    
+    .news-card {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 15px;
+        padding: 2rem;
+        border: 1px solid rgba(0, 255, 255, 0.2);
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+    }
+    
+    .news-card:hover {
+        transform: translateY(-5px);
+        border-color: #00ffff;
+        box-shadow: 0 10px 30px rgba(0, 255, 255, 0.2);
+    }
+    
+    .news-category {
+        display: inline-block;
+        background: linear-gradient(45deg, #ff00ff, #00ffff);
+        color: #000;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+    
+    .news-title {
+        font-size: 1.3rem;
+        margin-bottom: 1rem;
+        color: #ffffff;
+    }
+    
+    .news-excerpt {
+        color: #cccccc;
+        line-height: 1.6;
+    }
+    
+    .events-preview {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 15px;
+        padding: 2rem;
+        margin-top: 3rem;
+        border: 1px solid rgba(0, 255, 255, 0.2);
+    }
+    
+    .event-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .event-item:last-child {
+        border-bottom: none;
+    }
+    
+    .event-date {
+        color: #00ffff;
+        font-weight: 600;
+    }
+    
+    .event-title {
+        color: #ffffff;
+        font-weight: 500;
+    }
+    
+    .projects-showcase {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 2rem;
+        margin-top: 3rem;
+    }
+    
+    .project-card {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 15px;
+        padding: 1.5rem;
+        border: 1px solid rgba(0, 255, 255, 0.2);
+        transition: all 0.3s ease;
+        text-align: center;
+    }
+    
+    .project-card:hover {
+        transform: translateY(-5px);
+        border-color: #00ffff;
+    }
+    
+    .project-icon {
+        font-size: 3rem;
+        color: #00ffff;
+        margin-bottom: 1rem;
+    }
+    
+    .project-title {
+        font-size: 1.2rem;
+        color: #ffffff;
+        margin-bottom: 0.5rem;
+    }
+    
+    .project-description {
+        color: #cccccc;
+        font-size: 0.9rem;
+    }
+    
+    /* Statistics Section */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 2rem;
+        margin-top: 3rem;
+    }
+    
+    .stat-card {
+        text-align: center;
+        padding: 2rem;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 15px;
+        border: 1px solid rgba(0, 255, 255, 0.2);
+        transition: all 0.3s ease;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        border-color: var(--primary-color);
+        box-shadow: 0 10px 30px rgba(0, 255, 255, 0.2);
+    }
+    
+    .stat-icon {
+        font-size: 3rem;
+        color: var(--primary-color);
+        margin-bottom: 1rem;
+    }
+    
+    .stat-number {
+        font-size: 3rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+        font-family: 'Fira Code', monospace;
+    }
+    
+    .stat-label {
+        color: var(--text-secondary);
+        font-size: 1.1rem;
+        font-weight: 500;
+    }
+    
+    /* Testimonials Section */
+    .testimonials-container {
+        max-width: 800px;
+        margin: 0 auto;
+        position: relative;
+    }
+    
+    .testimonials-carousel {
+        position: relative;
+        overflow: hidden;
+        border-radius: 15px;
+    }
+    
+    .testimonial-card {
+        display: none;
+        padding: 3rem;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(0, 255, 255, 0.2);
+        border-radius: 15px;
+        text-align: center;
+    }
+    
+    .testimonial-card.active {
+        display: block;
+        animation: fadeIn 0.5s ease-in-out;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .quote-icon {
+        font-size: 2rem;
+        color: var(--primary-color);
+        margin-bottom: 1.5rem;
+    }
+    
+    .testimonial-content p {
+        font-size: 1.2rem;
+        line-height: 1.8;
+        color: var(--text-secondary);
+        margin-bottom: 2rem;
+        font-style: italic;
+    }
+    
+    .testimonial-author {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+    }
+    
+    .author-avatar {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--bg-primary);
+        font-size: 1.5rem;
+    }
+    
+    .author-info h4 {
+        color: var(--text-primary);
+        margin-bottom: 0.3rem;
+    }
+    
+    .author-info span {
+        color: var(--text-muted);
+        font-size: 0.9rem;
+    }
+    
+    .testimonial-nav {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+    
+    .nav-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: none;
+        background: rgba(255, 255, 255, 0.3);
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .nav-dot.active {
+        background: var(--primary-color);
+        transform: scale(1.2);
+    }
+    
+    /* Partners Section */
+    .partners-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 2rem;
+        margin-top: 3rem;
+    }
+    
+    .partner-card {
+        text-align: center;
+        padding: 2rem;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 15px;
+        border: 1px solid rgba(0, 255, 255, 0.2);
+        transition: all 0.3s ease;
+    }
+    
+    .partner-card:hover {
+        transform: translateY(-5px);
+        border-color: var(--primary-color);
+        box-shadow: 0 10px 30px rgba(0, 255, 255, 0.2);
+    }
+    
+    .partner-logo {
+        font-size: 3rem;
+        color: var(--primary-color);
+        margin-bottom: 1rem;
+    }
+    
+    .partner-card h4 {
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+    }
+    
+    .partner-card p {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+    }
+    
+    /* Achievements Section */
+    .achievements-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-top: 3rem;
+    }
+    
+    .achievement-card {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        padding: 2rem;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 15px;
+        border: 1px solid rgba(0, 255, 255, 0.2);
+        transition: all 0.3s ease;
+    }
+    
+    .achievement-card:hover {
+        transform: translateY(-5px);
+        border-color: var(--primary-color);
+        box-shadow: 0 10px 30px rgba(0, 255, 255, 0.2);
+    }
+    
+    .achievement-icon {
+        font-size: 2.5rem;
+        color: var(--accent-color);
+        min-width: 60px;
+    }
+    
+    .achievement-content h4 {
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+    }
+    
+    .achievement-content p {
+        color: var(--text-secondary);
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .achievement-date {
+        color: var(--primary-color);
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="hero-bg"></div>
+    <div class="particles">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+    <div class="hero-content" data-aos="fade-up">
+        <h1 class="hero-title">Digital Club</h1>
+        <p class="hero-subtitle typing-text" id="typing-text">Empowering Students Through Technology & Innovation</p>
+        <div class="hero-buttons">
+            <a href="{{ url_for('auth.register') }}" class="btn-primary">
+                <i class="fas fa-rocket"></i> Join Us
+            </a>
+            <a href="{{ url_for('main.about') }}" class="btn-secondary">
+                <i class="fas fa-info-circle"></i> Learn More
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Latest News Section -->
+<section class="section">
+    <div class="container">
+        <h2 class="section-title" data-aos="fade-up">Latest News & Updates</h2>
+        <div class="news-grid">
+            {% for news in latest_news %}
+            <div class="news-card" data-aos="fade-up" data-aos-delay="{{ loop.index * 100 }}">
+                <span class="news-category">{{ news.category.title() }}</span>
+                <h3 class="news-title">{{ news.title }}</h3>
+                <p class="news-excerpt">{{ news.content[:150] }}...</p>
+                <a href="{{ url_for('main.news_detail', news_id=news.id) }}" class="btn-secondary">
+                    Read More <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Upcoming Events Section -->
+<section class="section">
+    <div class="container">
+        <h2 class="section-title" data-aos="fade-up">Upcoming Events</h2>
+        <div class="events-preview" data-aos="fade-up">
+            {% for event in upcoming_events %}
+            <div class="event-item">
+                <div>
+                    <div class="event-date">{{ event.event_date.strftime('%B %d, %Y') }}</div>
+                    <div class="event-title">{{ event.title }}</div>
+                </div>
+                <div>
+                    <i class="fas fa-calendar-alt" style="color: #00ffff;"></i>
+                </div>
+            </div>
+            {% endfor %}
+            <div style="text-align: center; margin-top: 2rem;">
+                <a href="{{ url_for('main.events') }}" class="btn-primary">
+                    View All Events <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Projects Section -->
+<section class="section">
+    <div class="container">
+        <h2 class="section-title" data-aos="fade-up">Featured Projects</h2>
+        <div class="projects-showcase">
+            {% for project in featured_projects %}
+            <div class="project-card" data-aos="fade-up" data-aos-delay="{{ loop.index * 100 }}">
+                <div class="project-icon">
+                    <i class="fas fa-code"></i>
+                </div>
+                <h3 class="project-title">{{ project.title }}</h3>
+                <p class="project-description">{{ project.description[:100] }}...</p>
+            </div>
+            {% endfor %}
+        </div>
+        <div style="text-align: center; margin-top: 2rem;">
+            <a href="{{ url_for('main.projects') }}" class="btn-secondary">
+                View All Projects <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Statistics Counter Section -->
+<section class="section" style="background: rgba(255, 255, 255, 0.02);">
+    <div class="container">
+        <h2 class="section-title" data-aos="fade-up">Our Impact</h2>
+        <div class="stats-grid" data-aos="fade-up" data-aos-delay="200">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-number" data-count="200">0</div>
+                <div class="stat-label">Active Members</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-code"></i>
+                </div>
+                <div class="stat-number" data-count="50">0</div>
+                <div class="stat-label">Projects Completed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <div class="stat-number" data-count="100">0</div>
+                <div class="stat-label">Workshops Conducted</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-trophy"></i>
+                </div>
+                <div class="stat-number" data-count="20">0</div>
+                <div class="stat-label">Awards Won</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Testimonials Section -->
+<section class="section">
+    <div class="container">
+        <h2 class="section-title" data-aos="fade-up">What Our Members Say</h2>
+        <div class="testimonials-container" data-aos="fade-up" data-aos-delay="200">
+            <div class="testimonials-carousel">
+                <div class="testimonial-card active">
+                    <div class="testimonial-content">
+                        <div class="quote-icon">
+                            <i class="fas fa-quote-left"></i>
+                        </div>
+                        <p>"Digital Club transformed my understanding of technology. The hands-on workshops and collaborative projects gave me the skills I needed to land my dream job at a tech startup."</p>
+                        <div class="testimonial-author">
+                            <div class="author-avatar">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="author-info">
+                                <h4>Sarah Mwangi</h4>
+                                <span>Software Engineer at TechStart Tanzania</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-content">
+                        <div class="quote-icon">
+                            <i class="fas fa-quote-left"></i>
+                        </div>
+                        <p>"The hackathons and coding competitions pushed me beyond my limits. I learned more in one semester with Digital Club than in two years of regular coursework."</p>
+                        <div class="testimonial-author">
+                            <div class="author-avatar">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="author-info">
+                                <h4>Ahmed Hassan</h4>
+                                <span>Full-Stack Developer</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-content">
+                        <div class="quote-icon">
+                            <i class="fas fa-quote-left"></i>
+                        </div>
+                        <p>"Digital Club provided the perfect environment to explore AI and machine learning. The mentorship and resources helped me build my first ML model and publish a research paper."</p>
+                        <div class="testimonial-author">
+                            <div class="author-avatar">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="author-info">
+                                <h4>Grace Kimaro</h4>
+                                <span>AI Research Assistant</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-nav">
+                <button class="nav-dot active" data-slide="0"></button>
+                <button class="nav-dot" data-slide="1"></button>
+                <button class="nav-dot" data-slide="2"></button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Partners & Sponsors Section -->
+<section class="section" style="background: rgba(255, 255, 255, 0.02);">
+    <div class="container">
+        <h2 class="section-title" data-aos="fade-up">Our Partners & Sponsors</h2>
+        <p style="text-align: center; color: var(--text-secondary); margin-bottom: 3rem; font-size: 1.1rem;" data-aos="fade-up" data-aos-delay="200">
+            We're grateful for the support of leading tech companies and organizations
+        </p>
+        <div class="partners-grid" data-aos="fade-up" data-aos-delay="400">
+            <div class="partner-card">
+                <div class="partner-logo">
+                    <i class="fab fa-microsoft"></i>
+                </div>
+                <h4>Microsoft</h4>
+                <p>Cloud computing workshops and Azure credits</p>
+            </div>
+            <div class="partner-card">
+                <div class="partner-logo">
+                    <i class="fab fa-google"></i>
+                </div>
+                <h4>Google</h4>
+                <p>Developer tools and Android development training</p>
+            </div>
+            <div class="partner-card">
+                <div class="partner-logo">
+                    <i class="fab fa-github"></i>
+                </div>
+                <h4>GitHub</h4>
+                <p>Student developer pack and repository hosting</p>
+            </div>
+            <div class="partner-card">
+                <div class="partner-logo">
+                    <i class="fas fa-code"></i>
+                </div>
+                <h4>TechStart Tanzania</h4>
+                <p>Internship opportunities and mentorship</p>
+            </div>
+            <div class="partner-card">
+                <div class="partner-logo">
+                    <i class="fas fa-laptop-code"></i>
+                </div>
+                <h4>Digital Innovation Hub</h4>
+                <p>Co-working space and networking events</p>
+            </div>
+            <div class="partner-card">
+                <div class="partner-logo">
+                    <i class="fas fa-university"></i>
+                </div>
+                <h4>KIUT</h4>
+                <p>University support and academic integration</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Achievement Highlights Section -->
+<section class="section">
+    <div class="container">
+        <h2 class="section-title" data-aos="fade-up">Recent Achievements</h2>
+        <div class="achievements-grid" data-aos="fade-up" data-aos-delay="200">
+            <div class="achievement-card">
+                <div class="achievement-icon">
+                    <i class="fas fa-medal"></i>
+                </div>
+                <div class="achievement-content">
+                    <h4>1st Place - Tanzania Hackathon 2024</h4>
+                    <p>Our team won the national hackathon with an innovative mobile health solution</p>
+                    <span class="achievement-date">March 2024</span>
+                </div>
+            </div>
+            <div class="achievement-card">
+                <div class="achievement-icon">
+                    <i class="fas fa-star"></i>
+                </div>
+                <div class="achievement-content">
+                    <h4>Best Student Organization Award</h4>
+                    <p>Recognized by KIUT for outstanding contribution to student development</p>
+                    <span class="achievement-date">February 2024</span>
+                </div>
+            </div>
+            <div class="achievement-card">
+                <div class="achievement-icon">
+                    <i class="fas fa-rocket"></i>
+                </div>
+                <div class="achievement-content">
+                    <h4>Startup Incubation Program</h4>
+                    <p>Three club members launched successful tech startups</p>
+                    <span class="achievement-date">January 2024</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Newsletter Signup Section -->
+<section class="section" style="background: rgba(255, 255, 255, 0.02);">
+    <div class="container">
+        <div style="text-align: center; background: rgba(255, 255, 255, 0.05); border-radius: 15px; padding: 3rem; border: 1px solid rgba(0, 255, 255, 0.2);" data-aos="fade-up">
+            <h2 style="color: #ffffff; margin-bottom: 1rem;">Stay Updated</h2>
+            <p style="color: #cccccc; margin-bottom: 2rem;">Subscribe to our newsletter for the latest updates on events, workshops, and opportunities.</p>
+            <form class="newsletter-form" id="homepage-newsletter-form" style="max-width: 400px; margin: 0 auto;">
+                <div style="display: flex; gap: 1rem;">
+                    <input type="email" placeholder="Enter your email" name="email" required style="flex: 1; padding: 1rem; border: 1px solid #00ffff; border-radius: 50px; background: rgba(0, 0, 0, 0.3); color: #ffffff; outline: none;">
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Initialize AOS animations
+    AOS.init({
+        duration: 1000,
+        once: true,
+        offset: 100
+    });
+
+    // Statistics Counter Animation
+    function animateCounters() {
+        const counters = document.querySelectorAll('.stat-number');
+        const speed = 200; // The lower the slower
+
+        counters.forEach(counter => {
+            const updateCount = () => {
+                const target = +counter.getAttribute('data-count');
+                const count = +counter.innerText;
+
+                const inc = target / speed;
+
+                if (count < target) {
+                    counter.innerText = Math.ceil(count + inc);
+                    setTimeout(updateCount, 1);
+                } else {
+                    counter.innerText = target;
+                }
+            };
+
+            updateCount();
+        });
+    }
+
+    // Intersection Observer for counter animation
+    const statsSection = document.querySelector('.stats-grid');
+    if (statsSection) {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    animateCounters();
+                    observer.unobserve(entry.target);
+                }
+            });
+        });
+        observer.observe(statsSection);
+    }
+
+    // Testimonials Carousel
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.testimonial-card');
+    const dots = document.querySelectorAll('.nav-dot');
+
+    function showSlide(index) {
+        slides.forEach(slide => slide.classList.remove('active'));
+        dots.forEach(dot => dot.classList.remove('active'));
+        
+        slides[index].classList.add('active');
+        dots[index].classList.add('active');
+    }
+
+    function nextSlide() {
+        currentSlide = (currentSlide + 1) % slides.length;
+        showSlide(currentSlide);
+    }
+
+    // Auto-advance testimonials
+    setInterval(nextSlide, 5000);
+
+    // Manual navigation
+    dots.forEach((dot, index) => {
+        dot.addEventListener('click', () => {
+            currentSlide = index;
+            showSlide(currentSlide);
+        });
+    });
+
+    // Typing Animation for Hero
+    function typeWriter(element, text, speed = 100) {
+        let i = 0;
+        element.innerHTML = '';
+        
+        function type() {
+            if (i < text.length) {
+                element.innerHTML += text.charAt(i);
+                i++;
+                setTimeout(type, speed);
+            }
+        }
+        
+        type();
+    }
+
+    // Start typing animation when page loads
+    window.addEventListener('load', () => {
+        const typingElement = document.getElementById('typing-text');
+        if (typingElement) {
+            const text = typingElement.textContent;
+            typeWriter(typingElement, text, 50);
+        }
+    });
+
+    // Newsletter form handling
+    document.getElementById('homepage-newsletter-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        
+        try {
+            const response = await fetch('{{ url_for("main.newsletter_subscribe") }}', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert('Successfully subscribed to newsletter!');
+                this.reset();
+            } else {
+                alert(result.message);
+            }
+        } catch (error) {
+            alert('An error occurred. Please try again.');
+        }
+    });
+
+    // Smooth scrolling for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        });
+    });
+
+    // Add parallax effect to particles
+    window.addEventListener('scroll', () => {
+        const scrolled = window.pageYOffset;
+        const particles = document.querySelector('.particles');
+        if (particles) {
+            particles.style.transform = `translateY(${scrolled * 0.5}px)`;
+        }
+    });
+</script>
+{% endblock %}

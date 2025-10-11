@@ -1,0 +1,55 @@
+{% extends "admin/admin_base.html" %}
+
+{% block admin_title %}Add Gallery Item{% endblock %}
+{% block page_title %}Add Gallery Item{% endblock %}
+{% block breadcrumb %}<span class="breadcrumb-separator">/</span> <a href="{{ url_for('admin.gallery') }}">Gallery Management</a><span class="breadcrumb-separator">/</span> <span>Add Item</span>{% endblock %}
+
+{% block admin_content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="admin-form">
+            <div class="d-flex align-items-center mb-4">
+                <div class="admin-activity-icon primary me-3">
+                    <i class="fas fa-images"></i>
+                </div>
+                <div>
+                    <h2 class="mb-1">Add Gallery Item</h2>
+                    <p class="text-muted mb-0">Add an image or video to the gallery</p>
+                </div>
+            </div>
+            
+            <form method="POST">
+                <div class="admin-form-group">
+                    <label for="type" class="admin-form-label">Media Type</label>
+                    <select class="admin-form-control" id="type" name="type" required>
+                        <option value="">Select media type</option>
+                        <option value="image">Image</option>
+                        <option value="video">Video</option>
+                    </select>
+                </div>
+                
+                <div class="admin-form-group">
+                    <label for="url" class="admin-form-label">Media URL</label>
+                    <input type="url" class="admin-form-control" id="url" name="url" required 
+                           placeholder="https://example.com/image.jpg or https://youtube.com/watch?v=...">
+                </div>
+                
+                <div class="admin-form-group">
+                    <label for="caption" class="admin-form-label">Caption</label>
+                    <input type="text" class="admin-form-control" id="caption" name="caption" 
+                           placeholder="Optional caption for the media">
+                </div>
+                
+                <div class="d-flex gap-3">
+                    <button type="submit" class="admin-btn admin-btn-primary">
+                        <i class="fas fa-save"></i> Save Gallery Item
+                    </button>
+                    <a href="{{ url_for('admin.gallery') }}" class="admin-btn admin-btn-outline">
+                        <i class="fas fa-arrow-left"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

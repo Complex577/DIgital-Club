@@ -1,0 +1,99 @@
+{% extends "admin/admin_base.html" %}
+
+{% block admin_title %}Add Blog Post{% endblock %}
+{% block page_title %}Add Blog Post{% endblock %}
+{% block breadcrumb %}<span class="breadcrumb-separator">/</span> <a href="{{ url_for('admin.blogs') }}">Blog Management</a><span class="breadcrumb-separator">/</span> <span>Add Blog Post</span>{% endblock %}
+
+{% block admin_content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="admin-form">
+            <div class="d-flex align-items-center mb-4">
+                <div class="admin-activity-icon primary me-3">
+                    <i class="fas fa-blog"></i>
+                </div>
+                <div>
+                    <h2 class="mb-1">Create New Blog Post</h2>
+                    <p class="text-muted mb-0">Write engaging content for your club members</p>
+                </div>
+            </div>
+            
+            <form method="POST">
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="admin-form-group">
+                            <label for="title" class="admin-form-label">Blog Post Title</label>
+                            <input type="text" class="admin-form-control" id="title" name="title" 
+                                   placeholder="Enter an engaging title for your blog post" required>
+                        </div>
+                        
+                        <div class="admin-form-group">
+                            <label for="excerpt" class="admin-form-label">Excerpt</label>
+                            <textarea class="admin-form-control" id="excerpt" name="excerpt" rows="3" 
+                                      placeholder="Brief summary of your blog post (optional)"></textarea>
+                            <small class="text-muted">This will be shown in blog listings and previews.</small>
+                        </div>
+                        
+                        <div class="admin-form-group">
+                            <label for="content" class="admin-form-label">Content</label>
+                            <textarea class="admin-form-control" id="content" name="content" rows="15" 
+                                      placeholder="Write your blog post content here. You can use basic HTML formatting like &lt;strong&gt;, &lt;em&gt;, &lt;p&gt;, &lt;h2&gt;, etc." required></textarea>
+                            <small class="text-muted">You can use basic HTML tags for formatting: &lt;strong&gt;, &lt;em&gt;, &lt;p&gt;, &lt;h2&gt;, &lt;h3&gt;, &lt;ul&gt;, &lt;ol&gt;, &lt;li&gt;, etc.</small>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4">
+                        <div class="admin-card">
+                            <div class="admin-card-header">
+                                <h5><i class="fas fa-cog"></i> Post Settings</h5>
+                            </div>
+                            <div class="admin-card-body">
+                                <div class="admin-form-group">
+                                    <label for="category" class="admin-form-label">Category</label>
+                                    <select class="admin-form-control" id="category" name="category" required>
+                                        <option value="">Select a category</option>
+                                        <option value="general">General</option>
+                                        <option value="tech">Technology</option>
+                                        <option value="tutorial">Tutorial</option>
+                                        <option value="news">Club News</option>
+                                        <option value="event">Event Coverage</option>
+                                        <option value="project">Project Showcase</option>
+                                        <option value="interview">Interview</option>
+                                        <option value="opinion">Opinion</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="admin-form-group">
+                                    <label for="tags" class="admin-form-label">Tags</label>
+                                    <input type="text" class="admin-form-control" id="tags" name="tags" 
+                                           placeholder="e.g., python, web development, tutorial">
+                                    <small class="text-muted">Separate tags with commas</small>
+                                </div>
+                                
+                                <div class="admin-form-group">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="is_published" name="is_published">
+                                        <label class="form-check-label" for="is_published">
+                                            Publish immediately
+                                        </label>
+                                    </div>
+                                    <small class="text-muted">Uncheck to save as draft</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-flex gap-3">
+                    <button type="submit" class="admin-btn admin-btn-primary">
+                        <i class="fas fa-save"></i> Create Blog Post
+                    </button>
+                    <a href="{{ url_for('admin.blogs') }}" class="admin-btn admin-btn-outline">
+                        <i class="fas fa-arrow-left"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
