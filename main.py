@@ -1,5 +1,5 @@
 from app import create_app, db
-from app.models import User, Member, Leader, News, Event, Project, Gallery, Topic, Newsletter, Blog
+from app.models import User, Member, Leader, News, Event, Project, Gallery, Topic, Newsletter, Blog, RSVP
 from flask_migrate import upgrade
 import click
 

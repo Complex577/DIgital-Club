@@ -129,6 +129,11 @@
                 <span>Events Management</span>
             </a>
             
+            <a href="{{ url_for('admin.rsvps') }}" class="admin-nav-item {% if request.endpoint in ['admin.rsvps', 'admin.approve_rsvp', 'admin.reject_rsvp', 'admin.bulk_approve_rsvps', 'admin.bulk_reject_rsvps'] %}active{% endif %}">
+                <i class="fas fa-calendar-check"></i>
+                <span>RSVP Management</span>
+            </a>
+            
             <a href="{{ url_for('admin.projects') }}" class="admin-nav-item {% if request.endpoint in ['admin.projects', 'admin.add_project', 'admin.edit_project'] %}active{% endif %}">
                 <i class="fas fa-project-diagram"></i>
                 <span>Projects Management</span>

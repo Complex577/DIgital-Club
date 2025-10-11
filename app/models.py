@@ -174,3 +174,41 @@ class Blog(db.Model):
     
     def __repr__(self):
         return f'<Blog {self.title}>'
+
+class RSVP(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    event_id = db.Column(db.Integer, db.ForeignKey('event.id'), nullable=False)
+    member_id = db.Column(db.Integer, db.ForeignKey('member.id'), nullable=True)
+    status = db.Column(db.String(20), default='pending')  # pending, approved, rejected
+    acceptance_code = db.Column(db.String(10), unique=True)
+    full_name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(120), nullable=False)
+    phone = db.Column(db.String(20))
+    course = db.Column(db.String(100))
+    year = db.Column(db.String(20))
+    dietary_requirements = db.Column(db.Text)
+    emergency_contact = db.Column(db.String(100))
+    emergency_phone = db.Column(db.String(20))
+    additional_notes = db.Column(db.Text)
+    submitted_at = db.Column(db.DateTime, default=datetime.utcnow)
+    approved_at = db.Column(db.DateTime)
+    approved_by = db.Column(db.Integer, db.ForeignKey('user.id'))
+    
+    # Relationships
+    event = db.relationship('Event', backref='rsvps')
+    member = db.relationship('Member', backref='rsvps')
+    approver = db.relationship('User', backref='approved_rsvps')
+    
+    def generate_acceptance_code(self):
+        """Generate a unique acceptance code"""
+        import random
+        import string
+        
+        while True:
+            code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+            if not RSVP.query.filter_by(acceptance_code=code).first():
+                self.acceptance_code = code
+                break
+    
+    def __repr__(self):
+        return f'<RSVP {self.full_name} - {self.event.title if self.event else "Unknown Event"}>'

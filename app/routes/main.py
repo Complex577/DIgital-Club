@@ -1,6 +1,6 @@
 from flask import render_template, request, flash, redirect, url_for, jsonify
 from app.routes import main_bp
-from app.models import News, Event, Project, Gallery, Topic, Member, Leader, Newsletter, Blog
+from app.models import News, Event, Project, Gallery, Topic, Member, Leader, Newsletter, Blog, RSVP
 from app import db
 from datetime import datetime
 
@@ -201,3 +201,73 @@ def blog_post(slug):
     ).order_by(Blog.published_date.desc()).limit(3).all()
     
     return render_template('blog_post.html', blog=blog, related_posts=related_posts)
+
+# RSVP Routes
+@main_bp.route('/events/<int:event_id>/rsvp', methods=['GET', 'POST'])
+def event_rsvp(event_id):
+    event = Event.query.get_or_404(event_id)
+    
+    if request.method == 'POST':
+        # Get form data
+        full_name = request.form.get('full_name')
+        email = request.form.get('email')
+        phone = request.form.get('phone')
+        course = request.form.get('course')
+        year = request.form.get('year')
+        dietary_requirements = request.form.get('dietary_requirements')
+        emergency_contact = request.form.get('emergency_contact')
+        emergency_phone = request.form.get('emergency_phone')
+        additional_notes = request.form.get('additional_notes')
+        
+        # Validation
+        if not all([full_name, email]):
+            flash('Please fill in all required fields.', 'error')
+            return render_template('rsvp_form.html', event=event)
+        
+        # Check if already RSVP'd
+        existing_rsvp = RSVP.query.filter_by(event_id=event_id, email=email).first()
+        if existing_rsvp:
+            flash('You have already RSVP\'d for this event.', 'warning')
+            return redirect(url_for('main.event_rsvp_status', event_id=event_id, email=email))
+        
+        # Try to link with member if exists
+        member = Member.query.join(Member.user).filter(Member.user.has(email=email)).first()
+        
+        # Create RSVP with member_id (use 0 as default for non-members to avoid NULL constraint)
+        rsvp = RSVP(
+            event_id=event_id,
+            member_id=member.id if member else 0,  # Use 0 for non-members
+            full_name=full_name,
+            email=email,
+            phone=phone,
+            course=course,
+            year=year,
+            dietary_requirements=dietary_requirements,
+            emergency_contact=emergency_contact,
+            emergency_phone=emergency_phone,
+            additional_notes=additional_notes
+        )
+        
+        db.session.add(rsvp)
+        db.session.commit()
+        
+        flash('RSVP submitted successfully! You will receive an email/SMS once approved.', 'success')
+        return redirect(url_for('main.event_rsvp_status', event_id=event_id, email=email))
+    
+    return render_template('rsvp_form.html', event=event)
+
+@main_bp.route('/events/<int:event_id>/rsvp/status')
+def event_rsvp_status(event_id):
+    event = Event.query.get_or_404(event_id)
+    email = request.args.get('email')
+    
+    if not email:
+        flash('Email parameter is required.', 'error')
+        return redirect(url_for('main.events'))
+    
+    rsvp = RSVP.query.filter_by(event_id=event_id, email=email).first()
+    if not rsvp:
+        flash('No RSVP found for this email.', 'error')
+        return redirect(url_for('main.events'))
+    
+    return render_template('rsvp_status.html', rsvp=rsvp, event=event)

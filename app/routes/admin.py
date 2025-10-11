@@ -2,8 +2,9 @@ from flask import render_template, request, flash, redirect, url_for, jsonify, c
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from app.routes import admin_bp
-from app.models import User, Member, Leader, News, Event, Project, Gallery, Topic, Newsletter, Blog
+from app.models import User, Member, Leader, News, Event, Project, Gallery, Topic, Newsletter, Blog, RSVP
 from app import db
+from app.utils import get_notification_service
 from datetime import datetime
 import os
 import json
@@ -474,3 +475,130 @@ def delete_blog(blog_id):
     
     flash('Blog post deleted successfully.', 'success')
     return redirect(url_for('admin.blogs'))
+
+# RSVP Management Routes
+@admin_bp.route('/rsvps')
+@login_required
+@admin_required
+def rsvps():
+    event_id = request.args.get('event_id', type=int)
+    status_filter = request.args.get('status', '')
+    
+    query = RSVP.query.join(Event)
+    
+    if event_id:
+        query = query.filter(RSVP.event_id == event_id)
+    if status_filter:
+        query = query.filter(RSVP.status == status_filter)
+    
+    rsvps = query.order_by(RSVP.submitted_at.desc()).all()
+    events = Event.query.order_by(Event.event_date.desc()).all()
+    
+    return render_template('admin/rsvps.html', rsvps=rsvps, events=events, 
+                         current_event_id=event_id, current_status=status_filter)
+
+@admin_bp.route('/rsvps/approve/<int:rsvp_id>')
+@login_required
+@admin_required
+def approve_rsvp(rsvp_id):
+    rsvp = RSVP.query.get_or_404(rsvp_id)
+    rsvp.status = 'approved'
+    rsvp.approved_at = datetime.utcnow()
+    rsvp.approved_by = current_user.id
+    rsvp.generate_acceptance_code()
+    
+    db.session.commit()
+    
+    # Send notification (email/SMS)
+    send_rsvp_notification(rsvp, 'approved')
+    
+    flash(f'RSVP for {rsvp.full_name} has been approved. Acceptance code: {rsvp.acceptance_code}', 'success')
+    return redirect(url_for('admin.rsvps'))
+
+@admin_bp.route('/rsvps/reject/<int:rsvp_id>')
+@login_required
+@admin_required
+def reject_rsvp(rsvp_id):
+    rsvp = RSVP.query.get_or_404(rsvp_id)
+    rsvp.status = 'rejected'
+    rsvp.approved_at = datetime.utcnow()
+    rsvp.approved_by = current_user.id
+    
+    db.session.commit()
+    
+    # Send notification (email/SMS)
+    send_rsvp_notification(rsvp, 'rejected')
+    
+    flash(f'RSVP for {rsvp.full_name} has been rejected.', 'success')
+    return redirect(url_for('admin.rsvps'))
+
+@admin_bp.route('/rsvps/bulk-approve', methods=['POST'])
+@login_required
+@admin_required
+def bulk_approve_rsvps():
+    rsvp_ids = request.json.get('rsvp_ids', [])
+    count = 0
+    
+    for rsvp_id in rsvp_ids:
+        rsvp = RSVP.query.get(rsvp_id)
+        if rsvp and rsvp.status == 'pending':
+            rsvp.status = 'approved'
+            rsvp.approved_at = datetime.utcnow()
+            rsvp.approved_by = current_user.id
+            rsvp.generate_acceptance_code()
+            count += 1
+    
+    db.session.commit()
+    
+    # Send notifications for all approved RSVPs
+    approved_rsvps = RSVP.query.filter(RSVP.id.in_(rsvp_ids), RSVP.status == 'approved').all()
+    for rsvp in approved_rsvps:
+        send_rsvp_notification(rsvp, 'approved')
+    
+    return jsonify({'success': True, 'message': f'{count} RSVPs approved successfully'})
+
+@admin_bp.route('/rsvps/bulk-reject', methods=['POST'])
+@login_required
+@admin_required
+def bulk_reject_rsvps():
+    rsvp_ids = request.json.get('rsvp_ids', [])
+    count = 0
+    
+    for rsvp_id in rsvp_ids:
+        rsvp = RSVP.query.get(rsvp_id)
+        if rsvp and rsvp.status == 'pending':
+            rsvp.status = 'rejected'
+            rsvp.approved_at = datetime.utcnow()
+            rsvp.approved_by = current_user.id
+            count += 1
+    
+    db.session.commit()
+    
+    # Send notifications for all rejected RSVPs
+    rejected_rsvps = RSVP.query.filter(RSVP.id.in_(rsvp_ids), RSVP.status == 'rejected').all()
+    for rsvp in rejected_rsvps:
+        send_rsvp_notification(rsvp, 'rejected')
+    
+    return jsonify({'success': True, 'message': f'{count} RSVPs rejected successfully'})
+
+def send_rsvp_notification(rsvp, status):
+    """Send email/SMS notification for RSVP status change"""
+    try:
+        notification_service = get_notification_service()
+        result = notification_service.send_rsvp_notification(rsvp, status)
+        
+        if result.get('email_sent'):
+            current_app.logger.info(f"Email notification sent to {rsvp.email}")
+        else:
+            current_app.logger.warning(f"Failed to send email notification to {rsvp.email}")
+        
+        if result.get('sms_sent'):
+            current_app.logger.info(f"SMS notification sent to {rsvp.phone}")
+        elif rsvp.phone:
+            current_app.logger.warning(f"Failed to send SMS notification to {rsvp.phone}")
+        
+        return result
+        
+    except Exception as e:
+        current_app.logger.error(f"Failed to send notification: {e}")
+        return {'email_sent': False, 'sms_sent': False, 'error': str(e)}

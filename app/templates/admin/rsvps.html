@@ -1,0 +1,520 @@
+{% extends "admin/admin_base.html" %}
+
+{% block title %}RSVP Management - Admin Dashboard{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-header">
+                <h1 class="page-title">
+                    <i class="fas fa-calendar-check me-2"></i>
+                    RSVP Management
+                </h1>
+                <p class="page-subtitle">Manage event RSVPs and approvals</p>
+            </div>
+
+            <!-- Filters -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-4">
+                            <label for="event_id" class="form-label">Filter by Event</label>
+                            <select class="form-select" id="event_id" name="event_id">
+                                <option value="">All Events</option>
+                                {% for event in events %}
+                                <option value="{{ event.id }}" {% if current_event_id == event.id %}selected{% endif %}>
+                                    {{ event.title }} - {{ event.event_date.strftime('%B %d, %Y') }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="status" class="form-label">Filter by Status</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="">All Statuses</option>
+                                <option value="pending" {% if current_status == 'pending' %}selected{% endif %}>Pending</option>
+                                <option value="approved" {% if current_status == 'approved' %}selected{% endif %}>Approved</option>
+                                <option value="rejected" {% if current_status == 'rejected' %}selected{% endif %}>Rejected</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="fas fa-filter me-1"></i>
+                                Apply Filters
+                            </button>
+                            <a href="{{ url_for('admin.rsvps') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i>
+                                Clear
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Bulk Actions -->
+            <div class="card mb-4" id="bulk-actions" style="display: none;">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <span class="text-muted">
+                                <span id="selected-count">0</span> RSVP(s) selected
+                            </span>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <button class="btn btn-success me-2" id="bulk-approve-btn">
+                                <i class="fas fa-check me-1"></i>
+                                Approve Selected
+                            </button>
+                            <button class="btn btn-danger" id="bulk-reject-btn">
+                                <i class="fas fa-times me-1"></i>
+                                Reject Selected
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RSVPs Table -->
+            <div class="card">
+                <div class="card-body">
+                    {% if rsvps %}
+                    <div class="table-responsive">
+                        <table class="table table-hover" style="background-color: #1a1a2e !important; color: #ffffff !important;">
+                            <thead style="background-color: #16213e !important;">
+                                <tr>
+                                    <th>
+                                        <input type="checkbox" id="select-all" class="form-check-input">
+                                    </th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Event</th>
+                                    <th>Status</th>
+                                    <th>Submitted</th>
+                                    <th>Acceptance Code</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for rsvp in rsvps %}
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" class="form-check-input rsvp-checkbox" value="{{ rsvp.id }}" 
+                                               {% if rsvp.status != 'pending' %}disabled{% endif %}>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2">
+                                                {{ rsvp.full_name[0].upper() }}
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold">{{ rsvp.full_name }}</div>
+                                                {% if rsvp.phone %}
+                                                <small class="text-muted">{{ rsvp.phone }}</small>
+                                                {% endif %}
+                                                {% if not rsvp.member_id or rsvp.member_id == 0 %}
+                                                <small class="badge bg-secondary ms-1">Non-Member</small>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ rsvp.email }}</td>
+                                    <td>
+                                        <div>
+                                            <div class="fw-bold">{{ rsvp.event.title }}</div>
+                                            <small class="text-muted">
+                                                {{ rsvp.event.event_date.strftime('%B %d, %Y at %I:%M %p') }}
+                                            </small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if rsvp.status == 'pending' %}
+                                            <span class="badge bg-warning">Pending</span>
+                                        {% elif rsvp.status == 'approved' %}
+                                            <span class="badge bg-success">Approved</span>
+                                        {% elif rsvp.status == 'rejected' %}
+                                            <span class="badge bg-danger">Rejected</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <div>{{ rsvp.submitted_at.strftime('%B %d, %Y') }}</div>
+                                            <small class="text-muted">{{ rsvp.submitted_at.strftime('%I:%M %p') }}</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if rsvp.acceptance_code %}
+                                            <code class="bg-light px-2 py-1 rounded">{{ rsvp.acceptance_code }}</code>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            {% if rsvp.status == 'pending' %}
+                                                <a href="{{ url_for('admin.approve_rsvp', rsvp_id=rsvp.id) }}" 
+                                                   class="btn btn-sm btn-success" 
+                                                   onclick="return confirm('Approve this RSVP?')">
+                                                    <i class="fas fa-check"></i>
+                                                </a>
+                                                <a href="{{ url_for('admin.reject_rsvp', rsvp_id=rsvp.id) }}" 
+                                                   class="btn btn-sm btn-danger" 
+                                                   onclick="return confirm('Reject this RSVP?')">
+                                                    <i class="fas fa-times"></i>
+                                                </a>
+                                            {% endif %}
+                                            <button type="button" class="btn btn-sm btn-info" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#rsvpModal{{ rsvp.id }}">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                        <h4 class="text-muted">No RSVPs Found</h4>
+                        <p class="text-muted">No RSVPs match your current filters.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- RSVP Detail Modals -->
+{% for rsvp in rsvps %}
+<div class="modal fade" id="rsvpModal{{ rsvp.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="background-color: #1a1a2e !important; color: #ffffff !important; border-color: rgba(0, 255, 255, 0.2) !important;">
+            <div class="modal-header" style="background-color: #16213e !important; border-color: rgba(0, 255, 255, 0.2) !important;">
+                <h5 class="modal-title" style="color: #ffffff !important;">
+                    <i class="fas fa-user me-2"></i>
+                    RSVP Details - {{ rsvp.full_name }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: invert(1);"></button>
+            </div>
+            <div class="modal-body" style="background-color: #1a1a2e !important; color: #ffffff !important;">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-primary" style="color: #00ffff !important;">Personal Information</h6>
+                        <table class="table table-sm" style="background-color: #1a1a2e !important; color: #ffffff !important;">
+                            <tr>
+                                <td><strong>Name:</strong></td>
+                                <td>{{ rsvp.full_name }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Email:</strong></td>
+                                <td>{{ rsvp.email }}</td>
+                            </tr>
+                            {% if rsvp.phone %}
+                            <tr>
+                                <td><strong>Phone:</strong></td>
+                                <td>{{ rsvp.phone }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if rsvp.course %}
+                            <tr>
+                                <td><strong>Course:</strong></td>
+                                <td>{{ rsvp.course }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if rsvp.year %}
+                            <tr>
+                                <td><strong>Year:</strong></td>
+                                <td>{{ rsvp.year }}</td>
+                            </tr>
+                            {% endif %}
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-primary" style="color: #00ffff !important;">Event Information</h6>
+                        <table class="table table-sm" style="background-color: #1a1a2e !important; color: #ffffff !important;">
+                            <tr>
+                                <td><strong>Event:</strong></td>
+                                <td>{{ rsvp.event.title }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Date:</strong></td>
+                                <td>{{ rsvp.event.event_date.strftime('%B %d, %Y at %I:%M %p') }}</td>
+                            </tr>
+                            {% if rsvp.event.location %}
+                            <tr>
+                                <td><strong>Location:</strong></td>
+                                <td>{{ rsvp.event.location }}</td>
+                            </tr>
+                            {% endif %}
+                            <tr>
+                                <td><strong>Status:</strong></td>
+                                <td>
+                                    {% if rsvp.status == 'pending' %}
+                                        <span class="badge bg-warning">Pending</span>
+                                    {% elif rsvp.status == 'approved' %}
+                                        <span class="badge bg-success">Approved</span>
+                                    {% elif rsvp.status == 'rejected' %}
+                                        <span class="badge bg-danger">Rejected</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% if rsvp.acceptance_code %}
+                            <tr>
+                                <td><strong>Acceptance Code:</strong></td>
+                                <td><code class="px-2 py-1 rounded" style="background-color: #16213e !important; color: #00ffff !important; border: 1px solid rgba(0, 255, 255, 0.2) !important;">{{ rsvp.acceptance_code }}</code></td>
+                            </tr>
+                            {% endif %}
+                        </table>
+                    </div>
+                </div>
+                
+                {% if rsvp.dietary_requirements or rsvp.emergency_contact or rsvp.additional_notes %}
+                <div class="mt-4">
+                    <h6 class="text-primary" style="color: #00ffff !important;">Additional Information</h6>
+                    <div class="row">
+                        {% if rsvp.dietary_requirements %}
+                        <div class="col-md-6 mb-3">
+                            <strong>Dietary Requirements:</strong><br>
+                            <span class="text-muted">{{ rsvp.dietary_requirements }}</span>
+                        </div>
+                        {% endif %}
+                        {% if rsvp.emergency_contact %}
+                        <div class="col-md-6 mb-3">
+                            <strong>Emergency Contact:</strong><br>
+                            <span class="text-muted">{{ rsvp.emergency_contact }}
+                            {% if rsvp.emergency_phone %} - {{ rsvp.emergency_phone }}{% endif %}</span>
+                        </div>
+                        {% endif %}
+                        {% if rsvp.additional_notes %}
+                        <div class="col-12 mb-3">
+                            <strong>Additional Notes:</strong><br>
+                            <span class="text-muted">{{ rsvp.additional_notes }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer" style="background-color: #16213e !important; border-color: rgba(0, 255, 255, 0.2) !important;">
+                {% if rsvp.status == 'pending' %}
+                    <a href="{{ url_for('admin.approve_rsvp', rsvp_id=rsvp.id) }}" 
+                       class="btn btn-success" 
+                       onclick="return confirm('Approve this RSVP?')">
+                        <i class="fas fa-check me-1"></i>
+                        Approve
+                    </a>
+                    <a href="{{ url_for('admin.reject_rsvp', rsvp_id=rsvp.id) }}" 
+                       class="btn btn-danger" 
+                       onclick="return confirm('Reject this RSVP?')">
+                        <i class="fas fa-times me-1"></i>
+                        Reject
+                    </a>
+                {% endif %}
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAllCheckbox = document.getElementById('select-all');
+    const rsvpCheckboxes = document.querySelectorAll('.rsvp-checkbox');
+    const bulkActionsDiv = document.getElementById('bulk-actions');
+    const selectedCountSpan = document.getElementById('selected-count');
+    const bulkApproveBtn = document.getElementById('bulk-approve-btn');
+    const bulkRejectBtn = document.getElementById('bulk-reject-btn');
+
+    // Select all functionality
+    selectAllCheckbox.addEventListener('change', function() {
+        rsvpCheckboxes.forEach(checkbox => {
+            if (!checkbox.disabled) {
+                checkbox.checked = this.checked;
+            }
+        });
+        updateBulkActions();
+    });
+
+    // Individual checkbox change
+    rsvpCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateBulkActions();
+        });
+    });
+
+    function updateBulkActions() {
+        const checkedBoxes = document.querySelectorAll('.rsvp-checkbox:checked');
+        const count = checkedBoxes.length;
+        
+        if (count > 0) {
+            bulkActionsDiv.style.display = 'block';
+            selectedCountSpan.textContent = count;
+        } else {
+            bulkActionsDiv.style.display = 'none';
+        }
+    }
+
+    // Bulk approve
+    bulkApproveBtn.addEventListener('click', function() {
+        const checkedBoxes = document.querySelectorAll('.rsvp-checkbox:checked');
+        const rsvpIds = Array.from(checkedBoxes).map(cb => cb.value);
+        
+        if (rsvpIds.length === 0) {
+            alert('Please select at least one RSVP to approve.');
+            return;
+        }
+        
+        if (confirm(`Approve ${rsvpIds.length} RSVP(s)?`)) {
+            fetch('{{ url_for("admin.bulk_approve_rsvps") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ rsvp_ids: rsvpIds })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while processing the request.');
+            });
+        }
+    });
+
+    // Bulk reject
+    bulkRejectBtn.addEventListener('click', function() {
+        const checkedBoxes = document.querySelectorAll('.rsvp-checkbox:checked');
+        const rsvpIds = Array.from(checkedBoxes).map(cb => cb.value);
+        
+        if (rsvpIds.length === 0) {
+            alert('Please select at least one RSVP to reject.');
+            return;
+        }
+        
+        if (confirm(`Reject ${rsvpIds.length} RSVP(s)?`)) {
+            fetch('{{ url_for("admin.bulk_reject_rsvps") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ rsvp_ids: rsvpIds })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while processing the request.');
+            });
+        }
+    });
+});
+</script>
+
+<style>
+.avatar-sm {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: #ffffff !important;
+    background-color: #16213e !important;
+    border-color: rgba(0, 255, 255, 0.2) !important;
+}
+
+.table td {
+    vertical-align: middle;
+    background-color: #1a1a2e !important;
+    color: #cccccc !important;
+    border-color: rgba(0, 255, 255, 0.2) !important;
+}
+
+.btn-group .btn {
+    margin-right: 2px;
+}
+
+.btn-group .btn:last-child {
+    margin-right: 0;
+}
+
+.modal-lg {
+    max-width: 800px;
+}
+
+.badge {
+    font-size: 0.75em;
+}
+
+code {
+    font-size: 0.9em;
+}
+
+/* Dark theme modal styling */
+.modal-content {
+    background-color: #1a1a2e !important;
+    color: #ffffff !important;
+    border-color: rgba(0, 255, 255, 0.2) !important;
+}
+
+.modal-header {
+    background-color: #16213e !important;
+    border-color: rgba(0, 255, 255, 0.2) !important;
+}
+
+.modal-body {
+    background-color: #1a1a2e !important;
+    color: #ffffff !important;
+}
+
+.modal-footer {
+    background-color: #16213e !important;
+    border-color: rgba(0, 255, 255, 0.2) !important;
+}
+
+/* Table styling for dark theme */
+.table {
+    background-color: #1a1a2e !important;
+    color: #ffffff !important;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 255, 255, 0.1) !important;
+}
+
+/* Form styling */
+.form-control, .form-select {
+    background-color: #16213e !important;
+    color: #ffffff !important;
+    border-color: rgba(0, 255, 255, 0.2) !important;
+}
+
+.form-control:focus, .form-select:focus {
+    background-color: #0f1419 !important;
+    color: #ffffff !important;
+    border-color: #00ffff !important;
+    box-shadow: 0 0 0 0.2rem rgba(0, 255, 255, 0.25) !important;
+}
+</style>
+{% endblock %}
