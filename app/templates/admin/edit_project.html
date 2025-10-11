@@ -31,6 +31,14 @@
                 </div>
                 
                 <div class="admin-form-group">
+                    <label for="image" class="admin-form-label">Project Image URL</label>
+                    <input type="url" class="admin-form-control" id="image" name="image" 
+                           value="{{ project.image or '' }}"
+                           placeholder="https://example.com/project-image.jpg">
+                    <small class="form-text text-muted">Optional: URL to project screenshot or logo</small>
+                </div>
+                
+                <div class="admin-form-group">
                     <label for="technologies" class="admin-form-label">Technologies Used</label>
                     <input type="text" class="admin-form-control" id="technologies" name="technologies" 
                            value="{{ project.technologies or '' }}"
@@ -39,9 +47,23 @@
                 
                 <div class="admin-form-group">
                     <label for="team_members" class="admin-form-label">Team Members</label>
-                    <input type="text" class="admin-form-control" id="team_members" name="team_members" 
-                           value="{{ project.team_members or '' }}"
-                           placeholder="e.g., John Doe, Jane Smith (comma-separated)">
+                    <select class="admin-form-control" id="team_members" name="team_members" multiple size="5">
+                        {% for member in members %}
+                        <option value="{{ member.full_name }}" 
+                                {% if member.full_name in project.get_team_list() %}selected{% endif %}>
+                            {{ member.full_name }} - {{ member.user.email }}
+                            {% if member.title %} ({{ member.title }}){% endif %}
+                            {% if member.course %} - {{ member.course }}{% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <small class="form-text text-muted">Hold Ctrl/Cmd to select multiple members</small>
+                    <div id="selected-count" class="text-info small mt-1" style="display: none;">
+                        <i class="fas fa-users"></i> <span id="count-text">0</span> members selected
+                    </div>
+                    {% if not members %}
+                    <small class="text-muted">No approved members found. Members must be approved before they can be added to projects.</small>
+                    {% endif %}
                 </div>
                 
                 <div class="admin-form-group">
@@ -70,4 +92,30 @@
         </div>
     </div>
 </div>
+
+<script>
+// Update selected members count
+document.addEventListener('DOMContentLoaded', function() {
+    const teamSelect = document.getElementById('team_members');
+    const countDiv = document.getElementById('selected-count');
+    const countText = document.getElementById('count-text');
+    
+    function updateCount() {
+        const selectedCount = teamSelect.selectedOptions.length;
+        countText.textContent = selectedCount;
+        
+        if (selectedCount > 0) {
+            countDiv.style.display = 'block';
+        } else {
+            countDiv.style.display = 'none';
+        }
+    }
+    
+    // Initial count
+    updateCount();
+    
+    // Update count on change
+    teamSelect.addEventListener('change', updateCount);
+});
+</script>
 {% endblock %}

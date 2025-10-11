@@ -175,11 +175,14 @@ def add_project():
         github_link = request.form.get('github_link')
         demo_link = request.form.get('demo_link')
         technologies = request.form.get('technologies')
-        team_members = request.form.get('team_members')
+        # Handle multi-select team members
+        selected_members = request.form.getlist('team_members')
+        team_members = ', '.join(selected_members) if selected_members else ''
         
         project = Project(
             title=title,
             description=description,
+            image=request.form.get('image'),
             github_link=github_link,
             demo_link=demo_link,
             technologies=technologies,
@@ -191,7 +194,9 @@ def add_project():
         flash('Project added successfully.', 'success')
         return redirect(url_for('admin.projects'))
     
-    return render_template('admin/add_project.html')
+    # Get all approved members for the dropdown
+    members = Member.query.join(User).filter(User.is_approved == True).order_by(Member.full_name.asc()).all()
+    return render_template('admin/add_project.html', members=members)
 
 @admin_bp.route('/gallery')
 @login_required
@@ -268,16 +273,21 @@ def edit_project(project_id):
     if request.method == 'POST':
         project.title = request.form.get('title')
         project.description = request.form.get('description')
+        project.image = request.form.get('image')
         project.github_link = request.form.get('github_link')
         project.demo_link = request.form.get('demo_link')
         project.technologies = request.form.get('technologies')
-        project.team_members = request.form.get('team_members')
+        # Handle multi-select team members
+        selected_members = request.form.getlist('team_members')
+        project.team_members = ', '.join(selected_members) if selected_members else ''
         db.session.commit()
         
         flash('Project updated successfully.', 'success')
         return redirect(url_for('admin.projects'))
     
-    return render_template('admin/edit_project.html', project=project)
+    # Get all approved members for the dropdown
+    members = Member.query.join(User).filter(User.is_approved == True).order_by(Member.full_name.asc()).all()
+    return render_template('admin/edit_project.html', project=project, members=members)
 
 @admin_bp.route('/projects/delete/<int:project_id>')
 @login_required

@@ -1674,3 +1674,38 @@
 .admin-empty-state p {
     margin-bottom: 1.5rem;
 }
+
+/* Multi-select styling */
+.admin-form-control[multiple] {
+    min-height: 120px;
+    padding: 0.5rem;
+    background-color: var(--admin-bg-tertiary);
+    border: 1px solid var(--admin-border);
+    border-radius: 8px;
+    color: var(--admin-text-primary);
+    font-size: 0.9rem;
+}
+
+.admin-form-control[multiple] option {
+    padding: 0.5rem;
+    background-color: var(--admin-bg-tertiary);
+    color: var(--admin-text-primary);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.admin-form-control[multiple] option:hover {
+    background-color: var(--admin-primary);
+    color: var(--admin-bg-primary);
+}
+
+.admin-form-control[multiple] option:checked {
+    background-color: var(--admin-primary);
+    color: var(--admin-bg-primary);
+    font-weight: 600;
+}
+
+.admin-form-control[multiple]:focus {
+    border-color: var(--admin-primary);
+    box-shadow: 0 0 0 2px rgba(0, 255, 255, 0.2);
+    outline: none;
+}

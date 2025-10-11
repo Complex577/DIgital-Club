@@ -35,9 +35,14 @@
                 {% for project in projects %}
                 <tr>
                     <td>
-                        <div>
-                            <h6 class="mb-1">{{ project.title }}</h6>
-                            <p class="text-muted mb-0 small">{{ project.description[:100] }}{% if project.description|length > 100 %}...{% endif %}</p>
+                        <div class="d-flex align-items-center">
+                            {% if project.image %}
+                            <img src="{{ project.image }}" alt="{{ project.title }}" class="me-3" style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px;">
+                            {% endif %}
+                            <div>
+                                <h6 class="mb-1">{{ project.title }}</h6>
+                                <p class="text-muted mb-0 small">{{ project.description[:100] }}{% if project.description|length > 100 %}...{% endif %}</p>
+                            </div>
                         </div>
                     </td>
                     <td>

@@ -269,6 +269,60 @@
         </div>
         
         <!-- Featured Project -->
+        {% if projects and projects|length > 0 %}
+        {% set featured_project = projects[0] %}
+        <div class="featured-project" data-aos="fade-up" data-aos-delay="200">
+            <h2>Featured Project</h2>
+            <h3 style="font-size: 2rem; margin-bottom: 1rem;">{{ featured_project.title }}</h3>
+            <p>{{ featured_project.description[:200] }}{% if featured_project.description|length > 200 %}...{% endif %}</p>
+            
+            {% if featured_project.technologies %}
+            <div class="tech-stack">
+                {% for tech in featured_project.get_technologies_list()[:5] %}
+                <span class="tech-badge">{{ tech }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <div class="project-stats">
+                <div class="stat-item">
+                    <span class="stat-number">{{ projects|length }}</span>
+                    <span class="stat-label">Total Projects</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">{{ featured_project.created_at.strftime('%Y') }}</span>
+                    <span class="stat-label">Year</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">
+                        {% if featured_project.team_members %}
+                            {{ featured_project.get_team_list()|length }}
+                        {% else %}
+                            1
+                        {% endif %}
+                    </span>
+                    <span class="stat-label">Team Members</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">{{ featured_project.created_at.strftime('%m') }}</span>
+                    <span class="stat-label">Month</span>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 2rem;">
+                {% if featured_project.demo_link %}
+                <a href="{{ featured_project.demo_link }}" class="overlay-btn" target="_blank">
+                    <i class="fas fa-external-link-alt"></i> Live Demo
+                </a>
+                {% endif %}
+                {% if featured_project.github_link %}
+                <a href="{{ featured_project.github_link }}" class="overlay-btn" target="_blank">
+                    <i class="fab fa-github"></i> Source Code
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
         <div class="featured-project" data-aos="fade-up" data-aos-delay="200">
             <h2>Project of the Month</h2>
             <h3 style="font-size: 2rem; margin-bottom: 1rem;">Smart Campus Navigator</h3>
@@ -310,6 +364,7 @@
                 </a>
             </div>
         </div>
+        {% endif %}
         
         <!-- Search and Filter -->
         <div class="search-filter" data-aos="fade-up">
@@ -330,113 +385,70 @@
         
         <!-- Featured Projects Content -->
         <div class="projects-content active" id="featured-projects">
+            {% if projects %}
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2rem;">
-                <!-- Sample Featured Projects -->
-                <div class="card project-card-enhanced" data-aos="fade-up" data-aos-delay="100">
-                    <img src="https://via.placeholder.com/400x200/00ffff/000000?text=E-Learning+Platform" alt="E-Learning Platform" class="project-image">
+                {% for project in projects %}
+                <div class="card project-card-enhanced" data-aos="fade-up" data-aos-delay="{{ loop.index * 100 }}">
+                    {% if project.image %}
+                        <img src="{{ project.image }}" alt="{{ project.title }}" class="project-image">
+                    {% else %}
+                        <img src="https://via.placeholder.com/400x200/00ffff/000000?text={{ project.title|urlencode }}" alt="{{ project.title }}" class="project-image">
+                    {% endif %}
                     <div class="project-overlay">
                         <div class="overlay-buttons">
-                            <a href="#" class="overlay-btn">
+                            {% if project.demo_link %}
+                            <a href="{{ project.demo_link }}" class="overlay-btn" target="_blank">
                                 <i class="fas fa-external-link-alt"></i> Demo
                             </a>
-                            <a href="#" class="overlay-btn">
+                            {% endif %}
+                            {% if project.github_link %}
+                            <a href="{{ project.github_link }}" class="overlay-btn" target="_blank">
                                 <i class="fab fa-github"></i> Code
                             </a>
+                            {% endif %}
                         </div>
                     </div>
                     
-                    <span class="difficulty-badge difficulty-intermediate">Intermediate</span>
-                    <h3 style="color: var(--text-primary); margin-bottom: 1rem;">E-Learning Platform</h3>
-                <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.5rem;">
-                        A comprehensive online learning management system with video streaming, quizzes, and progress tracking.
-                </p>
-                
-                <div style="margin-bottom: 1.5rem;">
-                        <span style="background: rgba(0, 255, 255, 0.1); color: var(--primary-color); padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.8rem; margin-right: 0.5rem; margin-bottom: 0.5rem; display: inline-block;">React</span>
-                        <span style="background: rgba(0, 255, 255, 0.1); color: var(--primary-color); padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.8rem; margin-right: 0.5rem; margin-bottom: 0.5rem; display: inline-block;">Node.js</span>
-                        <span style="background: rgba(0, 255, 255, 0.1); color: var(--primary-color); padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.8rem; margin-right: 0.5rem; margin-bottom: 0.5rem; display: inline-block;">MongoDB</span>
-                    </div>
-                    
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="color: var(--text-muted); font-size: 0.9rem;">
-                            <i class="fas fa-users"></i> 4 members
-                        </span>
-                        <span style="color: var(--text-muted); font-size: 0.9rem;">
-                            <i class="fas fa-calendar"></i> 2024
-                    </span>
-                    </div>
-                </div>
-                
-                <div class="card project-card-enhanced" data-aos="fade-up" data-aos-delay="200">
-                    <img src="https://via.placeholder.com/400x200/ff00ff/ffffff?text=Health+Tracker" alt="Health Tracker" class="project-image">
-                    <div class="project-overlay">
-                        <div class="overlay-buttons">
-                            <a href="#" class="overlay-btn">
-                                <i class="fas fa-external-link-alt"></i> Demo
-                            </a>
-                            <a href="#" class="overlay-btn">
-                                <i class="fab fa-github"></i> Code
-                            </a>
-                        </div>
-                    </div>
-                    
-                    <span class="difficulty-badge difficulty-beginner">Beginner</span>
-                    <h3 style="color: var(--text-primary); margin-bottom: 1rem;">Health Tracker App</h3>
+                    <span class="difficulty-badge difficulty-intermediate">Project</span>
+                    <h3 style="color: var(--text-primary); margin-bottom: 1rem;">{{ project.title }}</h3>
                     <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.5rem;">
-                        A mobile app for tracking daily health metrics, exercise routines, and medication reminders.
+                        {{ project.description[:150] }}{% if project.description|length > 150 %}...{% endif %}
                     </p>
                     
+                    {% if project.technologies %}
                     <div style="margin-bottom: 1.5rem;">
-                        <span style="background: rgba(255, 0, 255, 0.1); color: var(--secondary-color); padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.8rem; margin-right: 0.5rem; margin-bottom: 0.5rem; display: inline-block;">Flutter</span>
-                        <span style="background: rgba(255, 0, 255, 0.1); color: var(--secondary-color); padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.8rem; margin-right: 0.5rem; margin-bottom: 0.5rem; display: inline-block;">Firebase</span>
-                        <span style="background: rgba(255, 0, 255, 0.1); color: var(--secondary-color); padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.8rem; margin-right: 0.5rem; margin-bottom: 0.5rem; display: inline-block;">Dart</span>
+                        {% for tech in project.get_technologies_list()[:3] %}
+                        <span style="background: rgba(0, 255, 255, 0.1); color: var(--primary-color); padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.8rem; margin-right: 0.5rem; margin-bottom: 0.5rem; display: inline-block;">{{ tech }}</span>
+                        {% endfor %}
+                        {% if project.get_technologies_list()|length > 3 %}
+                        <span style="background: rgba(0, 255, 255, 0.1); color: var(--primary-color); padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.8rem; margin-right: 0.5rem; margin-bottom: 0.5rem; display: inline-block;">+{{ project.get_technologies_list()|length - 3 }} more</span>
+                        {% endif %}
                     </div>
+                    {% endif %}
                     
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <span style="color: var(--text-muted); font-size: 0.9rem;">
-                            <i class="fas fa-users"></i> 3 members
+                            <i class="fas fa-users"></i> 
+                            {% if project.team_members %}
+                                {{ project.get_team_list()|length }} members
+                            {% else %}
+                                Individual
+                            {% endif %}
                         </span>
                         <span style="color: var(--text-muted); font-size: 0.9rem;">
-                            <i class="fas fa-calendar"></i> 2024
+                            <i class="fas fa-calendar"></i> {{ project.created_at.strftime('%Y') }}
                         </span>
                     </div>
                 </div>
-                
-                <div class="card project-card-enhanced" data-aos="fade-up" data-aos-delay="300">
-                    <img src="https://via.placeholder.com/400x200/ffff00/000000?text=AI+Chatbot" alt="AI Chatbot" class="project-image">
-                    <div class="project-overlay">
-                        <div class="overlay-buttons">
-                            <a href="#" class="overlay-btn">
-                                <i class="fas fa-external-link-alt"></i> Demo
-                            </a>
-                            <a href="#" class="overlay-btn">
-                        <i class="fab fa-github"></i> Code
-                    </a>
-                        </div>
-                    </div>
-                    
-                    <span class="difficulty-badge difficulty-advanced">Advanced</span>
-                    <h3 style="color: var(--text-primary); margin-bottom: 1rem;">AI Student Assistant</h3>
-                    <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.5rem;">
-                        An intelligent chatbot that helps students with course information, scheduling, and academic guidance.
-                    </p>
-                    
-                    <div style="margin-bottom: 1.5rem;">
-                        <span style="background: rgba(255, 255, 0, 0.1); color: var(--accent-color); padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.8rem; margin-right: 0.5rem; margin-bottom: 0.5rem; display: inline-block;">Python</span>
-                        <span style="background: rgba(255, 255, 0, 0.1); color: var(--accent-color); padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.8rem; margin-right: 0.5rem; margin-bottom: 0.5rem; display: inline-block;">TensorFlow</span>
-                        <span style="background: rgba(255, 255, 0, 0.1); color: var(--accent-color); padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.8rem; margin-right: 0.5rem; margin-bottom: 0.5rem; display: inline-block;">OpenAI API</span>
-                    </div>
-                    
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="color: var(--text-muted); font-size: 0.9rem;">
-                            <i class="fas fa-users"></i> 6 members
-                        </span>
-                        <span style="color: var(--text-muted); font-size: 0.9rem;">
-                            <i class="fas fa-calendar"></i> 2024
-                        </span>
-                    </div>
-                </div>
+                {% endfor %}
             </div>
+            {% else %}
+            <div style="text-align: center; padding: 3rem;">
+                <i class="fas fa-project-diagram" style="font-size: 4rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+                <h3 style="color: var(--text-secondary); margin-bottom: 1rem;">No Projects Yet</h3>
+                <p style="color: var(--text-muted);">Projects will appear here once they are added by administrators.</p>
+            </div>
+            {% endif %}
         </div>
         
         <!-- Web Development Projects -->
@@ -574,7 +586,8 @@
             const title = card.querySelector('h3').textContent.toLowerCase();
             const description = card.querySelector('p').textContent.toLowerCase();
             const difficulty = card.querySelector('.difficulty-badge').textContent.toLowerCase();
-            const year = card.querySelector('.fa-calendar').parentElement.textContent;
+            const yearElement = card.querySelector('.fa-calendar').parentElement;
+            const year = yearElement ? yearElement.textContent.trim() : '';
             
             const matchesSearch = title.includes(searchTerm) || description.includes(searchTerm);
             const matchesDifficulty = !difficultyValue || difficulty.includes(difficultyValue);
