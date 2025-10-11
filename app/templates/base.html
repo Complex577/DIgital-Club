@@ -29,13 +29,13 @@
     <!-- Navigation -->
     <nav class="navbar">
         <div class="nav-container">
-            <div class="nav-logo">
+            <!-- <div class="nav-logo">
                 <a href="{{ url_for('main.index') }}">
-                    <i class="fas fa-code"></i>
-                    <span>Digital Club</span>
+                    <img src="{{ url_for('static', filename='DigitalClub_LOGO copy.svg') }}" alt="Digital Club Logo" class="logo-img">
+                   
                 </a>
             </div>
-            
+             -->
             <div class="nav-menu" id="nav-menu">
                 <!-- Main Navigation -->
                 <div class="nav-main">
@@ -193,7 +193,10 @@
     <footer class="footer">
         <div class="footer-container">
             <div class="footer-section">
-                <h3>Digital Club</h3>
+                <div class="footer-logo">
+                    <img src="{{ url_for('static', filename='DigitalClub_LOGO copy.svg') }}" alt="Digital Club Logo" class="footer-logo-img">
+                    <h3>Digital Club</h3>
+                </div>
                 <p>Empowering students through technology and innovation at Kampala International University in Tanzania.</p>
                 <div class="social-links">
                     <a href="#" class="social-link"><i class="fab fa-facebook"></i></a>
