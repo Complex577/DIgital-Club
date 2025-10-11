@@ -260,12 +260,12 @@
 <section style="padding: 3rem 0;">
     <div class="container">
         <div class="projects-nav" data-aos="fade-up">
-            <div class="nav-tab active" data-tab="featured">Featured</div>
-            <div class="nav-tab" data-tab="web">Web Development</div>
-            <div class="nav-tab" data-tab="mobile">Mobile Apps</div>
-            <div class="nav-tab" data-tab="ai">AI/ML</div>
-            <div class="nav-tab" data-tab="iot">IoT</div>
-            <div class="nav-tab" data-tab="data">Data Science</div>
+            <a href="{{ url_for('main.projects') }}" class="nav-tab {% if not current_category %}active{% endif %}">Featured</a>
+            <a href="{{ url_for('main.projects', category='web') }}" class="nav-tab {% if current_category == 'web' %}active{% endif %}">Web Development</a>
+            <a href="{{ url_for('main.projects', category='mobile') }}" class="nav-tab {% if current_category == 'mobile' %}active{% endif %}">Mobile Apps</a>
+            <a href="{{ url_for('main.projects', category='ai') }}" class="nav-tab {% if current_category == 'ai' %}active{% endif %}">AI/ML</a>
+            <a href="{{ url_for('main.projects', category='iot') }}" class="nav-tab {% if current_category == 'iot' %}active{% endif %}">IoT</a>
+            <a href="{{ url_for('main.projects', category='data') }}" class="nav-tab {% if current_category == 'data' %}active{% endif %}">Data Science</a>
         </div>
         
         <!-- Featured Project -->
@@ -383,162 +383,83 @@
             </select>
         </div>
         
-        <!-- Featured Projects Content -->
-        <div class="projects-content active" id="featured-projects">
-            {% if projects %}
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2rem;">
-                {% for project in projects %}
-                <div class="card project-card-enhanced" data-aos="fade-up" data-aos-delay="{{ loop.index * 100 }}">
-                    {% if project.image %}
-                        <img src="{{ project.image }}" alt="{{ project.title }}" class="project-image">
-                    {% else %}
-                        <img src="https://via.placeholder.com/400x200/00ffff/000000?text={{ project.title|urlencode }}" alt="{{ project.title }}" class="project-image">
-                    {% endif %}
-                    <div class="project-overlay">
-                        <div class="overlay-buttons">
-                            {% if project.demo_link %}
-                            <a href="{{ project.demo_link }}" class="overlay-btn" target="_blank">
-                                <i class="fas fa-external-link-alt"></i> Demo
-                            </a>
-                            {% endif %}
-                            {% if project.github_link %}
-                            <a href="{{ project.github_link }}" class="overlay-btn" target="_blank">
-                                <i class="fab fa-github"></i> Code
-                            </a>
-                            {% endif %}
-                        </div>
-                    </div>
-                    
-                    <span class="difficulty-badge difficulty-intermediate">Project</span>
-                    <h3 style="color: var(--text-primary); margin-bottom: 1rem;">{{ project.title }}</h3>
-                    <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.5rem;">
-                        {{ project.description[:150] }}{% if project.description|length > 150 %}...{% endif %}
-                    </p>
-                    
-                    {% if project.technologies %}
-                    <div style="margin-bottom: 1.5rem;">
-                        {% for tech in project.get_technologies_list()[:3] %}
-                        <span style="background: rgba(0, 255, 255, 0.1); color: var(--primary-color); padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.8rem; margin-right: 0.5rem; margin-bottom: 0.5rem; display: inline-block;">{{ tech }}</span>
-                        {% endfor %}
-                        {% if project.get_technologies_list()|length > 3 %}
-                        <span style="background: rgba(0, 255, 255, 0.1); color: var(--primary-color); padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.8rem; margin-right: 0.5rem; margin-bottom: 0.5rem; display: inline-block;">+{{ project.get_technologies_list()|length - 3 }} more</span>
+        <!-- Projects Content -->
+        {% if projects %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2rem;">
+            {% for project in projects %}
+            <div class="card project-card-enhanced" data-aos="fade-up" data-aos-delay="{{ loop.index * 100 }}">
+                {% if project.image %}
+                    <img src="{{ project.image }}" alt="{{ project.title }}" class="project-image">
+                {% else %}
+                    <img src="https://via.placeholder.com/400x200/00ffff/000000?text={{ project.title|urlencode }}" alt="{{ project.title }}" class="project-image">
+                {% endif %}
+                <div class="project-overlay">
+                    <div class="overlay-buttons">
+                        {% if project.demo_link %}
+                        <a href="{{ project.demo_link }}" class="overlay-btn" target="_blank">
+                            <i class="fas fa-external-link-alt"></i> Demo
+                        </a>
+                        {% endif %}
+                        {% if project.github_link %}
+                        <a href="{{ project.github_link }}" class="overlay-btn" target="_blank">
+                            <i class="fab fa-github"></i> Code
+                        </a>
                         {% endif %}
                     </div>
+                </div>
+                
+                <span class="difficulty-badge difficulty-intermediate">Project</span>
+                <h3 style="color: var(--text-primary); margin-bottom: 1rem;">{{ project.title }}</h3>
+                <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.5rem;">
+                    {{ project.description[:150] }}{% if project.description|length > 150 %}...{% endif %}
+                </p>
+                
+                {% if project.technologies %}
+                <div style="margin-bottom: 1.5rem;">
+                    {% for tech in project.get_technologies_list()[:3] %}
+                    <span style="background: rgba(0, 255, 255, 0.1); color: var(--primary-color); padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.8rem; margin-right: 0.5rem; margin-bottom: 0.5rem; display: inline-block;">{{ tech }}</span>
+                    {% endfor %}
+                    {% if project.get_technologies_list()|length > 3 %}
+                    <span style="background: rgba(0, 255, 255, 0.1); color: var(--primary-color); padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.8rem; margin-right: 0.5rem; margin-bottom: 0.5rem; display: inline-block;">+{{ project.get_technologies_list()|length - 3 }} more</span>
                     {% endif %}
-                    
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="color: var(--text-muted); font-size: 0.9rem;">
-                            <i class="fas fa-users"></i> 
-                            {% if project.team_members %}
-                                {{ project.get_team_list()|length }} members
-                            {% else %}
-                                Individual
-                            {% endif %}
-                        </span>
-                        <span style="color: var(--text-muted); font-size: 0.9rem;">
-                            <i class="fas fa-calendar"></i> {{ project.created_at.strftime('%Y') }}
-                        </span>
-                    </div>
                 </div>
-                {% endfor %}
-            </div>
-            {% else %}
-            <div style="text-align: center; padding: 3rem;">
-                <i class="fas fa-project-diagram" style="font-size: 4rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
-                <h3 style="color: var(--text-secondary); margin-bottom: 1rem;">No Projects Yet</h3>
-                <p style="color: var(--text-muted);">Projects will appear here once they are added by administrators.</p>
-            </div>
-            {% endif %}
-        </div>
-        
-        <!-- Web Development Projects -->
-        <div class="projects-content" id="web-projects">
-            <h2 style="text-align: center; margin-bottom: 3rem; color: var(--text-primary);" data-aos="fade-up">
-                Web Development Projects
-            </h2>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2rem;">
-                <!-- Additional web projects would go here -->
-                <div class="card project-card-enhanced" data-aos="fade-up" data-aos-delay="100">
-                    <img src="https://via.placeholder.com/400x200/00ffff/000000?text=E-Commerce+Site" alt="E-Commerce Site" class="project-image">
-                    <div class="project-overlay">
-                        <div class="overlay-buttons">
-                            <a href="#" class="overlay-btn">
-                        <i class="fas fa-external-link-alt"></i> Demo
-                    </a>
-                            <a href="#" class="overlay-btn">
-                                <i class="fab fa-github"></i> Code
-                            </a>
-                        </div>
-                    </div>
-                    
-                    <span class="difficulty-badge difficulty-intermediate">Intermediate</span>
-                    <h3 style="color: var(--text-primary); margin-bottom: 1rem;">E-Commerce Platform</h3>
-                    <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.5rem;">
-                        A full-stack e-commerce solution with payment integration, inventory management, and admin dashboard.
-                    </p>
-                    
-                    <div style="margin-bottom: 1.5rem;">
-                        <span style="background: rgba(0, 255, 255, 0.1); color: var(--primary-color); padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.8rem; margin-right: 0.5rem; margin-bottom: 0.5rem; display: inline-block;">Vue.js</span>
-                        <span style="background: rgba(0, 255, 255, 0.1); color: var(--primary-color); padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.8rem; margin-right: 0.5rem; margin-bottom: 0.5rem; display: inline-block;">Express.js</span>
-                        <span style="background: rgba(0, 255, 255, 0.1); color: var(--primary-color); padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.8rem; margin-right: 0.5rem; margin-bottom: 0.5rem; display: inline-block;">PostgreSQL</span>
-                    </div>
-                    
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="color: var(--text-muted); font-size: 0.9rem;">
-                            <i class="fas fa-users"></i> 5 members
-                        </span>
-                        <span style="color: var(--text-muted); font-size: 0.9rem;">
-                            <i class="fas fa-calendar"></i> 2023
-                        </span>
-                    </div>
+                {% endif %}
+                
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: var(--text-muted); font-size: 0.9rem;">
+                        <i class="fas fa-users"></i> 
+                        {% if project.team_members %}
+                            {{ project.get_team_list()|length }} members
+                        {% else %}
+                            Individual
+                        {% endif %}
+                    </span>
+                    <span style="color: var(--text-muted); font-size: 0.9rem;">
+                        <i class="fas fa-calendar"></i> {{ project.created_at.strftime('%Y') }}
+                    </span>
                 </div>
             </div>
+            {% endfor %}
         </div>
-        
-        <!-- Other category content sections would follow similar pattern -->
-        <div class="projects-content" id="mobile-projects">
-            <h2 style="text-align: center; margin-bottom: 3rem; color: var(--text-primary);" data-aos="fade-up">
-                Mobile App Projects
-            </h2>
-            <div style="text-align: center; padding: 3rem;">
-                <i class="fas fa-mobile-alt" style="font-size: 4rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
-                <h3 style="color: var(--text-secondary); margin-bottom: 1rem;">Mobile Projects Coming Soon</h3>
-                <p style="color: var(--text-muted);">We're working on amazing mobile applications!</p>
-            </div>
-        </div>
-        
-        <div class="projects-content" id="ai-projects">
-            <h2 style="text-align: center; margin-bottom: 3rem; color: var(--text-primary);" data-aos="fade-up">
-                AI/ML Projects
-            </h2>
-            <div style="text-align: center; padding: 3rem;">
-                <i class="fas fa-brain" style="font-size: 4rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
-                <h3 style="color: var(--text-secondary); margin-bottom: 1rem;">AI Projects Coming Soon</h3>
-                <p style="color: var(--text-muted);">Exciting artificial intelligence projects are in development!</p>
-            </div>
-        </div>
-        
-        <div class="projects-content" id="iot-projects">
-            <h2 style="text-align: center; margin-bottom: 3rem; color: var(--text-primary);" data-aos="fade-up">
-                IoT Projects
-            </h2>
-            <div style="text-align: center; padding: 3rem;">
-                <i class="fas fa-microchip" style="font-size: 4rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
-                <h3 style="color: var(--text-secondary); margin-bottom: 1rem;">IoT Projects Coming Soon</h3>
-                <p style="color: var(--text-muted);">Innovative Internet of Things solutions are being developed!</p>
-            </div>
-        </div>
-        
-        <div class="projects-content" id="data-projects">
-            <h2 style="text-align: center; margin-bottom: 3rem; color: var(--text-primary);" data-aos="fade-up">
-                Data Science Projects
-            </h2>
+        {% else %}
         <div style="text-align: center; padding: 3rem;">
-                <i class="fas fa-chart-bar" style="font-size: 4rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
-                <h3 style="color: var(--text-secondary); margin-bottom: 1rem;">Data Science Projects Coming Soon</h3>
-                <p style="color: var(--text-muted);">Powerful data analysis projects are in the pipeline!</p>
-            </div>
+            <i class="fas fa-project-diagram" style="font-size: 4rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+            <h3 style="color: var(--text-secondary); margin-bottom: 1rem;">
+                {% if current_category %}
+                    No {{ current_category|title }} Projects Yet
+                {% else %}
+                    No Projects Yet
+                {% endif %}
+            </h3>
+            <p style="color: var(--text-muted);">
+                {% if current_category %}
+                    No projects found in the {{ current_category }} category. Try adding some projects with relevant technologies!
+                {% else %}
+                    Projects will appear here once they are added by administrators or members.
+                {% endif %}
+            </p>
         </div>
+        {% endif %}
     </div>
 </section>
 {% endblock %}
@@ -552,23 +473,8 @@
         offset: 100
     });
 
-    // Projects Navigation Tabs
-    const navTabs = document.querySelectorAll('.nav-tab');
-    const projectContents = document.querySelectorAll('.projects-content');
-
-    navTabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            const targetTab = tab.getAttribute('data-tab');
-            
-            // Remove active class from all tabs and contents
-            navTabs.forEach(t => t.classList.remove('active'));
-            projectContents.forEach(c => c.classList.remove('active'));
-            
-            // Add active class to clicked tab and corresponding content
-            tab.classList.add('active');
-            document.getElementById(targetTab + '-projects').classList.add('active');
-        });
-    });
+    // Projects Navigation Tabs - Now handled by server-side filtering
+    // The navigation tabs are now links that reload the page with different category filters
 
     // Search and Filter Functionality
     const searchInput = document.getElementById('project-search');

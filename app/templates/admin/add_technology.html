@@ -1,0 +1,173 @@
+{% extends "admin/admin_base.html" %}
+
+{% block admin_title %}Add Technology{% endblock %}
+{% block page_title %}Add Technology{% endblock %}
+{% block breadcrumb %}<span class="breadcrumb-separator">/</span> <a href="{{ url_for('admin.technologies') }}">Technology Management</a><span class="breadcrumb-separator">/</span> <span>Add Technology</span>{% endblock %}
+
+{% block admin_content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="admin-form">
+            <div class="d-flex align-items-center mb-4">
+                <div class="admin-activity-icon primary me-3">
+                    <i class="fas fa-code"></i>
+                </div>
+                <div>
+                    <h2 class="mb-1">Add Technology</h2>
+                    <p class="text-muted mb-0">Create a new technology for project categorization</p>
+                </div>
+            </div>
+            
+            <form method="POST">
+                <div class="admin-form-group">
+                    <label for="name" class="admin-form-label">Technology Name *</label>
+                    <input type="text" class="admin-form-control" id="name" name="name" required 
+                           placeholder="e.g., React, Python, Arduino">
+                    <small class="form-text text-muted">Enter the technology name (must be unique)</small>
+                </div>
+                
+                <div class="admin-form-group">
+                    <label for="category" class="admin-form-label">Category *</label>
+                    <select class="admin-form-control" id="category" name="category" required>
+                        <option value="">Select a category...</option>
+                        <option value="web">Web Development</option>
+                        <option value="mobile">Mobile Apps</option>
+                        <option value="ai">AI/ML</option>
+                        <option value="iot">IoT</option>
+                        <option value="data">Data Science</option>
+                        <option value="other">Other</option>
+                    </select>
+                    <small class="form-text text-muted">Choose the category this technology belongs to</small>
+                </div>
+                
+                <div class="admin-form-group">
+                    <label for="description" class="admin-form-label">Description</label>
+                    <textarea class="admin-form-control" id="description" name="description" rows="3" 
+                              placeholder="Brief description of this technology..."></textarea>
+                    <small class="form-text text-muted">Optional: Describe what this technology is used for</small>
+                </div>
+                
+                <div class="admin-form-group">
+                    <label for="icon" class="admin-form-label">Icon Class</label>
+                    <input type="text" class="admin-form-control" id="icon" name="icon" 
+                           placeholder="e.g., fab fa-react, fab fa-python, fas fa-microchip">
+                    <small class="form-text text-muted">
+                        Optional: Font Awesome icon class. Examples:
+                        <br>• <code>fab fa-react</code> for React
+                        <br>• <code>fab fa-python</code> for Python
+                        <br>• <code>fas fa-microchip</code> for IoT
+                        <br>• <code>fab fa-android</code> for Android
+                    </small>
+                </div>
+                
+                <div class="admin-form-group">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="is_active" name="is_active" checked>
+                        <label class="form-check-label" for="is_active">
+                            Active Technology
+                        </label>
+                    </div>
+                    <small class="form-text text-muted">Active technologies will be available for selection when adding projects</small>
+                </div>
+                
+                <div class="d-flex gap-3">
+                    <button type="submit" class="admin-btn admin-btn-primary">
+                        <i class="fas fa-save"></i> Save Technology
+                    </button>
+                    <a href="{{ url_for('admin.technologies') }}" class="admin-btn admin-btn-outline">
+                        <i class="fas fa-arrow-left"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Add Section -->
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h5><i class="fas fa-bolt"></i> Quick Add Common Technologies</h5>
+            </div>
+            <div class="admin-card-body">
+                <p class="text-muted mb-3">Click to quickly add common technologies:</p>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-primary">Web Development</h6>
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            <button class="btn btn-sm btn-outline-primary" onclick="quickAdd('HTML', 'web', 'fab fa-html5')">HTML</button>
+                            <button class="btn btn-sm btn-outline-primary" onclick="quickAdd('CSS', 'web', 'fab fa-css3-alt')">CSS</button>
+                            <button class="btn btn-sm btn-outline-primary" onclick="quickAdd('JavaScript', 'web', 'fab fa-js')">JavaScript</button>
+                            <button class="btn btn-sm btn-outline-primary" onclick="quickAdd('React', 'web', 'fab fa-react')">React</button>
+                            <button class="btn btn-sm btn-outline-primary" onclick="quickAdd('Vue.js', 'web', 'fab fa-vuejs')">Vue.js</button>
+                            <button class="btn btn-sm btn-outline-primary" onclick="quickAdd('Angular', 'web', 'fab fa-angular')">Angular</button>
+                            <button class="btn btn-sm btn-outline-primary" onclick="quickAdd('Node.js', 'web', 'fab fa-node-js')">Node.js</button>
+                            <button class="btn btn-sm btn-outline-primary" onclick="quickAdd('Express', 'web', 'fas fa-server')">Express</button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-success">Mobile Apps</h6>
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            <button class="btn btn-sm btn-outline-success" onclick="quickAdd('React Native', 'mobile', 'fab fa-react')">React Native</button>
+                            <button class="btn btn-sm btn-outline-success" onclick="quickAdd('Flutter', 'mobile', 'fas fa-mobile-alt')">Flutter</button>
+                            <button class="btn btn-sm btn-outline-success" onclick="quickAdd('Swift', 'mobile', 'fab fa-swift')">Swift</button>
+                            <button class="btn btn-sm btn-outline-success" onclick="quickAdd('Kotlin', 'mobile', 'fab fa-android')">Kotlin</button>
+                            <button class="btn btn-sm btn-outline-success" onclick="quickAdd('Android', 'mobile', 'fab fa-android')">Android</button>
+                            <button class="btn btn-sm btn-outline-success" onclick="quickAdd('iOS', 'mobile', 'fab fa-apple')">iOS</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-info">AI/ML</h6>
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            <button class="btn btn-sm btn-outline-info" onclick="quickAdd('Python', 'ai', 'fab fa-python')">Python</button>
+                            <button class="btn btn-sm btn-outline-info" onclick="quickAdd('TensorFlow', 'ai', 'fas fa-brain')">TensorFlow</button>
+                            <button class="btn btn-sm btn-outline-info" onclick="quickAdd('PyTorch', 'ai', 'fas fa-brain')">PyTorch</button>
+                            <button class="btn btn-sm btn-outline-info" onclick="quickAdd('Scikit-learn', 'ai', 'fas fa-chart-line')">Scikit-learn</button>
+                            <button class="btn btn-sm btn-outline-info" onclick="quickAdd('OpenCV', 'ai', 'fas fa-eye')">OpenCV</button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-warning">IoT</h6>
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            <button class="btn btn-sm btn-outline-warning" onclick="quickAdd('Arduino', 'iot', 'fas fa-microchip')">Arduino</button>
+                            <button class="btn btn-sm btn-outline-warning" onclick="quickAdd('Raspberry Pi', 'iot', 'fas fa-microchip')">Raspberry Pi</button>
+                            <button class="btn btn-sm btn-outline-warning" onclick="quickAdd('ESP32', 'iot', 'fas fa-microchip')">ESP32</button>
+                            <button class="btn btn-sm btn-outline-warning" onclick="quickAdd('Sensors', 'iot', 'fas fa-thermometer-half')">Sensors</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function quickAdd(name, category, icon) {
+    document.getElementById('name').value = name;
+    document.getElementById('category').value = category;
+    document.getElementById('icon').value = icon;
+    
+    // Add a brief description based on category
+    const descriptions = {
+        'web': 'Web development technology',
+        'mobile': 'Mobile app development technology',
+        'ai': 'Artificial Intelligence and Machine Learning technology',
+        'iot': 'Internet of Things technology',
+        'data': 'Data science and analytics technology',
+        'other': 'General purpose technology'
+    };
+    
+    document.getElementById('description').value = descriptions[category] || '';
+    
+    // Scroll to the form
+    document.querySelector('.admin-form').scrollIntoView({ behavior: 'smooth' });
+}
+</script>
+{% endblock %}

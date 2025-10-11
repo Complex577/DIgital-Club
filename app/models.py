@@ -143,6 +143,18 @@ class Gallery(db.Model):
     def __repr__(self):
         return f'<Gallery {self.type}>'
 
+class Technology(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False, unique=True)
+    category = db.Column(db.String(50), nullable=False)  # web, mobile, ai, iot, data, other
+    description = db.Column(db.Text)
+    icon = db.Column(db.String(100))  # Font Awesome icon class
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def __repr__(self):
+        return f'<Technology {self.name}>'
+
 class Topic(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)

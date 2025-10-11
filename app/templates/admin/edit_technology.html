@@ -1,0 +1,188 @@
+{% extends "admin/admin_base.html" %}
+
+{% block admin_title %}Edit Technology{% endblock %}
+{% block page_title %}Edit Technology{% endblock %}
+{% block breadcrumb %}<span class="breadcrumb-separator">/</span> <a href="{{ url_for('admin.technologies') }}">Technology Management</a><span class="breadcrumb-separator">/</span> <span>Edit Technology</span>{% endblock %}
+
+{% block admin_content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="admin-form">
+            <div class="d-flex align-items-center mb-4">
+                <div class="admin-activity-icon primary me-3">
+                    <i class="fas fa-code"></i>
+                </div>
+                <div>
+                    <h2 class="mb-1">Edit Technology</h2>
+                    <p class="text-muted mb-0">Update technology information</p>
+                </div>
+            </div>
+            
+            <form method="POST">
+                <div class="admin-form-group">
+                    <label for="name" class="admin-form-label">Technology Name *</label>
+                    <input type="text" class="admin-form-control" id="name" name="name" required 
+                           value="{{ technology.name }}" placeholder="e.g., React, Python, Arduino">
+                    <small class="form-text text-muted">Enter the technology name (must be unique)</small>
+                </div>
+                
+                <div class="admin-form-group">
+                    <label for="category" class="admin-form-label">Category *</label>
+                    <select class="admin-form-control" id="category" name="category" required>
+                        <option value="">Select a category...</option>
+                        <option value="web" {% if technology.category == 'web' %}selected{% endif %}>Web Development</option>
+                        <option value="mobile" {% if technology.category == 'mobile' %}selected{% endif %}>Mobile Apps</option>
+                        <option value="ai" {% if technology.category == 'ai' %}selected{% endif %}>AI/ML</option>
+                        <option value="iot" {% if technology.category == 'iot' %}selected{% endif %}>IoT</option>
+                        <option value="data" {% if technology.category == 'data' %}selected{% endif %}>Data Science</option>
+                        <option value="other" {% if technology.category == 'other' %}selected{% endif %}>Other</option>
+                    </select>
+                    <small class="form-text text-muted">Choose the category this technology belongs to</small>
+                </div>
+                
+                <div class="admin-form-group">
+                    <label for="description" class="admin-form-label">Description</label>
+                    <textarea class="admin-form-control" id="description" name="description" rows="3" 
+                              placeholder="Brief description of this technology...">{{ technology.description or '' }}</textarea>
+                    <small class="form-text text-muted">Optional: Describe what this technology is used for</small>
+                </div>
+                
+                <div class="admin-form-group">
+                    <label for="icon" class="admin-form-label">Icon Class</label>
+                    <input type="text" class="admin-form-control" id="icon" name="icon" 
+                           value="{{ technology.icon or '' }}" placeholder="e.g., fab fa-react, fab fa-python, fas fa-microchip">
+                    <small class="form-text text-muted">
+                        Optional: Font Awesome icon class. Examples:
+                        <br>• <code>fab fa-react</code> for React
+                        <br>• <code>fab fa-python</code> for Python
+                        <br>• <code>fas fa-microchip</code> for IoT
+                        <br>• <code>fab fa-android</code> for Android
+                    </small>
+                </div>
+                
+                <div class="admin-form-group">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="is_active" name="is_active" 
+                               {% if technology.is_active %}checked{% endif %}>
+                        <label class="form-check-label" for="is_active">
+                            Active Technology
+                        </label>
+                    </div>
+                    <small class="form-text text-muted">Active technologies will be available for selection when adding projects</small>
+                </div>
+                
+                <!-- Technology Preview -->
+                <div class="admin-form-group">
+                    <label class="admin-form-label">Preview</label>
+                    <div class="admin-card">
+                        <div class="admin-card-body">
+                            <div class="d-flex align-items-center">
+                                {% if technology.icon %}
+                                <i class="{{ technology.icon }}" style="font-size: 2rem; color: var(--admin-primary); margin-right: 1rem;"></i>
+                                {% else %}
+                                <i class="fas fa-code" style="font-size: 2rem; color: var(--admin-muted); margin-right: 1rem;"></i>
+                                {% endif %}
+                                <div>
+                                    <h5 class="mb-1">{{ technology.name }}</h5>
+                                    <span class="admin-badge admin-badge-primary">{{ technology.category|title }}</span>
+                                    {% if technology.description %}
+                                    <p class="text-muted mb-0 mt-1">{{ technology.description }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-flex gap-3">
+                    <button type="submit" class="admin-btn admin-btn-primary">
+                        <i class="fas fa-save"></i> Update Technology
+                    </button>
+                    <a href="{{ url_for('admin.technologies') }}" class="admin-btn admin-btn-outline">
+                        <i class="fas fa-arrow-left"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Technology Usage Information -->
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h5><i class="fas fa-info-circle"></i> Technology Information</h5>
+            </div>
+            <div class="admin-card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Created</h6>
+                        <p class="text-muted">{{ technology.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Status</h6>
+                        <p>
+                            {% if technology.is_active %}
+                            <span class="admin-badge admin-badge-success">Active</span>
+                            {% else %}
+                            <span class="admin-badge admin-badge-secondary">Inactive</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info mt-3">
+                    <i class="fas fa-lightbulb"></i>
+                    <strong>Note:</strong> Changes to this technology will affect how projects are categorized and filtered on the projects page.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Update preview when form fields change
+document.addEventListener('DOMContentLoaded', function() {
+    const nameField = document.getElementById('name');
+    const categoryField = document.getElementById('category');
+    const descriptionField = document.getElementById('description');
+    const iconField = document.getElementById('icon');
+    
+    function updatePreview() {
+        const previewCard = document.querySelector('.admin-card .admin-card-body');
+        if (previewCard) {
+            const iconElement = previewCard.querySelector('i');
+            const nameElement = previewCard.querySelector('h5');
+            const categoryElement = previewCard.querySelector('.admin-badge');
+            const descriptionElement = previewCard.querySelector('p');
+            
+            if (iconElement) {
+                iconElement.className = iconField.value ? iconField.value : 'fas fa-code';
+                iconElement.style.color = iconField.value ? 'var(--admin-primary)' : 'var(--admin-muted)';
+            }
+            
+            if (nameElement) {
+                nameElement.textContent = nameField.value || 'Technology Name';
+            }
+            
+            if (categoryElement) {
+                categoryElement.textContent = categoryField.value ? categoryField.value.charAt(0).toUpperCase() + categoryField.value.slice(1) : 'Category';
+            }
+            
+            if (descriptionElement) {
+                descriptionElement.textContent = descriptionField.value || '';
+                descriptionElement.style.display = descriptionField.value ? 'block' : 'none';
+            }
+        }
+    }
+    
+    nameField.addEventListener('input', updatePreview);
+    categoryField.addEventListener('change', updatePreview);
+    descriptionField.addEventListener('input', updatePreview);
+    iconField.addEventListener('input', updatePreview);
+});
+</script>
+{% endblock %}

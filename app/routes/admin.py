@@ -2,7 +2,7 @@ from flask import render_template, request, flash, redirect, url_for, jsonify, c
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from app.routes import admin_bp
-from app.models import User, Member, Leader, News, Event, Project, Gallery, Topic, Newsletter, Blog, RSVP
+from app.models import User, Member, Leader, News, Event, Project, Gallery, Topic, Newsletter, Blog, RSVP, Technology
 from app import db
 from app.utils import get_notification_service
 from datetime import datetime
@@ -199,7 +199,11 @@ def add_project():
     
     # Get all approved members for the dropdown
     members = Member.query.join(User).filter(User.is_approved == True).order_by(Member.full_name.asc()).all()
-    return render_template('admin/add_project.html', members=members)
+    
+    # Get all active technologies for the dropdown
+    technologies = Technology.query.filter_by(is_active=True).order_by(Technology.category.asc(), Technology.name.asc()).all()
+    
+    return render_template('admin/add_project.html', members=members, technologies=technologies)
 
 @admin_bp.route('/gallery')
 @login_required
@@ -370,7 +374,11 @@ def edit_project(project_id):
     
     # Get all approved members for the dropdown
     members = Member.query.join(User).filter(User.is_approved == True).order_by(Member.full_name.asc()).all()
-    return render_template('admin/edit_project.html', project=project, members=members)
+    
+    # Get all active technologies for the dropdown
+    technologies = Technology.query.filter_by(is_active=True).order_by(Technology.category.asc(), Technology.name.asc()).all()
+    
+    return render_template('admin/edit_project.html', project=project, members=members, technologies=technologies)
 
 @admin_bp.route('/projects/delete/<int:project_id>')
 @login_required
@@ -719,6 +727,104 @@ def bulk_reject_rsvps():
         send_rsvp_notification(rsvp, 'rejected')
     
     return jsonify({'success': True, 'message': f'{count} RSVPs rejected successfully'})
+
+# Technology Management Routes
+@admin_bp.route('/technologies')
+@login_required
+@admin_required
+def technologies():
+    category_filter = request.args.get('category', '')
+    
+    query = Technology.query
+    if category_filter:
+        query = query.filter_by(category=category_filter)
+    
+    technologies = query.order_by(Technology.category.asc(), Technology.name.asc()).all()
+    
+    # Get all categories for filter dropdown
+    categories = db.session.query(Technology.category).distinct().all()
+    categories = [cat[0] for cat in categories if cat[0]]
+    
+    return render_template('admin/technologies.html', 
+                         technologies=technologies,
+                         categories=categories,
+                         current_category=category_filter)
+
+@admin_bp.route('/technologies/add', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def add_technology():
+    if request.method == 'POST':
+        name = request.form.get('name')
+        category = request.form.get('category')
+        description = request.form.get('description')
+        icon = request.form.get('icon')
+        is_active = 'is_active' in request.form
+        
+        # Check if technology already exists
+        existing = Technology.query.filter_by(name=name).first()
+        if existing:
+            flash('A technology with this name already exists.', 'warning')
+            return redirect(url_for('admin.add_technology'))
+        
+        technology = Technology(
+            name=name,
+            category=category,
+            description=description,
+            icon=icon,
+            is_active=is_active
+        )
+        
+        db.session.add(technology)
+        db.session.commit()
+        
+        flash('Technology added successfully.', 'success')
+        return redirect(url_for('admin.technologies'))
+    
+    return render_template('admin/add_technology.html')
+
+@admin_bp.route('/technologies/edit/<int:tech_id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def edit_technology(tech_id):
+    technology = Technology.query.get_or_404(tech_id)
+    
+    if request.method == 'POST':
+        technology.name = request.form.get('name')
+        technology.category = request.form.get('category')
+        technology.description = request.form.get('description')
+        technology.icon = request.form.get('icon')
+        technology.is_active = 'is_active' in request.form
+        
+        db.session.commit()
+        
+        flash('Technology updated successfully.', 'success')
+        return redirect(url_for('admin.technologies'))
+    
+    return render_template('admin/edit_technology.html', technology=technology)
+
+@admin_bp.route('/technologies/delete/<int:tech_id>')
+@login_required
+@admin_required
+def delete_technology(tech_id):
+    technology = Technology.query.get_or_404(tech_id)
+    db.session.delete(technology)
+    db.session.commit()
+    
+    flash('Technology deleted successfully.', 'success')
+    return redirect(url_for('admin.technologies'))
+
+@admin_bp.route('/technologies/toggle-status/<int:tech_id>')
+@login_required
+@admin_required
+def toggle_technology_status(tech_id):
+    technology = Technology.query.get_or_404(tech_id)
+    technology.is_active = not technology.is_active
+    db.session.commit()
+    
+    status = 'activated' if technology.is_active else 'deactivated'
+    flash(f'Technology {status} successfully.', 'success')
+    return redirect(url_for('admin.technologies'))
 
 def send_rsvp_notification(rsvp, status):
     """Send email/SMS notification for RSVP status change"""

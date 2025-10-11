@@ -139,6 +139,11 @@
                 <span>Projects Management</span>
             </a>
             
+            <a href="{{ url_for('admin.technologies') }}" class="admin-nav-item {% if request.endpoint in ['admin.technologies', 'admin.add_technology', 'admin.edit_technology'] %}active{% endif %}">
+                <i class="fas fa-code"></i>
+                <span>Technology Management</span>
+            </a>
+            
             <a href="{{ url_for('admin.gallery') }}" class="admin-nav-item {% if request.endpoint in ['admin.gallery', 'admin.add_gallery_item', 'admin.edit_gallery_item'] %}active{% endif %}">
                 <i class="fas fa-images"></i>
                 <span>Gallery Management</span>

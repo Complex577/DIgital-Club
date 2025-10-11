@@ -40,8 +40,47 @@
                 
                 <div class="admin-form-group">
                     <label for="technologies" class="admin-form-label">Technologies Used</label>
+                    
+                    <!-- Technology Selection -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="admin-form-label">Select from predefined technologies:</label>
+                            <select class="admin-form-control" id="tech-select" multiple size="8">
+                                {% for tech in technologies %}
+                                <option value="{{ tech.name }}" data-category="{{ tech.category }}">
+                                    {% if tech.icon %}<i class="{{ tech.icon }}"></i> {% endif %}{{ tech.name }} ({{ tech.category|title }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <small class="form-text text-muted">Hold Ctrl/Cmd to select multiple technologies</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="admin-form-label">Selected Technologies:</label>
+                            <div id="selected-techs" class="border rounded p-2" style="min-height: 200px; background: rgba(0,0,0,0.3);">
+                                <small class="text-muted">No technologies selected</small>
+                            </div>
+                            <div class="mt-2">
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="addSelectedTechs()">
+                                    <i class="fas fa-plus"></i> Add Selected
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearSelectedTechs()">
+                                    <i class="fas fa-trash"></i> Clear All
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Custom Technology Input -->
                     <input type="text" class="admin-form-control" id="technologies" name="technologies" 
                            placeholder="e.g., Python, Flask, JavaScript, React (comma-separated)">
+                    <small class="form-text text-muted">
+                        <strong>Tips:</strong> You can select from predefined technologies above or type custom ones separated by commas.
+                        <br>• Web: HTML, CSS, JavaScript, React, Node.js, Express
+                        <br>• Mobile: React Native, Flutter, Swift, Kotlin
+                        <br>• AI/ML: Python, TensorFlow, PyTorch, Scikit-learn
+                        <br>• IoT: Arduino, Raspberry Pi, ESP32, Sensors
+                        <br>• Data: Python, R, SQL, Pandas, Matplotlib
+                    </small>
                 </div>
                 
                 <div class="admin-form-group">
@@ -100,6 +139,57 @@
 </div>
 
 <script>
+// Technology selection functionality
+let selectedTechnologies = [];
+
+function addSelectedTechs() {
+    const techSelect = document.getElementById('tech-select');
+    const selectedOptions = Array.from(techSelect.selectedOptions);
+    
+    selectedOptions.forEach(option => {
+        const techName = option.value;
+        if (!selectedTechnologies.includes(techName)) {
+            selectedTechnologies.push(techName);
+        }
+    });
+    
+    updateSelectedTechsDisplay();
+    updateTechnologiesInput();
+}
+
+function clearSelectedTechs() {
+    selectedTechnologies = [];
+    updateSelectedTechsDisplay();
+    updateTechnologiesInput();
+}
+
+function removeTech(techName) {
+    selectedTechnologies = selectedTechnologies.filter(tech => tech !== techName);
+    updateSelectedTechsDisplay();
+    updateTechnologiesInput();
+}
+
+function updateSelectedTechsDisplay() {
+    const container = document.getElementById('selected-techs');
+    
+    if (selectedTechnologies.length === 0) {
+        container.innerHTML = '<small class="text-muted">No technologies selected</small>';
+        return;
+    }
+    
+    container.innerHTML = selectedTechnologies.map(tech => `
+        <span class="badge bg-primary me-1 mb-1" style="font-size: 0.8rem;">
+            ${tech}
+            <button type="button" class="btn-close btn-close-white" style="font-size: 0.6rem; margin-left: 0.3rem;" onclick="removeTech('${tech}')"></button>
+        </span>
+    `).join('');
+}
+
+function updateTechnologiesInput() {
+    const input = document.getElementById('technologies');
+    input.value = selectedTechnologies.join(', ');
+}
+
 // Update selected members count
 document.addEventListener('DOMContentLoaded', function() {
     const teamSelect = document.getElementById('team_members');
@@ -122,6 +212,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Update count on change
     teamSelect.addEventListener('change', updateCount);
+    
+    // Initialize technology display
+    updateSelectedTechsDisplay();
 });
 </script>
 {% endblock %}

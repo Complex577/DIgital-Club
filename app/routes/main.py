@@ -1,6 +1,6 @@
 from flask import render_template, request, flash, redirect, url_for, jsonify
 from app.routes import main_bp
-from app.models import News, Event, Project, Gallery, Topic, Member, Leader, Newsletter, Blog, RSVP, User
+from app.models import News, Event, Project, Gallery, Topic, Member, Leader, Newsletter, Blog, RSVP, User, Technology
 from app import db
 from datetime import datetime
 
@@ -198,11 +198,58 @@ def events():
 @main_bp.route('/projects')
 def projects():
     try:
+        # Get filter parameter
+        category_filter = request.args.get('category', '')
+        
         # Get all public projects (both admin and member projects), featured first
-        projects = Project.query.filter_by(is_public=True).order_by(Project.is_featured.desc(), Project.created_at.desc()).all()
-    except:
+        query = Project.query.filter_by(is_public=True)
+        
+        # Apply category filter based on technologies
+        if category_filter:
+            # Get technologies for this category from the database
+            category_technologies = Technology.query.filter_by(category=category_filter, is_active=True).all()
+            
+            if category_technologies:
+                # Create a list of technology names for this category
+                tech_names = [tech.name.lower() for tech in category_technologies]
+                
+                # Filter projects that contain any of these technologies
+                query = query.filter(
+                    db.or_(*[Project.technologies.ilike(f'%{tech_name}%') for tech_name in tech_names])
+                )
+            else:
+                # Fallback to hardcoded lists if no technologies in database
+                if category_filter == 'web':
+                    web_techs = ['html', 'css', 'javascript', 'react', 'vue', 'angular', 'node', 'express', 'django', 'flask', 'php', 'laravel', 'wordpress', 'bootstrap', 'tailwind']
+                    query = query.filter(
+                        db.or_(*[Project.technologies.ilike(f'%{tech}%') for tech in web_techs])
+                    )
+                elif category_filter == 'mobile':
+                    mobile_techs = ['react native', 'flutter', 'swift', 'kotlin', 'android', 'ios', 'xamarin', 'ionic', 'cordova']
+                    query = query.filter(
+                        db.or_(*[Project.technologies.ilike(f'%{tech}%') for tech in mobile_techs])
+                    )
+                elif category_filter == 'ai':
+                    ai_techs = ['python', 'tensorflow', 'pytorch', 'keras', 'scikit-learn', 'opencv', 'numpy', 'pandas', 'machine learning', 'deep learning', 'neural network', 'ai', 'artificial intelligence']
+                    query = query.filter(
+                        db.or_(*[Project.technologies.ilike(f'%{tech}%') for tech in ai_techs])
+                    )
+                elif category_filter == 'iot':
+                    iot_techs = ['arduino', 'raspberry pi', 'esp32', 'esp8266', 'sensors', 'mqtt', 'iot', 'internet of things', 'embedded', 'microcontroller']
+                    query = query.filter(
+                        db.or_(*[Project.technologies.ilike(f'%{tech}%') for tech in iot_techs])
+                    )
+                elif category_filter == 'data':
+                    data_techs = ['python', 'r', 'sql', 'pandas', 'numpy', 'matplotlib', 'seaborn', 'plotly', 'jupyter', 'data science', 'analytics', 'visualization', 'machine learning']
+                    query = query.filter(
+                        db.or_(*[Project.technologies.ilike(f'%{tech}%') for tech in data_techs])
+                    )
+        
+        projects = query.order_by(Project.is_featured.desc(), Project.created_at.desc()).all()
+    except Exception as e:
+        print(f"Error loading projects: {e}")
         projects = []
-    return render_template('projects.html', projects=projects)
+    return render_template('projects.html', projects=projects, current_category=category_filter)
 
 @main_bp.route('/gallery')
 def gallery():
