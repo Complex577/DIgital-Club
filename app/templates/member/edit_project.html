@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Project - Digital Club{% endblock %}
+
+{% block extra_head %}
+<style>
+    .edit-project-page {
+        background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+        min-height: 100vh;
+        padding: 2rem 0;
+    }
+    
+    .project-form {
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid var(--border-color);
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .form-section {
+        margin-bottom: 2rem;
+        padding-bottom: 2rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .form-section:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+    }
+    
+    .section-title {
+        color: var(--primary-color);
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+    }
+    
+    .section-title i {
+        margin-right: 0.5rem;
+        font-size: 1.3rem;
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-label {
+        color: var(--text-primary);
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+    
+    .form-control {
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        color: var(--text-primary);
+        padding: 0.75rem;
+        width: 100%;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(0, 255, 255, 0.2);
+        outline: none;
+        background: rgba(0, 0, 0, 0.4);
+    }
+    
+    .form-control::placeholder {
+        color: var(--text-muted);
+    }
+    
+    .form-check {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    
+    .form-check-input {
+        margin-right: 0.75rem;
+        transform: scale(1.2);
+    }
+    
+    .form-check-label {
+        color: var(--text-primary);
+        font-weight: 500;
+    }
+    
+    .btn-primary {
+        background: var(--primary-color);
+        border: 1px solid var(--primary-color);
+        color: var(--bg-primary);
+        padding: 0.75rem 2rem;
+        border-radius: 25px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-primary:hover {
+        background: var(--secondary-color);
+        border-color: var(--secondary-color);
+        transform: translateY(-2px);
+    }
+    
+    .btn-secondary {
+        background: transparent;
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+        padding: 0.75rem 2rem;
+        border-radius: 25px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+    }
+    
+    .btn-secondary:hover {
+        border-color: var(--primary-color);
+        color: var(--primary-color);
+    }
+    
+    .help-text {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        margin-top: 0.5rem;
+    }
+    
+    .privacy-info {
+        background: rgba(0, 255, 255, 0.1);
+        border: 1px solid rgba(0, 255, 255, 0.2);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .privacy-info h6 {
+        color: var(--primary-color);
+        margin-bottom: 0.5rem;
+    }
+    
+    .privacy-info ul {
+        margin: 0;
+        padding-left: 1.5rem;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+    }
+    
+    .privacy-info li {
+        margin-bottom: 0.25rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="edit-project-page">
+    <div class="container">
+        <div class="project-form" data-aos="fade-up">
+            <div class="text-center mb-4">
+                <h2 class="text-primary mb-2">Edit Project</h2>
+                <p class="text-secondary">Update your project details and settings</p>
+            </div>
+            
+            <form method="POST">
+                <!-- Basic Information -->
+                <div class="form-section">
+                    <h4 class="section-title">
+                        <i class="fas fa-info-circle"></i>
+                        Project Information
+                    </h4>
+                    
+                    <div class="form-group">
+                        <label for="title" class="form-label">Project Title *</label>
+                        <input type="text" class="form-control" id="title" name="title" 
+                               value="{{ project.title }}" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="description" class="form-label">Project Description *</label>
+                        <textarea class="form-control" id="description" name="description" rows="4" 
+                                  required>{{ project.description or '' }}</textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="image" class="form-label">Project Image URL</label>
+                        <input type="text" class="form-control" id="image" name="image" 
+                               value="{{ project.image or '' }}"
+                               placeholder="https://example.com/project-image.jpg">
+                        <div class="help-text">Optional: URL to project screenshot or logo</div>
+                    </div>
+                </div>
+                
+                <!-- Technical Details -->
+                <div class="form-section">
+                    <h4 class="section-title">
+                        <i class="fas fa-code"></i>
+                        Technical Details
+                    </h4>
+                    
+                    <div class="form-group">
+                        <label for="technologies" class="form-label">Technologies Used</label>
+                        <input type="text" class="form-control" id="technologies" name="technologies" 
+                               value="{{ project.technologies or '' }}"
+                               placeholder="e.g., Python, Flask, JavaScript, React (comma-separated)">
+                        <div class="help-text">List the technologies, frameworks, and tools you used</div>
+                    </div>
+                </div>
+                
+                <!-- Links -->
+                <div class="form-section">
+                    <h4 class="section-title">
+                        <i class="fas fa-link"></i>
+                        Project Links
+                    </h4>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="github_link" class="form-label">GitHub Repository</label>
+                                <input type="text" class="form-control" id="github_link" name="github_link" 
+                                       value="{{ project.github_link or '' }}"
+                                       placeholder="https://github.com/username/project-name">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="demo_link" class="form-label">Live Demo</label>
+                                <input type="text" class="form-control" id="demo_link" name="demo_link" 
+                                       value="{{ project.demo_link or '' }}"
+                                       placeholder="https://your-project-demo.com">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Privacy Settings -->
+                <div class="form-section">
+                    <h4 class="section-title">
+                        <i class="fas fa-shield-alt"></i>
+                        Privacy Settings
+                    </h4>
+                    
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="is_public" name="is_public" 
+                               {% if project.is_public %}checked{% endif %}>
+                        <label for="is_public" class="form-check-label">
+                            Make this project public
+                        </label>
+                    </div>
+                    
+                    <div class="privacy-info">
+                        <h6><i class="fas fa-info-circle"></i> Privacy Information</h6>
+                        <ul>
+                            <li><strong>Public:</strong> Your project will be visible to everyone on your profile and may be featured on the main projects page</li>
+                            <li><strong>Private:</strong> Only you can see this project in your dashboard</li>
+                            <li>You can change the privacy setting anytime</li>
+                            <li>Admins can feature public projects on the homepage</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Form Actions -->
+                <div class="text-center">
+                    <button type="submit" class="btn btn-primary me-3">
+                        <i class="fas fa-save"></i> Update Project
+                    </button>
+                    <a href="{{ url_for('member.my_projects') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Initialize AOS animations
+    AOS.init({
+        duration: 1000,
+        once: true,
+        offset: 100
+    });
+</script>
+{% endblock %}

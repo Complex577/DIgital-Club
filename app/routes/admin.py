@@ -186,7 +186,10 @@ def add_project():
             github_link=github_link,
             demo_link=demo_link,
             technologies=technologies,
-            team_members=team_members
+            team_members=team_members,
+            is_admin_project=True,
+            is_public=True,
+            is_featured='is_featured' in request.form
         )
         db.session.add(project)
         db.session.commit()
@@ -231,8 +234,87 @@ def add_gallery_item():
 @login_required
 @admin_required
 def newsletter():
-    subscribers = Newsletter.query.filter_by(is_active=True).order_by(Newsletter.subscribed_at.desc()).all()
-    return render_template('admin/newsletter.html', subscribers=subscribers)
+    # Get both active and inactive subscribers
+    active_subscribers = Newsletter.query.filter_by(is_active=True).order_by(Newsletter.subscribed_at.desc()).all()
+    inactive_subscribers = Newsletter.query.filter_by(is_active=False).order_by(Newsletter.subscribed_at.desc()).all()
+    
+    return render_template('admin/newsletter.html', 
+                         active_subscribers=active_subscribers,
+                         inactive_subscribers=inactive_subscribers)
+
+@admin_bp.route('/newsletter/test')
+@login_required
+@admin_required
+def test_newsletter():
+    return "Newsletter admin routes are working!"
+
+@admin_bp.route('/newsletter/export-csv')
+@login_required
+@admin_required
+def export_newsletter_csv():
+    try:
+        from flask import Response
+        import csv
+        import io
+        from datetime import datetime
+        
+        # Check if we should include inactive subscribers
+        include_inactive = request.args.get('include_inactive', 'false').lower() == 'true'
+        
+        # Get subscribers based on filter
+        if include_inactive:
+            subscribers = Newsletter.query.order_by(Newsletter.subscribed_at.desc()).all()
+            filename_suffix = 'all_subscribers'
+        else:
+            subscribers = Newsletter.query.filter_by(is_active=True).order_by(Newsletter.subscribed_at.desc()).all()
+            filename_suffix = 'active_subscribers'
+        
+        # Create CSV content
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # Write header
+        writer.writerow(['Email', 'Phone', 'Subscription Date', 'Subscription Time', 'Status', 'Days Since Subscription'])
+        
+        # Write data
+        for subscriber in subscribers:
+            days_since = (datetime.utcnow() - subscriber.subscribed_at).days
+            writer.writerow([
+                subscriber.email or '',
+                subscriber.phone or '',
+                subscriber.subscribed_at.strftime('%Y-%m-%d'),
+                subscriber.subscribed_at.strftime('%H:%M:%S'),
+                'Active' if subscriber.is_active else 'Inactive',
+                days_since
+            ])
+        
+        # Prepare response
+        output.seek(0)
+        response = Response(
+            output.getvalue(),
+            mimetype='text/csv',
+            headers={
+                'Content-Disposition': f'attachment; filename=newsletter_{filename_suffix}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+            }
+        )
+        
+        return response
+        
+    except Exception as e:
+        flash(f'Error exporting CSV: {str(e)}', 'error')
+        return redirect(url_for('admin.newsletter'))
+
+@admin_bp.route('/newsletter/toggle-status/<int:subscriber_id>')
+@login_required
+@admin_required
+def toggle_newsletter_status(subscriber_id):
+    subscriber = Newsletter.query.get_or_404(subscriber_id)
+    subscriber.is_active = not subscriber.is_active
+    db.session.commit()
+    
+    status = 'activated' if subscriber.is_active else 'deactivated'
+    flash(f'Subscriber {status} successfully.', 'success')
+    return redirect(url_for('admin.newsletter'))
 
 # Missing routes for edit/delete operations
 @admin_bp.route('/events/edit/<int:event_id>', methods=['GET', 'POST'])
@@ -280,6 +362,7 @@ def edit_project(project_id):
         # Handle multi-select team members
         selected_members = request.form.getlist('team_members')
         project.team_members = ', '.join(selected_members) if selected_members else ''
+        project.is_featured = 'is_featured' in request.form
         db.session.commit()
         
         flash('Project updated successfully.', 'success')
@@ -333,8 +416,49 @@ def delete_gallery_item(item_id):
 @login_required
 @admin_required
 def leaders():
-    leaders = Leader.query.join(User).join(Member).order_by(Leader.display_order.asc()).all()
+    from sqlalchemy.orm import joinedload
+    leaders = Leader.query.options(joinedload(Leader.user).joinedload(User.member)).order_by(Leader.display_order.asc()).all()
+    
+    # Debug: Print leader count
+    print(f"DEBUG: Found {len(leaders)} leaders")
+    for leader in leaders:
+        print(f"  - Leader ID: {leader.id}, Position: {leader.position}")
+        print(f"    User ID: {leader.user_id}, Has User: {leader.user is not None}")
+        if leader.user:
+            print(f"    User Email: {leader.user.email}, Has Member: {leader.user.member is not None}")
+            if leader.user.member:
+                print(f"    Member Name: {leader.user.member.full_name}")
+    
     return render_template('admin/leaders.html', leaders=leaders)
+
+@admin_bp.route('/leaders/debug')
+@login_required
+@admin_required
+def debug_leaders():
+    """Debug route to check leaders in database"""
+    all_leaders = Leader.query.all()
+    leaders_with_users = Leader.query.join(User).all()
+    leaders_with_members = Leader.query.join(User).join(Member).all()
+    
+    debug_info = {
+        'total_leaders': len(all_leaders),
+        'leaders_with_users': len(leaders_with_users),
+        'leaders_with_members': len(leaders_with_members),
+        'leaders': []
+    }
+    
+    for leader in all_leaders:
+        debug_info['leaders'].append({
+            'id': leader.id,
+            'user_id': leader.user_id,
+            'position': leader.position,
+            'has_user': leader.user is not None,
+            'has_member': leader.user.member is not None if leader.user else False,
+            'user_email': leader.user.email if leader.user else None,
+            'member_name': leader.user.member.full_name if leader.user and leader.user.member else None
+        })
+    
+    return f"<pre>{debug_info}</pre>"
 
 @admin_bp.route('/leaders/add', methods=['GET', 'POST'])
 @login_required
@@ -369,6 +493,11 @@ def add_leader():
         User.is_approved == True,
         ~Member.user_id.in_(existing_leader_ids)
     ).all()
+    
+    # Debug: Print member count
+    print(f"DEBUG: Found {len(members)} available members for leadership")
+    for member in members:
+        print(f"  - {member.full_name} ({member.user.email})")
     
     return render_template('admin/add_leader.html', members=members)
 

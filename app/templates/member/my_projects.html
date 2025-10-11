@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+
+{% block title %}My Projects - Digital Club{% endblock %}
+
+{% block extra_head %}
+<style>
+    .my-projects-page {
+        background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+        min-height: 100vh;
+        padding: 2rem 0;
+    }
+    
+    .projects-header {
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid var(--border-color);
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 3rem;
+        text-align: center;
+    }
+    
+    .projects-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 2rem;
+        margin-bottom: 3rem;
+    }
+    
+    .project-card {
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid var(--border-color);
+        border-radius: 15px;
+        padding: 2rem;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .project-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+        transition: left 0.5s;
+    }
+    
+    .project-card:hover::before {
+        left: 100%;
+    }
+    
+    .project-card:hover {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 20px var(--shadow-color);
+        transform: translateY(-5px);
+    }
+    
+    .project-image {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        border-radius: 10px;
+        margin-bottom: 1.5rem;
+    }
+    
+    .project-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 1rem;
+    }
+    
+    .project-description {
+        color: var(--text-secondary);
+        margin-bottom: 1.5rem;
+        line-height: 1.6;
+    }
+    
+    .project-tech {
+        margin-bottom: 1.5rem;
+    }
+    
+    .tech-tag {
+        display: inline-block;
+        background: rgba(0, 255, 255, 0.1);
+        color: var(--primary-color);
+        padding: 0.3rem 0.8rem;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        margin: 0.2rem;
+        border: 1px solid rgba(0, 255, 255, 0.2);
+    }
+    
+    .project-links {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .project-link {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        background: rgba(0, 255, 255, 0.1);
+        border: 1px solid var(--border-color);
+        border-radius: 25px;
+        text-decoration: none;
+        color: var(--text-primary);
+        transition: all 0.3s ease;
+        font-size: 0.9rem;
+    }
+    
+    .project-link:hover {
+        background: var(--primary-color);
+        color: var(--bg-primary);
+        transform: translateY(-2px);
+    }
+    
+    .project-link i {
+        margin-right: 0.5rem;
+    }
+    
+    .project-status {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    
+    .status-badge {
+        padding: 0.3rem 0.8rem;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    .status-public {
+        background: rgba(0, 255, 0, 0.2);
+        color: #00ff00;
+        border: 1px solid rgba(0, 255, 0, 0.3);
+    }
+    
+    .status-private {
+        background: rgba(255, 0, 0, 0.2);
+        color: #ff0000;
+        border: 1px solid rgba(255, 0, 0, 0.3);
+    }
+    
+    .project-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .action-btn {
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 8px;
+        text-decoration: none;
+        font-size: 0.9rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .btn-edit {
+        background: rgba(0, 255, 255, 0.1);
+        color: var(--primary-color);
+        border: 1px solid var(--primary-color);
+    }
+    
+    .btn-edit:hover {
+        background: var(--primary-color);
+        color: var(--bg-primary);
+    }
+    
+    .btn-delete {
+        background: rgba(255, 0, 0, 0.1);
+        color: #ff0000;
+        border: 1px solid #ff0000;
+    }
+    
+    .btn-delete:hover {
+        background: #ff0000;
+        color: white;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: var(--text-secondary);
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+        color: var(--text-muted);
+        margin-bottom: 1rem;
+    }
+    
+    .add-project-btn {
+        display: inline-flex;
+        align-items: center;
+        padding: 1rem 2rem;
+        background: var(--primary-color);
+        color: var(--bg-primary);
+        text-decoration: none;
+        border-radius: 25px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        margin-bottom: 2rem;
+    }
+    
+    .add-project-btn:hover {
+        background: var(--secondary-color);
+        transform: translateY(-2px);
+        color: var(--bg-primary);
+    }
+    
+    .add-project-btn i {
+        margin-right: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="my-projects-page">
+    <div class="container">
+        <!-- Projects Header -->
+        <div class="projects-header" data-aos="fade-up">
+            <h1 class="text-primary mb-3">
+                <i class="fas fa-project-diagram"></i> My Projects
+            </h1>
+            <p class="text-secondary mb-3">Manage your personal projects and showcase your work</p>
+            <a href="{{ url_for('member.add_project') }}" class="add-project-btn">
+                <i class="fas fa-plus"></i> Add New Project
+            </a>
+        </div>
+
+        <!-- Projects Grid -->
+        {% if projects %}
+        <div class="projects-grid" id="projects-grid">
+            {% for project in projects %}
+            <div class="project-card" data-aos="fade-up" data-aos-delay="{{ loop.index * 100 }}">
+                {% if project.image %}
+                    <img src="{{ project.image }}" alt="{{ project.title }}" class="project-image">
+                {% else %}
+                    <div class="project-image d-flex align-items-center justify-content-center" 
+                         style="background: var(--primary-color); color: var(--bg-primary); font-size: 3rem;">
+                        <i class="fas fa-project-diagram"></i>
+                    </div>
+                {% endif %}
+                
+                <h3 class="project-title">{{ project.title }}</h3>
+                <p class="project-description">
+                    {{ project.description[:150] }}{% if project.description|length > 150 %}...{% endif %}
+                </p>
+                
+                {% if project.technologies %}
+                <div class="project-tech">
+                    {% for tech in project.get_technologies_list()[:4] %}
+                    <span class="tech-tag">{{ tech }}</span>
+                    {% endfor %}
+                    {% if project.get_technologies_list()|length > 4 %}
+                    <span class="tech-tag">+{{ project.get_technologies_list()|length - 4 }} more</span>
+                    {% endif %}
+                </div>
+                {% endif %}
+                
+                <div class="project-links">
+                    {% if project.github_link %}
+                    <a href="{{ project.github_link }}" target="_blank" class="project-link">
+                        <i class="fab fa-github"></i> GitHub
+                    </a>
+                    {% endif %}
+                    {% if project.demo_link %}
+                    <a href="{{ project.demo_link }}" target="_blank" class="project-link">
+                        <i class="fas fa-external-link-alt"></i> Demo
+                    </a>
+                    {% endif %}
+                </div>
+                
+                <div class="project-status">
+                    <span class="status-badge status-{{ 'public' if project.is_public else 'private' }}">
+                        <i class="fas fa-{{ 'globe' if project.is_public else 'lock' }}"></i>
+                        {{ 'Public' if project.is_public else 'Private' }}
+                    </span>
+                    <small class="text-muted">{{ project.created_at.strftime('%B %d, %Y') }}</small>
+                </div>
+                
+                <div class="project-actions">
+                    <a href="{{ url_for('member.edit_project', project_id=project.id) }}" class="action-btn btn-edit">
+                        <i class="fas fa-edit"></i> Edit
+                    </a>
+                    <a href="{{ url_for('member.delete_project', project_id=project.id) }}" 
+                       class="action-btn btn-delete"
+                       onclick="return confirm('Are you sure you want to delete this project? This action cannot be undone.')">
+                        <i class="fas fa-trash"></i> Delete
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state" data-aos="fade-up">
+            <i class="fas fa-project-diagram"></i>
+            <h3>No Projects Yet</h3>
+            <p>Start showcasing your work by adding your first project!</p>
+            <a href="{{ url_for('member.add_project') }}" class="add-project-btn">
+                <i class="fas fa-plus"></i> Add Your First Project
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Initialize AOS animations
+    AOS.init({
+        duration: 1000,
+        once: true,
+        offset: 100
+    });
+</script>
+{% endblock %}

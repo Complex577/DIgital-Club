@@ -1,6 +1,6 @@
 from flask import render_template, request, flash, redirect, url_for, jsonify
 from app.routes import main_bp
-from app.models import News, Event, Project, Gallery, Topic, Member, Leader, Newsletter, Blog, RSVP
+from app.models import News, Event, Project, Gallery, Topic, Member, Leader, Newsletter, Blog, RSVP, User
 from app import db
 from datetime import datetime
 
@@ -33,8 +33,10 @@ def about():
 @main_bp.route('/leaders')
 def leaders():
     try:
-        leaders = Leader.query.join(Member).order_by(Leader.display_order.asc()).all()
-    except:
+        from sqlalchemy.orm import joinedload
+        leaders = Leader.query.options(joinedload(Leader.user).joinedload(User.member)).order_by(Leader.display_order.asc()).all()
+    except Exception as e:
+        print(f"Error loading leaders: {e}")
         leaders = []
     return render_template('leaders.html', leaders=leaders)
 
@@ -196,7 +198,8 @@ def events():
 @main_bp.route('/projects')
 def projects():
     try:
-        projects = Project.query.order_by(Project.created_at.desc()).all()
+        # Get all public projects (both admin and member projects), featured first
+        projects = Project.query.filter_by(is_public=True).order_by(Project.is_featured.desc(), Project.created_at.desc()).all()
     except:
         projects = []
     return render_template('projects.html', projects=projects)

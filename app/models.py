@@ -41,6 +41,9 @@ class Member(db.Model):
     areas_of_interest = db.Column(db.Text)  # Comma-separated areas
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
+    # Relationship to projects
+    projects = db.relationship('Project', backref='member', lazy='dynamic')
+    
     def get_projects(self):
         if self.projects_json:
             try:
@@ -65,6 +68,14 @@ class Leader(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     position = db.Column(db.String(100), nullable=False)  # e.g., "President", "Vice President"
     display_order = db.Column(db.Integer, default=0)
+    
+    # Relationship to User and Member
+    user = db.relationship('User', backref='leader')
+    
+    @property
+    def member(self):
+        """Get the member profile for this leader"""
+        return self.user.member if self.user else None
     
     def __repr__(self):
         return f'<Leader {self.position}>'
@@ -102,6 +113,12 @@ class Project(db.Model):
     technologies = db.Column(db.String(200))  # Comma-separated tech stack
     team_members = db.Column(db.String(200))  # Comma-separated member names
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # New fields for member projects
+    member_id = db.Column(db.Integer, db.ForeignKey('member.id'), nullable=True)  # NULL for admin projects
+    is_public = db.Column(db.Boolean, default=True)  # Public/private setting
+    is_featured = db.Column(db.Boolean, default=False)  # Admin can feature on homepage
+    is_admin_project = db.Column(db.Boolean, default=False)  # Distinguish admin vs member projects
     
     def get_technologies_list(self):
         if self.technologies:

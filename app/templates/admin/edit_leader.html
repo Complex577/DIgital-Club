@@ -23,7 +23,7 @@
                     <label class="admin-form-label">Current Member</label>
                     <div class="admin-form-control" style="background-color: var(--admin-bg-quaternary);">
                         <div class="d-flex align-items-center">
-                            {% if leader.member.profile_image %}
+                            {% if leader.member and leader.member.profile_image %}
                             <img src="{{ url_for('static', filename='uploads/profiles/' + leader.member.profile_image) }}" 
                                  alt="{{ leader.member.full_name }}" 
                                  class="rounded-circle me-2" 
@@ -35,8 +35,8 @@
                             </div>
                             {% endif %}
                             <div>
-                                <div class="fw-bold">{{ leader.member.full_name }}</div>
-                                <small class="text-muted">{{ leader.member.user.email }}</small>
+                                <div class="fw-bold">{{ leader.member.full_name if leader.member else leader.user.email }}</div>
+                                <small class="text-muted">{{ leader.user.email }}</small>
                             </div>
                         </div>
                     </div>

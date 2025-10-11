@@ -40,7 +40,7 @@
                     </td>
                     <td>
                         <div class="d-flex align-items-center">
-                            {% if leader.member.profile_image %}
+                            {% if leader.member and leader.member.profile_image %}
                             <img src="{{ url_for('static', filename='uploads/profiles/' + leader.member.profile_image) }}" 
                                  alt="{{ leader.member.full_name }}" 
                                  class="rounded-circle me-2" 
@@ -52,8 +52,8 @@
                             </div>
                             {% endif %}
                             <div>
-                                <div class="fw-bold">{{ leader.member.full_name }}</div>
-                                {% if leader.member.title %}
+                                <div class="fw-bold">{{ leader.member.full_name if leader.member else leader.user.email }}</div>
+                                {% if leader.member and leader.member.title %}
                                 <small class="text-muted">{{ leader.member.title }}</small>
                                 {% endif %}
                             </div>
@@ -62,8 +62,8 @@
                     <td>
                         <span class="admin-badge admin-badge-success">{{ leader.position }}</span>
                     </td>
-                    <td>{{ leader.member.user.email }}</td>
-                    <td>{{ leader.member.course or 'N/A' }}</td>
+                    <td>{{ leader.user.email }}</td>
+                    <td>{{ leader.member.course if leader.member else 'N/A' }}</td>
                     <td>
                         <div class="d-flex gap-2">
                             <a href="{{ url_for('admin.edit_leader', leader_id=leader.id) }}" 

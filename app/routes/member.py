@@ -120,3 +120,89 @@ def change_password():
         return redirect(url_for('member.dashboard'))
     
     return render_template('member/change_password.html')
+
+@member_bp.route('/projects')
+@login_required
+def my_projects():
+    if not current_user.member:
+        flash('Please complete your profile first.', 'warning')
+        return redirect(url_for('member.edit_profile'))
+    
+    # Get member's projects
+    projects = Project.query.filter_by(member_id=current_user.member.id).order_by(Project.created_at.desc()).all()
+    return render_template('member/my_projects.html', projects=projects)
+
+@member_bp.route('/projects/add', methods=['GET', 'POST'])
+@login_required
+def add_project():
+    if not current_user.member:
+        flash('Please complete your profile first.', 'warning')
+        return redirect(url_for('member.edit_profile'))
+    
+    if request.method == 'POST':
+        title = request.form.get('title')
+        description = request.form.get('description')
+        github_link = request.form.get('github_link')
+        demo_link = request.form.get('demo_link')
+        technologies = request.form.get('technologies')
+        is_public = 'is_public' in request.form
+        
+        project = Project(
+            title=title,
+            description=description,
+            image=request.form.get('image'),
+            github_link=github_link,
+            demo_link=demo_link,
+            technologies=technologies,
+            member_id=current_user.member.id,
+            is_public=is_public,
+            is_admin_project=False
+        )
+        
+        db.session.add(project)
+        db.session.commit()
+        
+        flash('Project added successfully!', 'success')
+        return redirect(url_for('member.my_projects'))
+    
+    return render_template('member/add_project.html')
+
+@member_bp.route('/projects/edit/<int:project_id>', methods=['GET', 'POST'])
+@login_required
+def edit_project(project_id):
+    if not current_user.member:
+        flash('Please complete your profile first.', 'warning')
+        return redirect(url_for('member.edit_profile'))
+    
+    project = Project.query.filter_by(id=project_id, member_id=current_user.member.id).first_or_404()
+    
+    if request.method == 'POST':
+        project.title = request.form.get('title')
+        project.description = request.form.get('description')
+        project.image = request.form.get('image')
+        project.github_link = request.form.get('github_link')
+        project.demo_link = request.form.get('demo_link')
+        project.technologies = request.form.get('technologies')
+        project.is_public = 'is_public' in request.form
+        
+        db.session.commit()
+        
+        flash('Project updated successfully!', 'success')
+        return redirect(url_for('member.my_projects'))
+    
+    return render_template('member/edit_project.html', project=project)
+
+@member_bp.route('/projects/delete/<int:project_id>')
+@login_required
+def delete_project(project_id):
+    if not current_user.member:
+        flash('Please complete your profile first.', 'warning')
+        return redirect(url_for('member.edit_profile'))
+    
+    project = Project.query.filter_by(id=project_id, member_id=current_user.member.id).first_or_404()
+    
+    db.session.delete(project)
+    db.session.commit()
+    
+    flash('Project deleted successfully!', 'success')
+    return redirect(url_for('member.my_projects'))

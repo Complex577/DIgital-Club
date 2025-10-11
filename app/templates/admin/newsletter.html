@@ -1,4 +1,23 @@
-{% extends "admin/admin_base.html" %}
+{% block extra_head %}
+<style>
+    .export-buttons {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .export-buttons .btn {
+        cursor: pointer;
+        pointer-events: auto;
+        z-index: 10;
+        position: relative;
+    }
+    
+    .export-buttons .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+</style>
+{% endblock %}
 
 {% block admin_title %}Newsletter Subscribers{% endblock %}
 {% block page_title %}Newsletter Subscribers{% endblock %}
@@ -10,15 +29,31 @@
         <h2 class="mb-1">Newsletter Subscribers</h2>
         <p class="text-muted mb-0">Manage newsletter subscriptions</p>
     </div>
-    <div>
-        <span class="admin-badge admin-badge-success">{{ subscribers|length }} Active</span>
+    <div class="d-flex align-items-center gap-3">
+        <span class="admin-badge admin-badge-success">{{ active_subscribers|length }} Active</span>
+        {% if inactive_subscribers %}
+        <span class="admin-badge admin-badge-secondary">{{ inactive_subscribers|length }} Inactive</span>
+        {% endif %}
+        {% if active_subscribers or inactive_subscribers %}
+        <div class="export-buttons">
+            <a href="{{ url_for('admin.test_newsletter') }}" class="btn btn-outline-warning btn-sm" target="_blank">
+                <i class="fas fa-test"></i> Test Route
+            </a>
+            <a href="{{ url_for('admin.export_newsletter_csv') }}" class="btn btn-outline-primary btn-sm" onclick="console.log('Export Active clicked')">
+                <i class="fas fa-download"></i> Export Active
+            </a>
+            <a href="{{ url_for('admin.export_newsletter_csv', include_inactive='true') }}" class="btn btn-outline-info btn-sm" onclick="console.log('Export All clicked')">
+                <i class="fas fa-download"></i> Export All
+            </a>
+        </div>
+        {% endif %}
     </div>
 </div>
 
-{% if subscribers %}
+{% if active_subscribers %}
 <div class="admin-table-container">
     <div class="admin-card-header">
-        <h5><i class="fas fa-envelope"></i> Active Subscribers ({{ subscribers|length }})</h5>
+        <h5><i class="fas fa-envelope"></i> Active Subscribers ({{ active_subscribers|length }})</h5>
     </div>
     <div class="table-responsive">
         <table class="admin-table">
@@ -27,10 +62,11 @@
                     <th>Contact Information</th>
                     <th>Subscription Date</th>
                     <th>Status</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
-                {% for subscriber in subscribers %}
+                {% for subscriber in active_subscribers %}
                 <tr>
                     <td>
                         <div class="d-flex align-items-center">
@@ -53,11 +89,14 @@
                         </div>
                     </td>
                     <td>
-                        {% if subscriber.is_active %}
                         <span class="admin-badge admin-badge-success">Active</span>
-                        {% else %}
-                        <span class="admin-badge admin-badge-secondary">Inactive</span>
-                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('admin.toggle_newsletter_status', subscriber_id=subscriber.id) }}" 
+                           class="btn btn-sm btn-outline-warning"
+                           onclick="return confirm('Are you sure you want to deactivate this subscriber?')">
+                            <i class="fas fa-pause"></i> Deactivate
+                        </a>
                     </td>
                 </tr>
                 {% endfor %}
@@ -65,7 +104,65 @@
         </table>
     </div>
 </div>
-{% else %}
+{% endif %}
+
+{% if inactive_subscribers %}
+<div class="admin-table-container mt-4">
+    <div class="admin-card-header">
+        <h5><i class="fas fa-envelope-open"></i> Inactive Subscribers ({{ inactive_subscribers|length }})</h5>
+    </div>
+    <div class="table-responsive">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Contact Information</th>
+                    <th>Subscription Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for subscriber in inactive_subscribers %}
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="admin-activity-icon secondary me-3">
+                                <i class="fas fa-envelope-open"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-1">{{ subscriber.email or 'Phone: ' + subscriber.phone }}</h6>
+                                {% if subscriber.email and subscriber.phone %}
+                                <small class="text-muted">Phone: {{ subscriber.phone }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div>
+                            {{ subscriber.subscribed_at.strftime('%Y-%m-%d') }}
+                            <br>
+                            <small class="text-muted">{{ subscriber.subscribed_at.strftime('%H:%M') }}</small>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="admin-badge admin-badge-secondary">Inactive</span>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('admin.toggle_newsletter_status', subscriber_id=subscriber.id) }}" 
+                           class="btn btn-sm btn-outline-success"
+                           onclick="return confirm('Are you sure you want to activate this subscriber?')">
+                            <i class="fas fa-play"></i> Activate
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% if not active_subscribers and not inactive_subscribers %}
 <div class="admin-empty-state">
     <i class="fas fa-envelope"></i>
     <h5>No newsletter subscribers</h5>

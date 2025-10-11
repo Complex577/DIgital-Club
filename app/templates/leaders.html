@@ -14,7 +14,7 @@
             {% for leader in leaders %}
             <div class="card" data-aos="fade-up" data-aos-delay="{{ loop.index * 100 }}">
                 <div style="text-align: center;">
-                    {% if leader.member.profile_image %}
+                    {% if leader.member and leader.member.profile_image %}
                     <img src="{{ url_for('static', filename='uploads/profiles/' + leader.member.profile_image) }}" 
                          alt="{{ leader.member.full_name }}" 
                          style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; margin-bottom: 1.5rem; border: 3px solid var(--primary-color);">
@@ -24,29 +24,29 @@
                     </div>
                     {% endif %}
                     
-                    <h3 style="color: var(--text-primary); margin-bottom: 0.5rem;">{{ leader.member.full_name }}</h3>
+                    <h3 style="color: var(--text-primary); margin-bottom: 0.5rem;">{{ leader.member.full_name if leader.member else leader.user.email }}</h3>
                     <p style="color: var(--primary-color); font-weight: 600; margin-bottom: 1rem;">{{ leader.position }}</p>
                     
-                    {% if leader.member.title %}
+                    {% if leader.member and leader.member.title %}
                     <p style="color: var(--text-secondary); margin-bottom: 1rem;">{{ leader.member.title }}</p>
                     {% endif %}
                     
-                    {% if leader.member.bio %}
+                    {% if leader.member and leader.member.bio %}
                     <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.5rem;">{{ leader.member.bio }}</p>
                     {% endif %}
                     
                     <div style="display: flex; gap: 1rem; justify-content: center;">
-                        {% if leader.member.github %}
+                        {% if leader.member and leader.member.github %}
                         <a href="{{ leader.member.github }}" target="_blank" class="social-link">
                             <i class="fab fa-github"></i>
                         </a>
                         {% endif %}
-                        {% if leader.member.linkedin %}
+                        {% if leader.member and leader.member.linkedin %}
                         <a href="{{ leader.member.linkedin }}" target="_blank" class="social-link">
                             <i class="fab fa-linkedin"></i>
                         </a>
                         {% endif %}
-                        {% if leader.member.phone %}
+                        {% if leader.member and leader.member.phone %}
                         <a href="tel:{{ leader.member.phone }}" class="social-link">
                             <i class="fas fa-phone"></i>
                         </a>

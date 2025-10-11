@@ -259,26 +259,46 @@
                 </div>
                 {% endif %}
                 
-                {% if member.get_projects() %}
+                {% if member.projects.filter_by(is_public=True).all() %}
                 <div class="profile-content" data-aos="fade-up" data-aos-delay="300">
-                    <h4 class="mb-3"><i class="fas fa-project-diagram text-primary"></i> Personal Projects</h4>
+                    <h4 class="mb-3"><i class="fas fa-project-diagram text-primary"></i> Public Projects</h4>
                     <div class="projects-grid">
-                        {% for project in member.get_projects() %}
+                        {% for project in member.projects.filter_by(is_public=True).limit(3).all() %}
                         <div class="project-item">
-                            <h6 class="text-primary mb-2">{{ project.get('name', 'Untitled Project') }}</h6>
-                            {% if project.get('description') %}
+                            {% if project.image %}
+                                <img src="{{ project.image }}" alt="{{ project.title }}" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px; margin-bottom: 1rem;">
+                            {% endif %}
+                            <h6 class="text-primary mb-2">{{ project.title }}</h6>
+                            {% if project.description %}
                                 <p class="text-secondary small mb-2">{{ project.description[:100] }}{% if project.description|length > 100 %}...{% endif %}</p>
                             {% endif %}
-                            {% if project.get('technologies') %}
+                            {% if project.technologies %}
                                 <div class="d-flex flex-wrap gap-1">
-                                    {% for tech in project.technologies[:3] %}
+                                    {% for tech in project.get_technologies_list()[:3] %}
                                     <span class="badge bg-secondary" style="font-size: 0.7rem;">{{ tech }}</span>
                                     {% endfor %}
                                 </div>
                             {% endif %}
+                            <div class="mt-2">
+                                {% if project.github_link %}
+                                <a href="{{ project.github_link }}" target="_blank" class="btn btn-sm btn-outline-primary me-2">
+                                    <i class="fab fa-github"></i> Code
+                                </a>
+                                {% endif %}
+                                {% if project.demo_link %}
+                                <a href="{{ project.demo_link }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-external-link-alt"></i> Demo
+                                </a>
+                                {% endif %}
+                            </div>
                         </div>
                         {% endfor %}
                     </div>
+                    {% if member.projects.filter_by(is_public=True).count() > 3 %}
+                    <div class="text-center mt-3">
+                        <small class="text-muted">And {{ member.projects.filter_by(is_public=True).count() - 3 }} more projects...</small>
+                    </div>
+                    {% endif %}
                 </div>
                 {% endif %}
             </div>

@@ -59,6 +59,16 @@
                     <div id="selected-count" class="text-info small mt-1" style="display: none;">
                         <i class="fas fa-users"></i> <span id="count-text">0</span> members selected
                     </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="is_featured" name="is_featured">
+                            <label class="form-check-label" for="is_featured">
+                                Feature this project on the homepage
+                            </label>
+                        </div>
+                        <div class="form-text">Featured projects will be displayed prominently on the main projects page</div>
+                    </div>
                     {% if not members %}
                     <small class="text-muted">No approved members found. Members must be approved before they can be added to projects.</small>
                     {% endif %}
