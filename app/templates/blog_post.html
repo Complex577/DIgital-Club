@@ -46,6 +46,15 @@
                         {% endif %}
                     </header>
                     
+                    <!-- Featured Image -->
+                    {% if blog.featured_image %}
+                    <div class="featured-image-container mb-4" data-aos="zoom-in">
+                        <img src="{{ url_for('static', filename=blog.featured_image) }}" 
+                             alt="{{ blog.title }}" 
+                             class="featured-image">
+                    </div>
+                    {% endif %}
+                    
                     <!-- Blog Content -->
                     <div class="blog-content" style="color: var(--text-primary); line-height: 1.8;">
                         {{ blog.content|safe }}
@@ -148,6 +157,25 @@
 </section>
 
 <style>
+.featured-image-container {
+    width: 100%;
+    overflow: hidden;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    border: 2px solid var(--border-color);
+}
+
+.featured-image {
+    width: 100%;
+    height: auto;
+    display: block;
+    transition: transform 0.5s ease;
+}
+
+.featured-image:hover {
+    transform: scale(1.05);
+}
+
 .blog-content h1, .blog-content h2, .blog-content h3, .blog-content h4, .blog-content h5, .blog-content h6 {
     color: var(--text-primary);
     margin-top: 2rem;

@@ -2,81 +2,728 @@
 
 {% block title %}Register - Digital Club{% endblock %}
 
+{% block extra_head %}
+<style>
+    .register-container {
+        min-height: calc(100vh - 70px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 1rem;
+    }
+    
+    .register-card {
+        max-width: 700px;
+        width: 100%;
+        background: var(--card-bg);
+        border-radius: 15px;
+        padding: 2.5rem;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        border: 1px solid var(--border-color);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .register-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    .register-header h2 {
+        color: var(--primary-color);
+        margin-bottom: 0.5rem;
+        font-size: 2rem;
+    }
+    
+    .register-header p {
+        color: var(--text-secondary);
+        font-size: 1rem;
+    }
+    
+    /* Progress Steps */
+    .progress-container {
+        margin-bottom: 3rem;
+        position: relative;
+    }
+    
+    .progress-steps {
+        display: flex;
+        justify-content: space-between;
+        position: relative;
+        margin-bottom: 1rem;
+    }
+    
+    .progress-line {
+        position: absolute;
+        top: 20px;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background: rgba(0, 255, 255, 0.2);
+        z-index: 0;
+    }
+    
+    .progress-line-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #00ffff, #8a2be2);
+        width: 0%;
+        transition: width 0.5s ease;
+        box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+    }
+    
+    .progress-step {
+        position: relative;
+        z-index: 1;
+        text-align: center;
+        flex: 1;
+    }
+    
+    .step-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--card-bg);
+        border: 3px solid rgba(0, 255, 255, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 0.5rem;
+        font-weight: 700;
+        color: var(--text-secondary);
+        transition: all 0.4s ease;
+        font-size: 1rem;
+    }
+    
+    .progress-step.active .step-circle {
+        border-color: #00ffff;
+        background: linear-gradient(135deg, #00ffff, #8a2be2);
+        color: #000;
+        transform: scale(1.1);
+        box-shadow: 0 0 20px rgba(0, 255, 255, 0.6);
+        animation: pulse-step 2s ease-in-out infinite;
+    }
+    
+    .progress-step.completed .step-circle {
+        border-color: #00ffff;
+        background: #00ffff;
+        color: #000;
+    }
+    
+    @keyframes pulse-step {
+        0%, 100% { box-shadow: 0 0 20px rgba(0, 255, 255, 0.6); }
+        50% { box-shadow: 0 0 30px rgba(0, 255, 255, 0.9); }
+    }
+    
+    .step-label {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        font-weight: 500;
+    }
+    
+    .progress-step.active .step-label {
+        color: #00ffff;
+        font-weight: 600;
+    }
+    
+    .progress-step.completed .step-label {
+        color: #00ffff;
+    }
+    
+    /* Form Steps */
+    .form-steps {
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .form-step {
+        display: none;
+        animation: slideIn 0.5s ease-out;
+    }
+    
+    .form-step.active {
+        display: block;
+    }
+    
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateX(50px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    
+    @keyframes slideOut {
+        from {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        to {
+            opacity: 0;
+            transform: translateX(-50px);
+        }
+    }
+    
+    .form-step.slide-out {
+        animation: slideOut 0.3s ease-out;
+    }
+    
+    .step-title {
+        text-align: center;
+        color: var(--primary-color);
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+    
+    .step-subtitle {
+        text-align: center;
+        color: var(--text-secondary);
+        margin-bottom: 2rem;
+        font-size: 0.95rem;
+    }
+    
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    @media (min-width: 768px) {
+        .form-grid.two-cols {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+    
+    /* Review Section */
+    .review-section {
+        background: rgba(0, 255, 255, 0.05);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .review-section h4 {
+        color: var(--primary-color);
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .review-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .review-item:last-child {
+        border-bottom: none;
+    }
+    
+    .review-label {
+        color: var(--text-secondary);
+        font-weight: 500;
+    }
+    
+    .review-value {
+        color: var(--text-primary);
+        font-weight: 600;
+    }
+    
+    /* Buttons */
+    .form-navigation {
+        display: flex;
+        gap: 1rem;
+        justify-content: space-between;
+        margin-top: 2rem;
+    }
+    
+    .btn-nav {
+        flex: 1;
+        padding: 1rem 2rem;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 1rem;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+    
+    .btn-previous {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text-primary);
+        border: 2px solid var(--border-color);
+    }
+    
+    .btn-previous:hover {
+        background: rgba(255, 255, 255, 0.15);
+        transform: translateX(-3px);
+    }
+    
+    .btn-next {
+        background: linear-gradient(135deg, #00ffff, #8a2be2);
+        color: #000;
+        border: none;
+        box-shadow: 0 5px 20px rgba(0, 255, 255, 0.3);
+    }
+    
+    .btn-next:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 30px rgba(0, 255, 255, 0.5);
+    }
+    
+    .btn-next:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    .info-box {
+        background: rgba(0, 255, 255, 0.1);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-top: 1.5rem;
+        text-align: center;
+    }
+    
+    .info-box p {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        margin: 0;
+    }
+    
+    .form-footer {
+        text-align: center;
+        margin-top: 2rem;
+    }
+    
+    /* Success Animation */
+    .success-icon {
+        font-size: 4rem;
+        color: #00ffff;
+        animation: successPop 0.5s ease-out;
+    }
+    
+    @keyframes successPop {
+        0% { transform: scale(0); opacity: 0; }
+        50% { transform: scale(1.2); }
+        100% { transform: scale(1); opacity: 1; }
+    }
+    
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+        .register-card {
+            padding: 1.5rem;
+        }
+        
+        .step-label {
+            font-size: 0.75rem;
+        }
+        
+        .step-circle {
+            width: 35px;
+            height: 35px;
+            font-size: 0.9rem;
+        }
+        
+        .form-navigation {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container" style="min-height: calc(100vh - 70px); display: flex; align-items: center; justify-content: center;">
-    <div class="card" style="max-width: 500px; width: 100%;">
-        <div style="text-align: center; margin-bottom: 2rem;">
-            <h2 style="color: var(--primary-color); margin-bottom: 0.5rem;">Join Digital Club</h2>
-            <p style="color: var(--text-secondary);">Become a member of KIUT's premier tech community</p>
+<div class="container register-container">
+    <div class="register-card">
+        <div class="register-header">
+            <h2><i class="fas fa-user-plus"></i> Join Digital Club</h2>
+            <p>Become a member of KIUT's premier tech community</p>
         </div>
         
-        <form method="POST">
-            <div class="form-group">
-                <label class="form-label">Email Address *</label>
-                <input type="email" name="email" class="form-control" placeholder="your.email@kiut.ac.tz" required>
+        <!-- Progress Indicator -->
+        <div class="progress-container">
+            <div class="progress-line">
+                <div class="progress-line-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-steps">
+                <div class="progress-step active" data-step="1">
+                    <div class="step-circle">1</div>
+                    <div class="step-label">Personal Info</div>
+                </div>
+                <div class="progress-step" data-step="2">
+                    <div class="step-circle">2</div>
+                    <div class="step-label">Academic Info</div>
+                </div>
+                <div class="progress-step" data-step="3">
+                    <div class="step-circle">3</div>
+                    <div class="step-label">Security</div>
+                </div>
+                <div class="progress-step" data-step="4">
+                    <div class="step-circle"><i class="fas fa-check"></i></div>
+                    <div class="step-label">Review</div>
+                </div>
+            </div>
+        </div>
+        
+        <form method="POST" id="registrationForm">
+            <div class="form-steps">
+                <!-- Step 1: Personal Information -->
+                <div class="form-step active" data-step="1">
+                    <div class="step-title">
+                        <i class="fas fa-user"></i>
+                        Personal Information
+                    </div>
+                    <p class="step-subtitle">Let's start with your basic details</p>
+                    
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Email Address *</label>
+                            <input type="email" name="email" id="email" class="form-control" 
+                                   placeholder="your.email@kiut.ac.tz" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Full Name *</label>
+                            <input type="text" name="full_name" id="full_name" class="form-control" 
+                                   placeholder="Enter your full name" required>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Step 2: Academic Information -->
+                <div class="form-step" data-step="2">
+                    <div class="step-title">
+                        <i class="fas fa-graduation-cap"></i>
+                        Academic Information
+                    </div>
+                    <p class="step-subtitle">Tell us about your academic background</p>
+                    
+                    <div class="form-grid two-cols">
+                        <div class="form-group">
+                            <label class="form-label">Course</label>
+                            <select name="course" id="course" class="form-control">
+                                <option value="">Select your course</option>
+                                <option value="Computer Science">Computer Science</option>
+                                <option value="Information Technology">Information Technology</option>
+                                <option value="Software Engineering">Software Engineering</option>
+                                <option value="Data Science">Data Science</option>
+                                <option value="Cybersecurity">Cybersecurity</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Year of Study</label>
+                            <select name="year" id="year" class="form-control">
+                                <option value="">Select year</option>
+                                <option value="Year 1">Year 1</option>
+                                <option value="Year 2">Year 2</option>
+                                <option value="Year 3">Year 3</option>
+                                <option value="Year 4">Year 4</option>
+                                <option value="Graduate">Graduate</option>
+                                <option value="Alumni">Alumni</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Step 3: Security -->
+                <div class="form-step" data-step="3">
+                    <div class="step-title">
+                        <i class="fas fa-lock"></i>
+                        Security
+                    </div>
+                    <p class="step-subtitle">Create a secure password for your account</p>
+                    
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Password *</label>
+                            <input type="password" name="password" id="password" class="form-control" 
+                                   placeholder="Create a strong password" required>
+                            <small style="color: var(--text-muted); font-size: 0.85rem;">
+                                <i class="fas fa-info-circle"></i> At least 6 characters
+                            </small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Confirm Password *</label>
+                            <input type="password" name="confirm_password" id="confirm_password" class="form-control" 
+                                   placeholder="Confirm your password" required>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Step 4: Review & Submit -->
+                <div class="form-step" data-step="4">
+                    <div class="step-title">
+                        <i class="fas fa-check-circle"></i>
+                        Review Your Information
+                    </div>
+                    <p class="step-subtitle">Please review your details before submitting</p>
+                    
+                    <!-- Personal Information Review -->
+                    <div class="review-section">
+                        <h4><i class="fas fa-user"></i> Personal Information</h4>
+                        <div class="review-item">
+                            <span class="review-label">Email:</span>
+                            <span class="review-value" id="review-email">-</span>
+                        </div>
+                        <div class="review-item">
+                            <span class="review-label">Full Name:</span>
+                            <span class="review-value" id="review-name">-</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Academic Information Review -->
+                    <div class="review-section">
+                        <h4><i class="fas fa-graduation-cap"></i> Academic Information</h4>
+                        <div class="review-item">
+                            <span class="review-label">Course:</span>
+                            <span class="review-value" id="review-course">-</span>
+                        </div>
+                        <div class="review-item">
+                            <span class="review-label">Year of Study:</span>
+                            <span class="review-value" id="review-year">-</span>
+                        </div>
+                    </div>
+                    
+                    <div class="info-box">
+                        <p>
+                            <i class="fas fa-info-circle" style="color: var(--primary-color);"></i>
+                            Your account will be reviewed by our admin team before activation.
+                        </p>
+                    </div>
+                </div>
             </div>
             
-            <div class="form-group">
-                <label class="form-label">Full Name *</label>
-                <input type="text" name="full_name" class="form-control" placeholder="Enter your full name" required>
+            <!-- Navigation Buttons -->
+            <div class="form-navigation">
+                <button type="button" class="btn-nav btn-previous" id="prevBtn" style="display: none;">
+                    <i class="fas fa-arrow-left"></i> Previous
+                </button>
+                <button type="button" class="btn-nav btn-next" id="nextBtn">
+                    Next <i class="fas fa-arrow-right"></i>
+                </button>
+                <button type="submit" class="btn-nav btn-next" id="submitBtn" style="display: none;">
+                    <i class="fas fa-rocket"></i> Join Digital Club
+                </button>
             </div>
-            
-            <div class="form-group">
-                <label class="form-label">Course</label>
-                <select name="course" class="form-control">
-                    <option value="">Select your course</option>
-                    <option value="Computer Science">Computer Science</option>
-                    <option value="Information Technology">Information Technology</option>
-                    <option value="Software Engineering">Software Engineering</option>
-                    <option value="Data Science">Data Science</option>
-                    <option value="Cybersecurity">Cybersecurity</option>
-                    <option value="Other">Other</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label">Year of Study</label>
-                <select name="year" class="form-control">
-                    <option value="">Select year</option>
-                    <option value="Year 1">Year 1</option>
-                    <option value="Year 2">Year 2</option>
-                    <option value="Year 3">Year 3</option>
-                    <option value="Year 4">Year 4</option>
-                    <option value="Graduate">Graduate</option>
-                    <option value="Alumni">Alumni</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label">Password *</label>
-                <input type="password" name="password" class="form-control" placeholder="Create a strong password" required>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label">Confirm Password *</label>
-                <input type="password" name="confirm_password" class="form-control" placeholder="Confirm your password" required>
-            </div>
-            
-            <button type="submit" class="btn-primary" style="width: 100%; margin-bottom: 1rem;">
-                <i class="fas fa-user-plus"></i> Join Digital Club
-            </button>
         </form>
         
-        <div style="text-align: center;">
-            <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+        <div class="form-footer">
+            <p style="color: var(--text-secondary);">
                 Already have an account? 
-                <a href="{{ url_for('auth.login') }}" style="color: var(--primary-color); text-decoration: none;">
-                    Sign In
+                <a href="{{ url_for('auth.login') }}" style="color: var(--primary-color); text-decoration: none; font-weight: 600;">
+                    Sign In <i class="fas fa-arrow-right"></i>
                 </a>
             </p>
-            
-            <div style="background: rgba(0, 255, 255, 0.1); border: 1px solid var(--border-color); border-radius: 10px; padding: 1rem; margin-top: 1rem;">
-                <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0;">
-                    <i class="fas fa-info-circle" style="color: var(--primary-color);"></i>
-                    Your account will be reviewed by our admin team before activation.
-                </p>
-            </div>
         </div>
     </div>
 </div>
+
+{% block extra_scripts %}
+<script>
+    // Multi-Step Form Controller
+    let currentStep = 1;
+    const totalSteps = 4;
+    
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const submitBtn = document.getElementById('submitBtn');
+    const progressFill = document.getElementById('progressFill');
+    
+    // Initialize
+    updateProgress();
+    
+    // Next Button
+    nextBtn.addEventListener('click', () => {
+        if (validateCurrentStep()) {
+            if (currentStep < totalSteps) {
+                goToStep(currentStep + 1);
+            }
+        }
+    });
+    
+    // Previous Button
+    prevBtn.addEventListener('click', () => {
+        if (currentStep > 1) {
+            goToStep(currentStep - 1);
+        }
+    });
+    
+    // Go to specific step
+    function goToStep(step) {
+        const currentFormStep = document.querySelector(`.form-step[data-step="${currentStep}"]`);
+        const nextFormStep = document.querySelector(`.form-step[data-step="${step}"]`);
+        const currentProgressStep = document.querySelector(`.progress-step[data-step="${currentStep}"]`);
+        const nextProgressStep = document.querySelector(`.progress-step[data-step="${step}"]`);
+        
+        // Animate out current step
+        currentFormStep.classList.add('slide-out');
+        
+        setTimeout(() => {
+            // Hide current, show next
+            currentFormStep.classList.remove('active', 'slide-out');
+            nextFormStep.classList.add('active');
+            
+            // Update progress
+            if (step > currentStep) {
+                currentProgressStep.classList.add('completed');
+                currentProgressStep.classList.remove('active');
+            } else {
+                nextProgressStep.classList.remove('completed');
+                currentProgressStep.classList.remove('completed');
+            }
+            
+            nextProgressStep.classList.add('active');
+            
+            currentStep = step;
+            updateProgress();
+            updateButtons();
+            
+            // Update review section if on last step
+            if (currentStep === totalSteps) {
+                updateReview();
+            }
+            
+            // Scroll to top of form
+            document.querySelector('.register-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 300);
+    }
+    
+    // Update progress bar
+    function updateProgress() {
+        const progress = ((currentStep - 1) / (totalSteps - 1)) * 100;
+        progressFill.style.width = progress + '%';
+    }
+    
+    // Update button visibility
+    function updateButtons() {
+        // Previous button
+        if (currentStep === 1) {
+            prevBtn.style.display = 'none';
+            nextBtn.style.flex = '1';
+        } else {
+            prevBtn.style.display = 'flex';
+            nextBtn.style.flex = '1';
+        }
+        
+        // Next/Submit button
+        if (currentStep === totalSteps) {
+            nextBtn.style.display = 'none';
+            submitBtn.style.display = 'flex';
+            submitBtn.style.flex = '1';
+        } else {
+            nextBtn.style.display = 'flex';
+            submitBtn.style.display = 'none';
+        }
+    }
+    
+    // Validate current step
+    function validateCurrentStep() {
+        const currentFormStep = document.querySelector(`.form-step[data-step="${currentStep}"]`);
+        const inputs = currentFormStep.querySelectorAll('input[required], select[required]');
+        let isValid = true;
+        
+        inputs.forEach(input => {
+            if (!input.value.trim()) {
+                isValid = false;
+                input.style.borderColor = '#ff4444';
+                
+                setTimeout(() => {
+                    input.style.borderColor = '';
+                }, 2000);
+            }
+        });
+        
+        // Additional validation for Step 1 (email)
+        if (currentStep === 1) {
+            const email = document.getElementById('email');
+            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailPattern.test(email.value)) {
+                isValid = false;
+                email.style.borderColor = '#ff4444';
+                alert('Please enter a valid email address');
+            }
+        }
+        
+        // Additional validation for Step 3 (passwords match)
+        if (currentStep === 3) {
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm_password').value;
+            
+            if (password.length < 6) {
+                isValid = false;
+                alert('Password must be at least 6 characters long');
+                document.getElementById('password').style.borderColor = '#ff4444';
+            } else if (password !== confirmPassword) {
+                isValid = false;
+                alert('Passwords do not match');
+                document.getElementById('confirm_password').style.borderColor = '#ff4444';
+            }
+        }
+        
+        if (!isValid) {
+            // Shake animation
+            currentFormStep.style.animation = 'shake 0.5s';
+            setTimeout(() => {
+                currentFormStep.style.animation = '';
+            }, 500);
+        }
+        
+        return isValid;
+    }
+    
+    // Update review section
+    function updateReview() {
+        document.getElementById('review-email').textContent = document.getElementById('email').value || '-';
+        document.getElementById('review-name').textContent = document.getElementById('full_name').value || '-';
+        document.getElementById('review-course').textContent = document.getElementById('course').value || 'Not specified';
+        document.getElementById('review-year').textContent = document.getElementById('year').value || 'Not specified';
+    }
+    
+    // Form submission
+    document.getElementById('registrationForm').addEventListener('submit', (e) => {
+        if (!validateCurrentStep()) {
+            e.preventDefault();
+        }
+    });
+    
+    // Add shake animation to CSS dynamically
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+    `;
+    document.head.appendChild(style);
+    
+    // Add enter key support
+    document.querySelectorAll('.form-step input').forEach(input => {
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (currentStep < totalSteps) {
+                    nextBtn.click();
+                }
+            }
+        });
+    });
+</script>
 {% endblock %}

@@ -918,9 +918,9 @@ p {
 }
 
 .footer-logo-img {
-    height: 2.5rem;
+    height: 6.5rem;
     width: auto;
-    filter: drop-shadow(0 0 8px var(--primary-color));
+    filter: drop-shadow(0 0 20px var(--primary-color));
 }
 
 .footer-logo h3 {

@@ -18,13 +18,27 @@
                 </div>
             </div>
             
-            <form method="POST">
+            <form method="POST" enctype="multipart/form-data">
                 <div class="row">
                     <div class="col-lg-8">
                         <div class="admin-form-group">
                             <label for="title" class="admin-form-label">Blog Post Title</label>
                             <input type="text" class="admin-form-control" id="title" name="title" 
                                    placeholder="Enter an engaging title for your blog post" required>
+                        </div>
+                        
+                        <div class="admin-form-group">
+                            <label for="featured_image" class="admin-form-label">
+                                <i class="fas fa-image"></i> Featured Image
+                            </label>
+                            <input type="file" class="admin-form-control" id="featured_image" name="featured_image" 
+                                   accept="image/*" onchange="previewImage(event)">
+                            <small class="text-muted">Upload a thumbnail image for this blog post (JPG, PNG, WEBP recommended)</small>
+                            
+                            <!-- Image Preview -->
+                            <div id="imagePreview" style="display: none; margin-top: 1rem;">
+                                <img id="preview" src="" alt="Preview" style="max-width: 100%; max-height: 300px; border-radius: 10px; border: 2px solid var(--admin-border-color);">
+                            </div>
                         </div>
                         
                         <div class="admin-form-group">
@@ -96,4 +110,24 @@
         </div>
     </div>
 </div>
+
+{% block extra_scripts %}
+<script>
+    function previewImage(event) {
+        const preview = document.getElementById('preview');
+        const previewContainer = document.getElementById('imagePreview');
+        const file = event.target.files[0];
+        
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                previewContainer.style.display = 'block';
+            }
+            reader.readAsDataURL(file);
+        } else {
+            previewContainer.style.display = 'none';
+        }
+    }
+</script>
 {% endblock %}

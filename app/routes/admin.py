@@ -557,6 +557,24 @@ def add_blog():
         tags = request.form.get('tags')
         is_published = 'is_published' in request.form
         
+        # Handle image upload
+        featured_image = None
+        if 'featured_image' in request.files:
+            file = request.files['featured_image']
+            if file and file.filename:
+                # Create uploads directory if it doesn't exist
+                upload_folder = os.path.join(current_app.static_folder, 'uploads', 'blogs')
+                os.makedirs(upload_folder, exist_ok=True)
+                
+                # Secure the filename and save
+                filename = secure_filename(file.filename)
+                # Add timestamp to make filename unique
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_')
+                filename = timestamp + filename
+                filepath = os.path.join(upload_folder, filename)
+                file.save(filepath)
+                featured_image = f'uploads/blogs/{filename}'
+        
         # Generate slug from title
         slug = title.lower().replace(' ', '-').replace('&', 'and')
         slug = ''.join(c for c in slug if c.isalnum() or c in '-')
@@ -576,6 +594,7 @@ def add_blog():
             author_id=current_user.id,
             category=category,
             tags=tags,
+            featured_image=featured_image,
             is_published=is_published,
             published_date=datetime.utcnow() if is_published else None
         )
@@ -601,6 +620,44 @@ def edit_blog(blog_id):
         blog.category = request.form.get('category')
         blog.tags = request.form.get('tags')
         blog.is_published = 'is_published' in request.form
+        
+        # Handle image removal
+        if 'remove_image' in request.form:
+            if blog.featured_image:
+                # Delete old image file
+                old_image_path = os.path.join(current_app.static_folder, blog.featured_image)
+                if os.path.exists(old_image_path):
+                    try:
+                        os.remove(old_image_path)
+                    except:
+                        pass  # If deletion fails, continue anyway
+                blog.featured_image = None
+        
+        # Handle new image upload
+        if 'featured_image' in request.files:
+            file = request.files['featured_image']
+            if file and file.filename:
+                # Delete old image if exists
+                if blog.featured_image:
+                    old_image_path = os.path.join(current_app.static_folder, blog.featured_image)
+                    if os.path.exists(old_image_path):
+                        try:
+                            os.remove(old_image_path)
+                        except:
+                            pass
+                
+                # Create uploads directory if it doesn't exist
+                upload_folder = os.path.join(current_app.static_folder, 'uploads', 'blogs')
+                os.makedirs(upload_folder, exist_ok=True)
+                
+                # Secure the filename and save
+                filename = secure_filename(file.filename)
+                # Add timestamp to make filename unique
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S_')
+                filename = timestamp + filename
+                filepath = os.path.join(upload_folder, filename)
+                file.save(filepath)
+                blog.featured_image = f'uploads/blogs/{filename}'
         
         if blog.is_published and not blog.published_date:
             blog.published_date = datetime.utcnow()

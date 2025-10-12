@@ -18,13 +18,47 @@
                 </div>
             </div>
             
-            <form method="POST">
+            <form method="POST" enctype="multipart/form-data">
                 <div class="row">
                     <div class="col-lg-8">
                         <div class="admin-form-group">
                             <label for="title" class="admin-form-label">Blog Post Title</label>
                             <input type="text" class="admin-form-control" id="title" name="title" 
                                    value="{{ blog.title }}" required>
+                        </div>
+                        
+                        <div class="admin-form-group">
+                            <label for="featured_image" class="admin-form-label">
+                                <i class="fas fa-image"></i> Featured Image
+                            </label>
+                            
+                            {% if blog.featured_image %}
+                            <div style="margin-bottom: 1rem;">
+                                <img src="{{ url_for('static', filename=blog.featured_image) }}" 
+                                     alt="Current featured image" 
+                                     style="max-width: 100%; max-height: 200px; border-radius: 10px; border: 2px solid var(--admin-border-color);">
+                                <p class="text-muted mt-2 mb-0"><i class="fas fa-check-circle text-success"></i> Current featured image</p>
+                            </div>
+                            {% endif %}
+                            
+                            <input type="file" class="admin-form-control" id="featured_image" name="featured_image" 
+                                   accept="image/*" onchange="previewImage(event)">
+                            <small class="text-muted">Upload a new thumbnail image to replace the current one (JPG, PNG, WEBP recommended)</small>
+                            
+                            <!-- Image Preview -->
+                            <div id="imagePreview" style="display: none; margin-top: 1rem;">
+                                <p class="text-muted mb-2"><i class="fas fa-eye"></i> New image preview:</p>
+                                <img id="preview" src="" alt="Preview" style="max-width: 100%; max-height: 300px; border-radius: 10px; border: 2px solid var(--admin-border-color);">
+                            </div>
+                            
+                            {% if blog.featured_image %}
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" id="remove_image" name="remove_image">
+                                <label class="form-check-label text-danger" for="remove_image">
+                                    <i class="fas fa-trash"></i> Remove featured image
+                                </label>
+                            </div>
+                            {% endif %}
                         </div>
                         
                         <div class="admin-form-group">
@@ -113,4 +147,25 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function previewImage(event) {
+        const preview = document.getElementById('preview');
+        const previewContainer = document.getElementById('imagePreview');
+        const file = event.target.files[0];
+        
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                previewContainer.style.display = 'block';
+            }
+            reader.readAsDataURL(file);
+        } else {
+            previewContainer.style.display = 'none';
+        }
+    }
+</script>
 {% endblock %}
