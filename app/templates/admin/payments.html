@@ -10,6 +10,12 @@
         <h2 class="mb-1">Membership Payments</h2>
         <p class="text-muted mb-0">Track all membership fee payments</p>
     </div>
+    <div>
+        <a href="{{ url_for('admin.export_payments', status=current_status, member_id=current_member_id) }}" 
+           class="admin-btn admin-btn-success">
+            <i class="fas fa-download"></i> Export to CSV
+        </a>
+    </div>
 </div>
 
 <!-- Current Financial Period Info -->
@@ -90,12 +96,17 @@
                     <option value="expired" {% if current_status == 'expired' %}selected{% endif %}>Expired</option>
                 </select>
             </div>
-            <div class="col-md-4 d-flex align-items-end">
-                <button type="submit" class="admin-btn admin-btn-primary me-2">
+            <div class="col-md-4 d-flex align-items-end gap-2">
+                <button type="submit" class="admin-btn admin-btn-primary">
                     <i class="fas fa-filter"></i> Filter
                 </button>
                 <a href="{{ url_for('admin.payments') }}" class="admin-btn admin-btn-outline">
                     <i class="fas fa-redo"></i> Reset
+                </a>
+                <a href="{{ url_for('admin.export_payments', status=current_status, member_id=current_member_id) }}" 
+                   class="admin-btn admin-btn-success"
+                   title="Export filtered results to CSV">
+                    <i class="fas fa-file-csv"></i> Export CSV
                 </a>
             </div>
         </form>

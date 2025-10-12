@@ -1,4 +1,4 @@
-from flask import render_template, request, flash, redirect, url_for, jsonify, current_app
+from flask import render_template, request, flash, redirect, url_for, jsonify, current_app, make_response
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from app.routes import admin_bp
@@ -13,6 +13,8 @@ from app.utils import get_notification_service
 from datetime import datetime, timedelta
 import os
 import json
+import csv
+import io
 
 def admin_required(f):
     """Decorator to require admin role"""
@@ -1612,6 +1614,94 @@ def delete_payment(payment_id):
     
     flash(f'Payment record for {member_name} deleted successfully.', 'success')
     return redirect(url_for('admin.payments'))
+
+
+@admin_bp.route('/payments/export')
+@login_required
+@admin_required
+def export_payments():
+    """Export payment records to CSV"""
+    # Get filter parameters from query string
+    status_filter = request.args.get('status', 'all')
+    member_id = request.args.get('member_id', type=int)
+    
+    # Build query
+    query = MembershipPayment.query
+    
+    if member_id:
+        query = query.filter_by(member_id=member_id)
+    
+    payments = query.order_by(MembershipPayment.payment_date.desc()).all()
+    
+    # Apply status filter
+    if status_filter == 'active':
+        payments = [p for p in payments if p.is_active()]
+    elif status_filter == 'expired':
+        payments = [p for p in payments if p.is_expired()]
+    
+    # Create CSV in memory
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Write header
+    writer.writerow([
+        'Payment ID',
+        'Member ID Number',
+        'Member Name',
+        'Member Email',
+        'Amount (Tsh)',
+        'Payment Date',
+        'Start Date',
+        'End Date',
+        'Duration (Months)',
+        'Payment Method',
+        'Status',
+        'Days Remaining',
+        'Notes',
+        'Created At'
+    ])
+    
+    # Write data rows
+    for payment in payments:
+        # Calculate status
+        if payment.is_active():
+            status = 'Active'
+            days_remaining = (payment.end_date - datetime.utcnow().date()).days
+        elif payment.is_expired():
+            status = 'Expired'
+            days_remaining = (payment.end_date - datetime.utcnow().date()).days  # Will be negative
+        else:
+            status = 'Future'
+            days_remaining = (payment.start_date - datetime.utcnow().date()).days
+        
+        # Calculate duration in months (approximate)
+        duration_days = (payment.end_date - payment.start_date).days
+        duration_months = round(duration_days / 30.44, 1)  # Average days per month
+        
+        writer.writerow([
+            payment.id,
+            payment.member.member_id_number,
+            payment.member.full_name,
+            payment.member.user.email,
+            f"{payment.amount:.2f}",
+            payment.payment_date.strftime('%Y-%m-%d'),
+            payment.start_date.strftime('%Y-%m-%d'),
+            payment.end_date.strftime('%Y-%m-%d'),
+            duration_months,
+            payment.payment_method,
+            status,
+            days_remaining,
+            payment.notes or '',
+            payment.created_at.strftime('%Y-%m-%d %H:%M:%S') if payment.created_at else ''
+        ])
+    
+    # Create response
+    output.seek(0)
+    response = make_response(output.getvalue())
+    response.headers['Content-Type'] = 'text/csv'
+    response.headers['Content-Disposition'] = f'attachment; filename=payments_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+    
+    return response
 
 
 @admin_bp.route('/settings', methods=['GET', 'POST'])
