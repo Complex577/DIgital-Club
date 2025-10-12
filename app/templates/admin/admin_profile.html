@@ -1,0 +1,338 @@
+{% extends "admin/admin_base.html" %}
+
+{% block admin_title %}My Profile{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+{% block breadcrumb %}<span class="breadcrumb-separator">/</span> <span>My Profile</span>{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-1">My Profile</h2>
+        <p class="text-muted mb-0">View your member profile information</p>
+    </div>
+    <div>
+        <a href="{{ url_for('admin.dashboard') }}" class="admin-btn admin-btn-outline">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- Profile Header -->
+<div class="admin-card mb-4">
+    <div class="admin-card-body">
+        <div class="row">
+            <div class="col-md-3 text-center">
+                {% if member.profile_image %}
+                <img src="{{ url_for('static', filename='uploads/profiles/' + member.profile_image) }}" 
+                     alt="{{ member.full_name }}" 
+                     class="rounded-circle mb-3"
+                     style="width: 120px; height: 120px; object-fit: cover;">
+                {% else %}
+                <div class="admin-activity-icon primary mb-3" style="width: 120px; height: 120px; margin: 0 auto;">
+                    <i class="fas fa-user" style="font-size: 3rem;"></i>
+                </div>
+                {% endif %}
+                <h4>{{ member.full_name }}</h4>
+                <p class="text-muted">{{ member.member_id_number }}</p>
+                {% if member.user.is_super_admin %}
+                <span class="admin-badge admin-badge-warning">
+                    <i class="fas fa-crown"></i> Super Admin
+                </span>
+                {% elif member.user.role == 'admin' %}
+                <span class="admin-badge admin-badge-primary">
+                    <i class="fas fa-user-shield"></i> Admin
+                </span>
+                {% endif %}
+            </div>
+            <div class="col-md-9">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-2">Contact Information</h6>
+                        <p><strong>Email:</strong> {{ member.user.email }}</p>
+                        <p><strong>Phone:</strong> {{ member.phone or 'Not provided' }}</p>
+                        <p><strong>Address:</strong> {{ member.address or 'Not provided' }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-2">Academic Information</h6>
+                        <p><strong>Course:</strong> {{ member.course or 'Not provided' }}</p>
+                        <p><strong>Year:</strong> {{ member.year or 'Not provided' }}</p>
+                        <p><strong>Student ID:</strong> {{ member.student_id or 'Not provided' }}</p>
+                    </div>
+                </div>
+                {% if member.bio %}
+                <div class="mt-3">
+                    <h6 class="text-muted mb-2">Bio</h6>
+                    <p>{{ member.bio }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="admin-stat-card">
+            <div class="admin-stat-icon">
+                <i class="fas fa-star"></i>
+            </div>
+            <div class="admin-stat-content">
+                <h3>{{ total_points }}</h3>
+                <p>Total Points</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="admin-stat-card success">
+            <div class="admin-stat-icon">
+                <i class="fas fa-trophy"></i>
+            </div>
+            <div class="admin-stat-content">
+                <h3>{{ trophies|length }}</h3>
+                <p>Trophies Earned</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="admin-stat-card info">
+            <div class="admin-stat-icon">
+                <i class="fas fa-calendar-check"></i>
+            </div>
+            <div class="admin-stat-content">
+                <h3>{{ attendance|length }}</h3>
+                <p>Events Attended</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="admin-stat-card">
+            <div class="admin-stat-icon">
+                <i class="fas fa-id-card"></i>
+            </div>
+            <div class="admin-stat-content">
+                <h3>{{ membership_status.title() }}</h3>
+                <p>Membership Status</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Trophies Section -->
+{% if trophies %}
+<div class="admin-card mb-4">
+    <div class="admin-card-header">
+        <h5><i class="fas fa-trophy"></i> Earned Trophies</h5>
+    </div>
+    <div class="admin-card-body">
+        <div class="row">
+            {% for trophy in trophies %}
+            <div class="col-md-4 mb-3">
+                <div class="admin-trophy-card">
+                    <div class="admin-trophy-icon">
+                        <i class="{{ trophy.icon }}"></i>
+                    </div>
+                    <div class="admin-trophy-content">
+                        <h6>{{ trophy.name }}</h6>
+                        <p class="text-muted">{{ trophy.description }}</p>
+                        <small class="text-success">
+                            <i class="fas fa-star"></i> {{ trophy.points_required }} points
+                        </small>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Recent Activity -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h5><i class="fas fa-history"></i> Recent Transactions</h5>
+            </div>
+            <div class="admin-card-body">
+                {% if recent_transactions %}
+                <div class="admin-activity-list">
+                    {% for transaction in recent_transactions %}
+                    <div class="admin-activity-item">
+                        <div class="admin-activity-icon {% if transaction.points > 0 %}success{% else %}danger{% endif %}">
+                            <i class="fas fa-{% if transaction.points > 0 %}plus{% else %}minus{% endif %}"></i>
+                        </div>
+                        <div class="admin-activity-content">
+                            <h6>{{ transaction.description }}</h6>
+                            <p class="text-muted">{{ transaction.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                        </div>
+                        <div class="admin-activity-meta">
+                            <span class="admin-badge {% if transaction.points > 0 %}admin-badge-success{% else %}admin-badge-danger{% endif %}">
+                                {% if transaction.points > 0 %}+{% endif %}{{ transaction.points }} pts
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="admin-empty-state">
+                    <i class="fas fa-history"></i>
+                    <h6>No recent transactions</h6>
+                    <p>Your transaction history will appear here.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h5><i class="fas fa-calendar-check"></i> Recent Attendance</h5>
+            </div>
+            <div class="admin-card-body">
+                {% if attendance %}
+                <div class="admin-activity-list">
+                    {% for rsvp in attendance %}
+                    <div class="admin-activity-item">
+                        <div class="admin-activity-icon success">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <div class="admin-activity-content">
+                            <h6>{{ rsvp.event.title }}</h6>
+                            <p class="text-muted">{{ rsvp.checked_in_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                        </div>
+                        <div class="admin-activity-meta">
+                            <span class="admin-badge admin-badge-success">
+                                <i class="fas fa-check"></i> Attended
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="admin-empty-state">
+                    <i class="fas fa-calendar-check"></i>
+                    <h6>No recent attendance</h6>
+                    <p>Your event attendance will appear here.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payment History -->
+{% if payments %}
+<div class="admin-card mt-4">
+    <div class="admin-card-header">
+        <h5><i class="fas fa-dollar-sign"></i> Payment History</h5>
+    </div>
+    <div class="admin-card-body">
+        <div class="table-responsive">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Payment Date</th>
+                        <th>Amount</th>
+                        <th>Period</th>
+                        <th>Method</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payment in payments %}
+                    <tr>
+                        <td>{{ payment.payment_date.strftime('%B %d, %Y') }}</td>
+                        <td><strong>Tsh {{ "%.2f"|format(payment.amount) }}</strong></td>
+                        <td>
+                            {% if payment.financial_period %}
+                            {{ payment.financial_period.name }}
+                            {% else %}
+                            <span class="text-muted">No period assigned</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ payment.payment_method.title() }}</td>
+                        <td>
+                            <span class="admin-badge admin-badge-success">
+                                <i class="fas fa-check"></i> Paid
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_head %}
+<style>
+.admin-trophy-card {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.admin-trophy-card:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+.admin-trophy-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ffd700, #ffed4e);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    color: #333;
+    font-size: 1.2rem;
+}
+
+.admin-trophy-content h6 {
+    margin: 0;
+    color: #fff;
+}
+
+.admin-trophy-content p {
+    margin: 0.25rem 0;
+    font-size: 0.9rem;
+}
+
+.admin-stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: rgba(0, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    color: #00ffff;
+    font-size: 1.5rem;
+}
+
+.admin-stat-content h3 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.admin-stat-content p {
+    margin: 0;
+    color: #ccc;
+    font-size: 0.9rem;
+}
+</style>
+{% endblock %}

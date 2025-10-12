@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "baseAdmin.html" %}
 
 {% block title %}{% block admin_title %}Admin Panel{% endblock %} - Digital Club{% endblock %}
 
@@ -215,7 +215,12 @@
                             <i class="fas fa-user"></i> {{ current_user.email }}
                         </button>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ url_for('main.index') }}"><i class="fas fa-home"></i> View Site</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin.admin_profile') }}">
+                                <i class="fas fa-user"></i> My Profile
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.index') }}">
+                                <i class="fas fa-home"></i> View Site
+                            </a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
                         </ul>

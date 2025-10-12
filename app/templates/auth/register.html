@@ -534,6 +534,7 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
 {% block extra_scripts %}
 <script>
@@ -567,10 +568,10 @@
     
     // Go to specific step
     function goToStep(step) {
-        const currentFormStep = document.querySelector(`.form-step[data-step="Tsh {currentStep}"]`);
-        const nextFormStep = document.querySelector(`.form-step[data-step="Tsh {step}"]`);
-        const currentProgressStep = document.querySelector(`.progress-step[data-step="Tsh {currentStep}"]`);
-        const nextProgressStep = document.querySelector(`.progress-step[data-step="Tsh {step}"]`);
+        const currentFormStep = document.querySelector(`.form-step[data-step="${currentStep}"]`);
+        const nextFormStep = document.querySelector(`.form-step[data-step="${step}"]`);
+        const currentProgressStep = document.querySelector(`.progress-step[data-step="${currentStep}"]`);
+        const nextProgressStep = document.querySelector(`.progress-step[data-step="${step}"]`);
         
         // Animate out current step
         currentFormStep.classList.add('slide-out');
@@ -635,7 +636,7 @@
     
     // Validate current step
     function validateCurrentStep() {
-        const currentFormStep = document.querySelector(`.form-step[data-step="Tsh {currentStep}"]`);
+        const currentFormStep = document.querySelector(`.form-step[data-step="${currentStep}"]`);
         const inputs = currentFormStep.querySelectorAll('input[required], select[required]');
         let isValid = true;
         
@@ -653,7 +654,7 @@
         // Additional validation for Step 1 (email)
         if (currentStep === 1) {
             const email = document.getElementById('email');
-            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+Tsh /;
+            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailPattern.test(email.value)) {
                 isValid = false;
                 email.style.borderColor = '#ff4444';

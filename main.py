@@ -14,7 +14,8 @@ def init_db():
             admin_user = User(
                 email='admin@digitalclub.kiut.ac.tz',
                 role='admin',
-                is_approved=True
+                is_approved=True,
+                is_super_admin=True
             )
             admin_user.set_password('admin123')
             db.session.add(admin_user)
@@ -70,18 +71,18 @@ def add_sample_data():
             db.session.add(news_item)
     
     # Sample events
-    from datetime import datetime, timedelta
+    from datetime import datetime, timedelta, timezone
     events_data = [
         {
             'title': 'Python Workshop',
             'description': 'Introduction to Python programming',
-            'event_date': datetime.utcnow() + timedelta(days=7),
+            'event_date': datetime.now(timezone.utc) + timedelta(days=7),
             'location': 'Computer Lab 1'
         },
         {
             'title': 'Hackathon Kickoff',
             'description': 'Digital Club Hackathon 2024 kickoff event',
-            'event_date': datetime.utcnow() + timedelta(days=14),
+            'event_date': datetime.now(timezone.utc) + timedelta(days=14),
             'location': 'Main Auditorium'
         }
     ]
@@ -120,7 +121,7 @@ def add_sample_data():
             'category': 'tutorial',
             'tags': 'python, programming, tutorial, beginner',
             'is_published': True,
-            'published_date': datetime.utcnow() - timedelta(days=5)
+            'published_date': datetime.now(timezone.utc) - timedelta(days=5)
         },
         {
             'title': 'Digital Club Hackathon 2024: A Complete Guide',
@@ -158,7 +159,7 @@ def add_sample_data():
             'category': 'event',
             'tags': 'hackathon, competition, programming, event',
             'is_published': True,
-            'published_date': datetime.utcnow() - timedelta(days=3)
+            'published_date': datetime.now(timezone.utc) - timedelta(days=3)
         },
         {
             'title': 'The Future of Web Development: Trends to Watch',
@@ -189,7 +190,7 @@ def add_sample_data():
             'category': 'tech',
             'tags': 'web development, trends, technology, future',
             'is_published': True,
-            'published_date': datetime.utcnow() - timedelta(days=1)
+            'published_date': datetime.now(timezone.utc) - timedelta(days=1)
         }
     ]
     

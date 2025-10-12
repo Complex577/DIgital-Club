@@ -1022,11 +1022,18 @@ def send_rsvp_notification(rsvp, status):
 @login_required
 @admin_required
 def members():
-    """View all members with payment status filters"""
+    """View all members with payment status and role filters"""
     status_filter = request.args.get('status', 'all')  # all, valid, expired, none
+    role_filter = request.args.get('role', 'all')  # all, admin, member
     search = request.args.get('search', '')
     
     query = Member.query.join(User).filter(User.is_approved == True)
+    
+    # Apply role filter
+    if role_filter == 'admin':
+        query = query.filter(User.role == 'admin')
+    elif role_filter == 'member':
+        query = query.filter(User.role == 'student')
     
     # Apply search filter
     if search:
@@ -1050,19 +1057,29 @@ def members():
         members = filtered_members
     
     # Get statistics
-    total_members = len(Member.query.join(User).filter(User.is_approved == True).all())
-    valid_count = sum(1 for m in Member.query.join(User).filter(User.is_approved == True).all() if m.get_membership_status() == 'valid')
-    expired_count = sum(1 for m in Member.query.join(User).filter(User.is_approved == True).all() if m.get_membership_status() == 'expired')
-    none_count = sum(1 for m in Member.query.join(User).filter(User.is_approved == True).all() if m.get_membership_status() == 'none')
+    all_members = Member.query.join(User).filter(User.is_approved == True).all()
+    total_members = len(all_members)
+    valid_count = sum(1 for m in all_members if m.get_membership_status() == 'valid')
+    expired_count = sum(1 for m in all_members if m.get_membership_status() == 'expired')
+    none_count = sum(1 for m in all_members if m.get_membership_status() == 'none')
+    
+    # Role statistics
+    admin_count = sum(1 for m in all_members if m.user.role == 'admin')
+    member_count = sum(1 for m in all_members if m.user.role == 'student')
+    super_admin_count = sum(1 for m in all_members if m.user.is_super_admin)
     
     return render_template('admin/members.html',
                          members=members,
                          current_status=status_filter,
+                         current_role=role_filter,
                          search_query=search,
                          total_members=total_members,
                          valid_count=valid_count,
                          expired_count=expired_count,
-                         none_count=none_count)
+                         none_count=none_count,
+                         admin_count=admin_count,
+                         member_count=member_count,
+                         super_admin_count=super_admin_count)
 
 
 @admin_bp.route('/members/<int:member_id>')
@@ -1090,6 +1107,86 @@ def member_detail(member_id):
     all_trophies = Trophy.query.filter_by(is_active=True).order_by(Trophy.points_required.asc()).all()
     
     return render_template('admin/member_detail.html',
+                         member=member,
+                         total_points=total_points,
+                         trophies=trophies,
+                         membership_status=membership_status,
+                         recent_transactions=recent_transactions,
+                         payments=payments,
+                         attendance=attendance,
+                         all_trophies=all_trophies)
+
+
+@admin_bp.route('/members/<int:member_id>/promote', methods=['POST'])
+@login_required
+@admin_required
+def promote_member(member_id):
+    """Promote a member to admin"""
+    member = Member.query.get_or_404(member_id)
+    user = member.user
+    
+    if user.role == 'admin':
+        flash(f'{member.full_name} is already an admin.', 'warning')
+        return redirect(url_for('admin.members'))
+    
+    user.role = 'admin'
+    db.session.commit()
+    
+    flash(f'{member.full_name} has been promoted to admin!', 'success')
+    return redirect(url_for('admin.members'))
+
+
+@admin_bp.route('/members/<int:member_id>/demote', methods=['POST'])
+@login_required
+@admin_required
+def demote_member(member_id):
+    """Demote an admin to regular member"""
+    member = Member.query.get_or_404(member_id)
+    user = member.user
+    
+    if user.is_super_admin:
+        flash('Cannot demote super admin!', 'error')
+        return redirect(url_for('admin.members'))
+    
+    if user.role != 'admin':
+        flash(f'{member.full_name} is not an admin.', 'warning')
+        return redirect(url_for('admin.members'))
+    
+    user.role = 'student'
+    db.session.commit()
+    
+    flash(f'{member.full_name} has been demoted to regular member.', 'success')
+    return redirect(url_for('admin.members'))
+
+
+@admin_bp.route('/profile')
+@login_required
+@admin_required
+def admin_profile():
+    """View current admin's profile"""
+    member = current_user.member
+    if not member:
+        flash('Profile not found. Please complete your member profile.', 'error')
+        return redirect(url_for('admin.dashboard'))
+    
+    # Get member statistics
+    total_points = member.get_total_points()
+    trophies = member.get_current_trophies()
+    membership_status = member.get_membership_status()
+    
+    # Get recent transactions
+    recent_transactions = member.reward_transactions.order_by(RewardTransaction.created_at.desc()).limit(10).all()
+    
+    # Get payment history
+    payments = member.membership_payments.order_by(MembershipPayment.payment_date.desc()).all()
+    
+    # Get attendance history
+    attendance = RSVP.query.filter_by(member_id=member.id, checked_in=True).order_by(RSVP.checked_in_at.desc()).limit(10).all()
+    
+    # Get all trophies for progress tracking
+    all_trophies = Trophy.query.filter_by(is_active=True).order_by(Trophy.points_required.asc()).all()
+    
+    return render_template('admin/admin_profile.html',
                          member=member,
                          total_points=total_points,
                          trophies=trophies,

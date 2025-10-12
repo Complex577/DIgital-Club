@@ -10,6 +10,7 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(128))
     role = db.Column(db.String(20), default='student')  # admin or student
     is_approved = db.Column(db.Boolean, default=False)
+    is_super_admin = db.Column(db.Boolean, default=False)  # Super admin cannot be demoted
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relationship to member profile

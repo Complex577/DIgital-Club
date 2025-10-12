@@ -12,7 +12,7 @@ from datetime import datetime, date
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from app import create_app, db
-from app.models import FinancialPeriod, FinancialCategory, FinancialTransaction, MembershipPayment
+from app.models import FinancialPeriod, FinancialCategory, FinancialTransaction, MembershipPayment, User
 
 def create_default_categories():
     """Create default financial categories"""

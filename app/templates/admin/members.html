@@ -19,28 +19,50 @@
 
 <!-- Statistics Cards -->
 <div class="row mb-4">
-    <div class="col-md-3">
+    <div class="col-md-2">
         <div class="admin-stat-card">
             <h5>{{ total_members }}</h5>
             <p>Total Members</p>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-2">
         <div class="admin-stat-card success">
             <h5>{{ valid_count }}</h5>
             <p>Valid Memberships</p>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-2">
         <div class="admin-stat-card warning">
             <h5>{{ expired_count }}</h5>
             <p>Expired Memberships</p>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-2">
         <div class="admin-stat-card">
             <h5>{{ none_count }}</h5>
             <p>No Payment History</p>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="admin-stat-card">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-crown text-warning me-2"></i>
+                <div>
+                    <h5>{{ super_admin_count }}</h5>
+                    <p>Super Admins</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="admin-stat-card">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-user-shield text-primary me-2"></i>
+                <div>
+                    <h5>{{ admin_count }}</h5>
+                    <p>Admins</p>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -49,11 +71,11 @@
 <div class="admin-card mb-4">
     <div class="admin-card-body">
         <form method="GET" class="row g-3">
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <label class="form-label">Search</label>
                 <input type="text" name="search" class="form-control" placeholder="Name, ID, or Email" value="{{ search_query }}">
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <label class="form-label">Payment Status</label>
                 <select name="status" class="form-control">
                     <option value="all" {% if current_status == 'all' %}selected{% endif %}>All Status</option>
@@ -62,7 +84,15 @@
                     <option value="none" {% if current_status == 'none' %}selected{% endif %}>No Payments</option>
                 </select>
             </div>
-            <div class="col-md-4 d-flex align-items-end">
+            <div class="col-md-3">
+                <label class="form-label">Role</label>
+                <select name="role" class="form-control">
+                    <option value="all" {% if current_role == 'all' %}selected{% endif %}>All Roles</option>
+                    <option value="admin" {% if current_role == 'admin' %}selected{% endif %}>Admins</option>
+                    <option value="member" {% if current_role == 'member' %}selected{% endif %}>Regular Members</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
                 <button type="submit" class="admin-btn admin-btn-primary me-2">
                     <i class="fas fa-filter"></i> Filter
                 </button>
@@ -84,6 +114,7 @@
                     <th>Member</th>
                     <th>Member ID</th>
                     <th>Course & Year</th>
+                    <th>Role</th>
                     <th>Points</th>
                     <th>Membership Status</th>
                     <th>Actions</th>
@@ -116,6 +147,21 @@
                         {{ member.course or 'N/A' }}<br>
                         <small class="text-muted">{{ member.year or 'N/A' }}</small>
                     </td>
+                    <td>
+                        {% if member.user.is_super_admin %}
+                        <span class="admin-badge admin-badge-warning">
+                            <i class="fas fa-crown"></i> Super Admin
+                        </span>
+                        {% elif member.user.role == 'admin' %}
+                        <span class="admin-badge admin-badge-primary">
+                            <i class="fas fa-user-shield"></i> Admin
+                        </span>
+                        {% else %}
+                        <span class="admin-badge admin-badge-secondary">
+                            <i class="fas fa-user"></i> Member
+                        </span>
+                        {% endif %}
+                    </td>
                     <td><span class="admin-badge admin-badge-info">{{ member.get_total_points() }} pts</span></td>
                     <td>
                         {% if status == 'valid' %}
@@ -146,6 +192,26 @@
                                class="admin-btn admin-btn-sm admin-btn-info">
                                 <i class="fas fa-plus"></i> Add Points
                             </a>
+                            {% if member.user.role != 'admin' %}
+                            <form method="POST" action="{{ url_for('admin.promote_member', member_id=member.id) }}" class="d-inline">
+                                <button type="submit" class="admin-btn admin-btn-sm admin-btn-warning" 
+                                        onclick="return confirm('Promote {{ member.full_name }} to admin?')">
+                                    <i class="fas fa-user-shield"></i> Make Admin
+                                </button>
+                            </form>
+                            {% elif not member.user.is_super_admin %}
+                            <form method="POST" action="{{ url_for('admin.demote_member', member_id=member.id) }}" class="d-inline">
+                                <button type="submit" class="admin-btn admin-btn-sm admin-btn-secondary" 
+                                        onclick="return confirm('Demote {{ member.full_name }} to regular member?')">
+                                    <i class="fas fa-user"></i> Revoke Admin
+                                </button>
+                            </form>
+                            {% else %}
+                            <button type="button" class="admin-btn admin-btn-sm admin-btn-secondary" disabled 
+                                    title="Cannot demote super admin">
+                                <i class="fas fa-crown"></i> Super Admin
+                            </button>
+                            {% endif %}
                         </div>
                     </td>
                 </tr>
