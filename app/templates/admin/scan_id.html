@@ -317,10 +317,41 @@ function displayMemberInfo(member) {
         attendanceList.innerHTML = '<p class="text-muted">No recent attendance</p>';
     }
     
-    // Set action button URLs using proper string interpolation
-    document.getElementById('viewDetailsBtn').href = `/admin/members/${member.id}`;
-    document.getElementById('addPointsBtn').href = `/admin/rewards/add-points/${member.id}`;
-    document.getElementById('addPaymentBtn').href = `/admin/payments/add/${member.id}`;
+    // Set action button URLs using Flask url_for
+    const baseUrl = window.location.origin;
+    const viewDetailsUrl = `${baseUrl}/admin/members/${member.id}`;
+    const addPointsUrl = `${baseUrl}/admin/rewards/add-points/${member.id}`;
+    const addPaymentUrl = `${baseUrl}/admin/payments/add/${member.id}`;
+    
+    // Debug: Log URLs to console
+    console.log('View Details URL:', viewDetailsUrl);
+    console.log('Add Points URL:', addPointsUrl);
+    console.log('Add Payment URL:', addPaymentUrl);
+    
+    // Set the href attributes
+    const viewDetailsBtn = document.getElementById('viewDetailsBtn');
+    const addPointsBtn = document.getElementById('addPointsBtn');
+    const addPaymentBtn = document.getElementById('addPaymentBtn');
+    
+    viewDetailsBtn.href = viewDetailsUrl;
+    addPointsBtn.href = addPointsUrl;
+    addPaymentBtn.href = addPaymentUrl;
+    
+    // Remove any existing click handlers and add new ones as fallback
+    viewDetailsBtn.onclick = function(e) {
+        e.preventDefault();
+        window.location.href = viewDetailsUrl;
+    };
+    
+    addPointsBtn.onclick = function(e) {
+        e.preventDefault();
+        window.location.href = addPointsUrl;
+    };
+    
+    addPaymentBtn.onclick = function(e) {
+        e.preventDefault();
+        window.location.href = addPaymentUrl;
+    };
     
     // Show member info
     document.getElementById('memberInfo').style.display = 'block';
