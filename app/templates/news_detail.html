@@ -88,18 +88,18 @@
 <script>
     function shareOnFacebook() {
         const url = encodeURIComponent(window.location.href);
-        window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=Tsh {url}`, '_blank');
     }
     
     function shareOnTwitter() {
         const url = encodeURIComponent(window.location.href);
         const text = encodeURIComponent('{{ news_item.title }}');
-        window.open(`https://twitter.com/intent/tweet?url=${url}&text=${text}`, '_blank');
+        window.open(`https://twitter.com/intent/tweet?url=Tsh {url}&text=Tsh {text}`, '_blank');
     }
     
     function shareOnLinkedIn() {
         const url = encodeURIComponent(window.location.href);
-        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`, '_blank');
+        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=Tsh {url}`, '_blank');
     }
     
     function copyLink() {

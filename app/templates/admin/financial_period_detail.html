@@ -1,0 +1,254 @@
+{% extends "admin/admin_base.html" %}
+
+{% block admin_title %}{{ period.name }} - Financial Period{% endblock %}
+{% block page_title %}{{ period.name }}{% endblock %}
+{% block breadcrumb %}<span class="breadcrumb-separator">/</span> <a href="{{ url_for('admin.financial') }}">Financial Management</a><span class="breadcrumb-separator">/</span> <span>{{ period.name }}</span>{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-1">{{ period.name }}</h2>
+        <p class="text-muted mb-0">
+            {{ period.start_date.strftime('%B %d, %Y') }} - {{ period.end_date.strftime('%B %d, %Y') }}
+            {% if period.description %} | {{ period.description }}{% endif %}
+        </p>
+    </div>
+    <div>
+        {% if period.status == 'open' %}
+        <a href="{{ url_for('admin.add_transaction', period_id=period.id) }}" class="admin-btn admin-btn-primary">
+            <i class="fas fa-plus"></i> Add Transaction
+        </a>
+        <form method="POST" action="{{ url_for('admin.close_financial_period', period_id=period.id) }}" 
+              class="d-inline" onsubmit="return confirm('Close this financial period? This action cannot be undone.')">
+            <button type="submit" class="admin-btn admin-btn-warning">
+                <i class="fas fa-lock"></i> Close Period
+            </button>
+        </form>
+        {% else %}
+        <form method="POST" action="{{ url_for('admin.reopen_financial_period', period_id=period.id) }}" 
+              class="d-inline" onsubmit="return confirm('Reopen this financial period?')">
+            <button type="submit" class="admin-btn admin-btn-success">
+                <i class="fas fa-unlock"></i> Reopen Period
+            </button>
+        </form>
+        {% endif %}
+        <a href="{{ url_for('admin.export_financial_period', period_id=period.id) }}" class="admin-btn admin-btn-outline">
+            <i class="fas fa-download"></i> Export Report
+        </a>
+    </div>
+</div>
+
+<!-- Period Status and Statistics -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="admin-stat-card {% if period.status == 'open' %}success{% else %}secondary{% endif %}">
+            <h5>{{ period.status.title() }}</h5>
+            <p>Status</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="admin-stat-card success">
+            <h5>Tsh {{ "%.2f"|format(total_revenue) }}</h5>
+            <p>Total Revenue</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="admin-stat-card danger">
+            <h5>Tsh {{ "%.2f"|format(total_expenses) }}</h5>
+            <p>Total Expenses</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="admin-stat-card {% if net_balance >= 0 %}success{% else %}danger{% endif %}">
+            <h5>Tsh {{ "%.2f"|format(net_balance) }}</h5>
+            <p>Net Balance</p>
+        </div>
+    </div>
+</div>
+
+<!-- Period Information -->
+<div class="admin-card mb-4">
+    <div class="admin-card-header">
+        <h5><i class="fas fa-info-circle"></i> Period Information</h5>
+    </div>
+    <div class="admin-card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Opened by:</strong> {{ period.opener.email }}</p>
+                <p><strong>Opened on:</strong> {{ period.opened_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+            </div>
+            <div class="col-md-6">
+                {% if period.status == 'closed' %}
+                <p><strong>Closed by:</strong> {{ period.closer.email }}</p>
+                <p><strong>Closed on:</strong> {{ period.closed_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                {% else %}
+                <p><strong>Status:</strong> <span class="text-success">Currently Open</span></p>
+                {% endif %}
+                <p><strong>Transactions:</strong> {{ transaction_count }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Category Breakdown -->
+{% if category_breakdown %}
+<div class="admin-card mb-4">
+    <div class="admin-card-header">
+        <h5><i class="fas fa-chart-pie"></i> Category Breakdown</h5>
+    </div>
+    <div class="admin-card-body">
+        <div class="row">
+            {% for category_name, category_type, total in category_breakdown %}
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="admin-category-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">{{ category_name }}</h6>
+                            <small class="text-muted">{{ category_type.title() }}</small>
+                        </div>
+                        <div class="text-end">
+                            <strong class="{% if category_type == 'revenue' %}text-success{% else %}text-danger{% endif %}">
+                                Tsh {{ "%.2f"|format(total) }}
+                            </strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Filters -->
+<div class="admin-card mb-4">
+    <div class="admin-card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Transaction Type</label>
+                <select name="type" class="form-control">
+                    <option value="">All Types</option>
+                    <option value="revenue" {% if current_type == 'revenue' %}selected{% endif %}>Revenue</option>
+                    <option value="expense" {% if current_type == 'expense' %}selected{% endif %}>Expense</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Category</label>
+                <select name="category_id" class="form-control">
+                    <option value="">All Categories</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}" {% if category.id == current_category_id %}selected{% endif %}>
+                        {{ category.name }} ({{ category.type.title() }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="admin-btn admin-btn-primary me-2">
+                    <i class="fas fa-filter"></i> Filter
+                </button>
+                <a href="{{ url_for('admin.financial_period_detail', period_id=period.id) }}" class="admin-btn admin-btn-outline">
+                    <i class="fas fa-redo"></i> Reset
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Transactions Table -->
+<div class="admin-card">
+    <div class="admin-card-header">
+        <h5><i class="fas fa-list"></i> Transactions</h5>
+    </div>
+    <div class="admin-card-body">
+        {% if transactions %}
+            <div class="table-responsive">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Category</th>
+                            <th>Description</th>
+                            <th>Amount</th>
+                            <th>Recorded By</th>
+                            {% if period.status == 'open' %}
+                            <th>Actions</th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in transactions %}
+                        <tr>
+                            <td>{{ transaction.transaction_date.strftime('%Y-%m-%d') }}</td>
+                            <td>
+                                <span class="admin-badge {% if transaction.transaction_type == 'revenue' %}admin-badge-success{% else %}admin-badge-danger{% endif %}">
+                                    {{ transaction.transaction_type.title() }}
+                                </span>
+                            </td>
+                            <td>{{ transaction.category.name }}</td>
+                            <td>
+                                {{ transaction.description }}
+                                {% if transaction.notes %}
+                                <br><small class="text-muted">{{ transaction.notes }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <strong class="{% if transaction.transaction_type == 'revenue' %}text-success{% else %}text-danger{% endif %}">
+                                    Tsh {{ "%.2f"|format(transaction.amount) }}
+                                </strong>
+                            </td>
+                            <td>{{ transaction.recorder.email }}</td>
+                            {% if period.status == 'open' %}
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('admin.edit_transaction', transaction_id=transaction.id) }}" 
+                                       class="admin-btn admin-btn-sm admin-btn-outline">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <form method="POST" action="{{ url_for('admin.delete_transaction', transaction_id=transaction.id) }}" 
+                                          class="d-inline" onsubmit="return confirm('Delete this transaction?')">
+                                        <button type="submit" class="admin-btn admin-btn-sm admin-btn-danger">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                            {% endif %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="admin-empty-state">
+                <i class="fas fa-receipt"></i>
+                <h5>No Transactions Found</h5>
+                <p>{% if current_type or current_category_id %}No transactions match your filter criteria.{% else %}No transactions have been recorded for this period yet.{% endif %}</p>
+                {% if period.status == 'open' %}
+                <a href="{{ url_for('admin.add_transaction', period_id=period.id) }}" class="admin-btn admin-btn-primary">
+                    <i class="fas fa-plus"></i> Add First Transaction
+                </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+.admin-category-item {
+    background: #16213e;
+    border: 1px solid rgba(0, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 1rem;
+    transition: all 0.3s ease;
+}
+
+.admin-category-item:hover {
+    border-color: rgba(0, 255, 255, 0.3);
+    background: #1a1a2e;
+}
+</style>
+{% endblock %}

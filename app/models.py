@@ -438,6 +438,7 @@ class MembershipPayment(db.Model):
     payment_method = db.Column(db.String(50))  # cash, bank_transfer, mobile_money, etc.
     notes = db.Column(db.Text)  # Additional notes about the payment
     recorded_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)  # Admin who recorded payment
+    financial_period_id = db.Column(db.Integer, db.ForeignKey('financial_period.id'), nullable=True)  # Link to financial period
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -460,7 +461,7 @@ class MembershipPayment(db.Model):
         return (self.end_date - today).days
     
     def __repr__(self):
-        return f'<MembershipPayment {self.member_id}: ${self.amount} ({self.start_date} to {self.end_date})>'
+        return f'<MembershipPayment {self.member_id}: Tsh {self.amount} ({self.start_date} to {self.end_date})>'
 
 
 class SystemSettings(db.Model):
@@ -502,3 +503,134 @@ class SystemSettings(db.Model):
     
     def __repr__(self):
         return f'<SystemSettings {self.setting_key}: {self.setting_value}>'
+
+
+class FinancialPeriod(db.Model):
+    """Track financial periods for club leadership terms"""
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    start_date = db.Column(db.Date, nullable=False)
+    end_date = db.Column(db.Date, nullable=False)
+    status = db.Column(db.String(20), default='open')  # open, closed
+    description = db.Column(db.Text)
+    
+    # Audit fields
+    opened_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    opened_at = db.Column(db.DateTime, default=datetime.utcnow)
+    closed_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    closed_at = db.Column(db.DateTime, nullable=True)
+    
+    # Relationships
+    opener = db.relationship('User', foreign_keys=[opened_by], backref='opened_periods')
+    closer = db.relationship('User', foreign_keys=[closed_by], backref='closed_periods')
+    transactions = db.relationship('FinancialTransaction', backref='financial_period', lazy='dynamic')
+    membership_payments = db.relationship('MembershipPayment', backref='financial_period', lazy='dynamic')
+    
+    def is_open(self):
+        """Check if period is currently open"""
+        return self.status == 'open'
+    
+    def is_closed(self):
+        """Check if period is closed"""
+        return self.status == 'closed'
+    
+    def get_total_revenue(self):
+        """Calculate total revenue for this period"""
+        total = db.session.query(db.func.sum(FinancialTransaction.amount)).filter(
+            FinancialTransaction.financial_period_id == self.id,
+            FinancialTransaction.transaction_type == 'revenue'
+        ).scalar()
+        return total or 0
+    
+    def get_total_expenses(self):
+        """Calculate total expenses for this period"""
+        total = db.session.query(db.func.sum(FinancialTransaction.amount)).filter(
+            FinancialTransaction.financial_period_id == self.id,
+            FinancialTransaction.transaction_type == 'expense'
+        ).scalar()
+        return total or 0
+    
+    def get_net_balance(self):
+        """Calculate net balance (revenue - expenses)"""
+        return self.get_total_revenue() - self.get_total_expenses()
+    
+    def get_transaction_count(self):
+        """Get total number of transactions in this period"""
+        return self.transactions.count()
+    
+    def __repr__(self):
+        return f'<FinancialPeriod {self.name}: {self.start_date} to {self.end_date}>'
+
+
+class FinancialCategory(db.Model):
+    """Categories for financial transactions"""
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    type = db.Column(db.String(20), nullable=False)  # revenue, expense
+    description = db.Column(db.Text)
+    is_active = db.Column(db.Boolean, default=True)
+    is_builtin = db.Column(db.Boolean, default=False)  # Built-in categories cannot be deleted
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    transactions = db.relationship('FinancialTransaction', backref='category', lazy='dynamic')
+    
+    def get_transaction_count(self):
+        """Get number of transactions using this category"""
+        return self.transactions.count()
+    
+    def get_total_amount(self):
+        """Get total amount for this category"""
+        total = db.session.query(db.func.sum(FinancialTransaction.amount)).filter(
+            FinancialTransaction.category_id == self.id
+        ).scalar()
+        return total or 0
+    
+    def __repr__(self):
+        return f'<FinancialCategory {self.name} ({self.type})>'
+
+
+class FinancialTransaction(db.Model):
+    """Track all financial transactions"""
+    id = db.Column(db.Integer, primary_key=True)
+    financial_period_id = db.Column(db.Integer, db.ForeignKey('financial_period.id'), nullable=False)
+    category_id = db.Column(db.Integer, db.ForeignKey('financial_category.id'), nullable=False)
+    transaction_type = db.Column(db.String(20), nullable=False)  # revenue, expense
+    amount = db.Column(db.Float, nullable=False)
+    transaction_date = db.Column(db.Date, nullable=False)
+    description = db.Column(db.String(200), nullable=False)
+    notes = db.Column(db.Text)
+    
+    # Reference linking (optional)
+    reference_type = db.Column(db.String(50), nullable=True)  # payment, event, manual
+    reference_id = db.Column(db.Integer, nullable=True)  # Links to MembershipPayment or other records
+    
+    # Audit fields
+    recorded_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    recorder = db.relationship('User', backref='recorded_transactions')
+    
+    def is_revenue(self):
+        """Check if this is a revenue transaction"""
+        return self.transaction_type == 'revenue'
+    
+    def is_expense(self):
+        """Check if this is an expense transaction"""
+        return self.transaction_type == 'expense'
+    
+    def get_reference_object(self):
+        """Get the referenced object if any"""
+        if not self.reference_type or not self.reference_id:
+            return None
+        
+        if self.reference_type == 'payment':
+            return MembershipPayment.query.get(self.reference_id)
+        # Add more reference types as needed
+        
+        return None
+    
+    def __repr__(self):
+        return f'<FinancialTransaction {self.description}: Tsh {self.amount} ({self.transaction_type})>'

@@ -104,7 +104,7 @@ This will:
 - Create new database tables
 - Add new columns to existing tables
 - Insert 7 default trophies
-- Create default system settings (membership fee: $50, duration: 12 months, event points: 100)
+- Create default system settings (membership fee: Tsh 50, duration: 12 months, event points: 100)
 
 ### 2. Configure Settings
 

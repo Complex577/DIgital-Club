@@ -5,7 +5,8 @@ from app.routes import admin_bp
 from app.models import (
     User, Member, Leader, News, Event, Project, Gallery, Topic, Newsletter, 
     Blog, RSVP, Technology, RewardTransaction, Trophy, MemberTrophy, 
-    MembershipPayment, SystemSettings
+    MembershipPayment, SystemSettings, FinancialPeriod, FinancialCategory, 
+    FinancialTransaction
 )
 from app import db
 from app.utils import get_notification_service
@@ -34,6 +35,12 @@ def dashboard():
     upcoming_events = Event.query.filter(Event.event_date >= datetime.utcnow()).count()
     newsletter_subscribers = Newsletter.query.filter_by(is_active=True).count()
     
+    # Get financial statistics
+    current_period = FinancialPeriod.query.filter_by(status='open').first()
+    current_revenue = current_period.get_total_revenue() if current_period else 0
+    current_expenses = current_period.get_total_expenses() if current_period else 0
+    current_balance = current_revenue - current_expenses
+    
     # Get recent activity
     recent_news = News.query.order_by(News.published_date.desc()).limit(5).all()
     pending_users = User.query.filter_by(role='student', is_approved=False).limit(5).all()
@@ -44,7 +51,11 @@ def dashboard():
                          upcoming_events=upcoming_events,
                          newsletter_subscribers=newsletter_subscribers,
                          recent_news=recent_news,
-                         pending_users=pending_users)
+                         pending_users=pending_users,
+                         current_period=current_period,
+                         current_revenue=current_revenue,
+                         current_expenses=current_expenses,
+                         current_balance=current_balance)
 
 @admin_bp.route('/users')
 @login_required
@@ -1371,6 +1382,9 @@ def payments():
     active_payments = sum(1 for p in MembershipPayment.query.all() if p.is_active())
     total_revenue = db.session.query(db.func.sum(MembershipPayment.amount)).scalar() or 0
     
+    # Get current financial period
+    current_period = FinancialPeriod.query.filter_by(status='open').first()
+    
     return render_template('admin/payments.html',
                          payments=payments,
                          members=members,
@@ -1378,7 +1392,8 @@ def payments():
                          current_member_id=member_id,
                          total_payments=total_payments,
                          active_payments=active_payments,
-                         total_revenue=total_revenue)
+                         total_revenue=total_revenue,
+                         current_period=current_period)
 
 
 @admin_bp.route('/payments/add/<int:member_id>', methods=['GET', 'POST'])
@@ -1412,6 +1427,9 @@ def add_payment(member_id):
             flash('End date must be after start date.', 'error')
             return render_template('admin/add_payment.html', member=member, default_fee=default_fee)
         
+        # Get current financial period
+        current_period = FinancialPeriod.query.filter_by(status='open').first()
+        
         payment = MembershipPayment(
             member_id=member.id,
             amount=amount,
@@ -1420,10 +1438,31 @@ def add_payment(member_id):
             end_date=end_date,
             payment_method=payment_method,
             notes=notes,
-            recorded_by=current_user.id
+            recorded_by=current_user.id,
+            financial_period_id=current_period.id if current_period else None
         )
         
         db.session.add(payment)
+        
+        # Create financial transaction if there's an active period
+        if current_period:
+            # Get membership fees category
+            membership_category = FinancialCategory.query.filter_by(name='Membership Fees', type='revenue').first()
+            if membership_category:
+                transaction = FinancialTransaction(
+                    financial_period_id=current_period.id,
+                    category_id=membership_category.id,
+                    transaction_type='revenue',
+                    amount=amount,
+                    transaction_date=payment_date,
+                    description=f"Membership fee payment from {member.full_name}",
+                    notes=f"Payment method: {payment_method or 'Not specified'}",
+                    reference_type='payment',
+                    reference_id=payment.id,
+                    recorded_by=current_user.id
+                )
+                db.session.add(transaction)
+        
         db.session.commit()
         
         flash(f'Payment recorded successfully for {member.full_name}!', 'success')
@@ -1624,3 +1663,556 @@ def undo_checkin(rsvp_id):
         'success': True,
         'message': f'Check-in undone for {rsvp.full_name}'
     })
+
+
+# ============================================================================
+# FINANCIAL MANAGEMENT ROUTES
+# ============================================================================
+
+@admin_bp.route('/financial')
+@login_required
+@admin_required
+def financial():
+    """Main financial management page"""
+    # Get all financial periods
+    periods = FinancialPeriod.query.order_by(FinancialPeriod.start_date.desc()).all()
+    
+    # Get current open period
+    current_period = FinancialPeriod.query.filter_by(status='open').first()
+    
+    # Get statistics
+    total_periods = FinancialPeriod.query.count()
+    open_periods = FinancialPeriod.query.filter_by(status='open').count()
+    closed_periods = FinancialPeriod.query.filter_by(status='closed').count()
+    
+    # Calculate all-time totals
+    all_time_revenue = db.session.query(db.func.sum(FinancialTransaction.amount)).filter(
+        FinancialTransaction.transaction_type == 'revenue'
+    ).scalar() or 0
+    
+    all_time_expenses = db.session.query(db.func.sum(FinancialTransaction.amount)).filter(
+        FinancialTransaction.transaction_type == 'expense'
+    ).scalar() or 0
+    
+    all_time_balance = all_time_revenue - all_time_expenses
+    
+    return render_template('admin/financial.html',
+                         periods=periods,
+                         current_period=current_period,
+                         total_periods=total_periods,
+                         open_periods=open_periods,
+                         closed_periods=closed_periods,
+                         all_time_revenue=all_time_revenue,
+                         all_time_expenses=all_time_expenses,
+                         all_time_balance=all_time_balance)
+
+
+@admin_bp.route('/financial/create', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def create_financial_period():
+    """Create and open a new financial period"""
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        start_date_str = request.form.get('start_date')
+        end_date_str = request.form.get('end_date')
+        description = request.form.get('description', '').strip()
+        close_previous = 'close_previous' in request.form
+        
+        if not name or not start_date_str or not end_date_str:
+            flash('All required fields must be filled.', 'error')
+            return render_template('admin/add_financial_period.html')
+        
+        try:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            flash('Invalid date format.', 'error')
+            return render_template('admin/add_financial_period.html')
+        
+        if end_date <= start_date:
+            flash('End date must be after start date.', 'error')
+            return render_template('admin/add_financial_period.html')
+        
+        # Check if there's already an open period
+        existing_open = FinancialPeriod.query.filter_by(status='open').first()
+        if existing_open and not close_previous:
+            flash('There is already an open financial period. Please close it first or check "Close Previous Period".', 'error')
+            return render_template('admin/add_financial_period.html')
+        
+        # Close previous period if requested
+        if close_previous and existing_open:
+            existing_open.status = 'closed'
+            existing_open.closed_by = current_user.id
+            existing_open.closed_at = datetime.utcnow()
+        
+        # Create new period
+        new_period = FinancialPeriod(
+            name=name,
+            start_date=start_date,
+            end_date=end_date,
+            description=description,
+            opened_by=current_user.id
+        )
+        
+        db.session.add(new_period)
+        db.session.commit()
+        
+        flash(f'Financial period "{name}" created and opened successfully!', 'success')
+        return redirect(url_for('admin.financial_period_detail', period_id=new_period.id))
+    
+    # Check for existing open period
+    existing_open = FinancialPeriod.query.filter_by(status='open').first()
+    
+    return render_template('admin/add_financial_period.html', existing_open=existing_open)
+
+
+@admin_bp.route('/financial/<int:period_id>')
+@login_required
+@admin_required
+def financial_period_detail(period_id):
+    """View financial period details and transactions"""
+    period = FinancialPeriod.query.get_or_404(period_id)
+    
+    # Get filter parameters
+    transaction_type = request.args.get('type', '')
+    category_id = request.args.get('category_id', type=int)
+    
+    # Build query for transactions
+    query = period.transactions
+    
+    if transaction_type:
+        query = query.filter_by(transaction_type=transaction_type)
+    if category_id:
+        query = query.filter_by(category_id=category_id)
+    
+    transactions = query.order_by(FinancialTransaction.transaction_date.desc()).all()
+    
+    # Get categories for filter
+    categories = FinancialCategory.query.filter_by(is_active=True).order_by(
+        FinancialCategory.type.asc(), FinancialCategory.name.asc()
+    ).all()
+    
+    # Calculate statistics
+    total_revenue = period.get_total_revenue()
+    total_expenses = period.get_total_expenses()
+    net_balance = period.get_net_balance()
+    transaction_count = period.get_transaction_count()
+    
+    # Get category breakdown
+    category_breakdown = db.session.query(
+        FinancialCategory.name,
+        FinancialCategory.type,
+        db.func.sum(FinancialTransaction.amount).label('total')
+    ).join(FinancialTransaction).filter(
+        FinancialTransaction.financial_period_id == period.id
+    ).group_by(FinancialCategory.id, FinancialCategory.name, FinancialCategory.type).all()
+    
+    return render_template('admin/financial_period_detail.html',
+                         period=period,
+                         transactions=transactions,
+                         categories=categories,
+                         total_revenue=total_revenue,
+                         total_expenses=total_expenses,
+                         net_balance=net_balance,
+                         transaction_count=transaction_count,
+                         category_breakdown=category_breakdown,
+                         current_type=transaction_type,
+                         current_category_id=category_id)
+
+
+@admin_bp.route('/financial/<int:period_id>/close', methods=['POST'])
+@login_required
+@admin_required
+def close_financial_period(period_id):
+    """Close a financial period"""
+    period = FinancialPeriod.query.get_or_404(period_id)
+    
+    if period.status == 'closed':
+        flash('This period is already closed.', 'warning')
+        return redirect(url_for('admin.financial_period_detail', period_id=period_id))
+    
+    period.status = 'closed'
+    period.closed_by = current_user.id
+    period.closed_at = datetime.utcnow()
+    
+    db.session.commit()
+    
+    flash(f'Financial period "{period.name}" has been closed successfully.', 'success')
+    return redirect(url_for('admin.financial_period_detail', period_id=period_id))
+
+
+@admin_bp.route('/financial/<int:period_id>/reopen', methods=['POST'])
+@login_required
+@admin_required
+def reopen_financial_period(period_id):
+    """Reopen a closed financial period (admin only)"""
+    period = FinancialPeriod.query.get_or_404(period_id)
+    
+    if period.status == 'open':
+        flash('This period is already open.', 'warning')
+        return redirect(url_for('admin.financial_period_detail', period_id=period_id))
+    
+    # Check if there's already an open period
+    existing_open = FinancialPeriod.query.filter_by(status='open').first()
+    if existing_open:
+        flash('There is already an open financial period. Please close it first.', 'error')
+        return redirect(url_for('admin.financial_period_detail', period_id=period_id))
+    
+    period.status = 'open'
+    period.closed_by = None
+    period.closed_at = None
+    
+    db.session.commit()
+    
+    flash(f'Financial period "{period.name}" has been reopened successfully.', 'success')
+    return redirect(url_for('admin.financial_period_detail', period_id=period_id))
+
+
+@admin_bp.route('/financial/<int:period_id>/add-transaction', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def add_transaction(period_id):
+    """Add a new financial transaction"""
+    period = FinancialPeriod.query.get_or_404(period_id)
+    
+    if period.status == 'closed':
+        flash('Cannot add transactions to a closed period.', 'error')
+        return redirect(url_for('admin.financial_period_detail', period_id=period_id))
+    
+    if request.method == 'POST':
+        transaction_type = request.form.get('transaction_type')
+        category_id = request.form.get('category_id', type=int)
+        amount = request.form.get('amount', type=float)
+        transaction_date_str = request.form.get('transaction_date')
+        description = request.form.get('description', '').strip()
+        notes = request.form.get('notes', '').strip()
+        
+        if not all([transaction_type, category_id, amount, transaction_date_str, description]):
+            flash('All required fields must be filled.', 'error')
+            return render_template('admin/add_transaction.html', period=period, categories=categories)
+        
+        if amount <= 0:
+            flash('Amount must be greater than zero.', 'error')
+            return render_template('admin/add_transaction.html', period=period, categories=categories)
+        
+        try:
+            transaction_date = datetime.strptime(transaction_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            flash('Invalid date format.', 'error')
+            return render_template('admin/add_transaction.html', period=period, categories=categories)
+        
+        # Verify category exists and matches transaction type
+        category = FinancialCategory.query.get(category_id)
+        if not category or category.type != transaction_type:
+            flash('Invalid category for transaction type.', 'error')
+            return render_template('admin/add_transaction.html', period=period, categories=categories)
+        
+        transaction = FinancialTransaction(
+            financial_period_id=period.id,
+            category_id=category_id,
+            transaction_type=transaction_type,
+            amount=amount,
+            transaction_date=transaction_date,
+            description=description,
+            notes=notes,
+            recorded_by=current_user.id
+        )
+        
+        db.session.add(transaction)
+        db.session.commit()
+        
+        flash(f'Transaction "{description}" added successfully!', 'success')
+        return redirect(url_for('admin.financial_period_detail', period_id=period_id))
+    
+    # Get categories filtered by transaction type (will be filtered by JavaScript)
+    categories = FinancialCategory.query.filter_by(is_active=True).order_by(
+        FinancialCategory.type.asc(), FinancialCategory.name.asc()
+    ).all()
+    
+    return render_template('admin/add_transaction.html', period=period, categories=categories)
+
+
+@admin_bp.route('/financial/transactions/<int:transaction_id>/edit', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def edit_transaction(transaction_id):
+    """Edit a financial transaction"""
+    transaction = FinancialTransaction.query.get_or_404(transaction_id)
+    
+    if transaction.financial_period.status == 'closed':
+        flash('Cannot edit transactions in a closed period.', 'error')
+        return redirect(url_for('admin.financial_period_detail', period_id=transaction.financial_period_id))
+    
+    if request.method == 'POST':
+        transaction_type = request.form.get('transaction_type')
+        category_id = request.form.get('category_id', type=int)
+        amount = request.form.get('amount', type=float)
+        transaction_date_str = request.form.get('transaction_date')
+        description = request.form.get('description', '').strip()
+        notes = request.form.get('notes', '').strip()
+        
+        if not all([transaction_type, category_id, amount, transaction_date_str, description]):
+            flash('All required fields must be filled.', 'error')
+            return render_template('admin/edit_transaction.html', transaction=transaction, categories=categories)
+        
+        if amount <= 0:
+            flash('Amount must be greater than zero.', 'error')
+            return render_template('admin/edit_transaction.html', transaction=transaction, categories=categories)
+        
+        try:
+            transaction_date = datetime.strptime(transaction_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            flash('Invalid date format.', 'error')
+            return render_template('admin/edit_transaction.html', transaction=transaction, categories=categories)
+        
+        # Verify category exists and matches transaction type
+        category = FinancialCategory.query.get(category_id)
+        if not category or category.type != transaction_type:
+            flash('Invalid category for transaction type.', 'error')
+            return render_template('admin/edit_transaction.html', transaction=transaction, categories=categories)
+        
+        transaction.transaction_type = transaction_type
+        transaction.category_id = category_id
+        transaction.amount = amount
+        transaction.transaction_date = transaction_date
+        transaction.description = description
+        transaction.notes = notes
+        
+        db.session.commit()
+        
+        flash(f'Transaction "{description}" updated successfully!', 'success')
+        return redirect(url_for('admin.financial_period_detail', period_id=transaction.financial_period_id))
+    
+    # Get categories filtered by transaction type
+    categories = FinancialCategory.query.filter_by(is_active=True).order_by(
+        FinancialCategory.type.asc(), FinancialCategory.name.asc()
+    ).all()
+    
+    return render_template('admin/edit_transaction.html', transaction=transaction, categories=categories)
+
+
+@admin_bp.route('/financial/transactions/<int:transaction_id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def delete_transaction(transaction_id):
+    """Delete a financial transaction"""
+    transaction = FinancialTransaction.query.get_or_404(transaction_id)
+    
+    if transaction.financial_period.status == 'closed':
+        flash('Cannot delete transactions in a closed period.', 'error')
+        return redirect(url_for('admin.financial_period_detail', period_id=transaction.financial_period_id))
+    
+    description = transaction.description
+    period_id = transaction.financial_period_id
+    
+    db.session.delete(transaction)
+    db.session.commit()
+    
+    flash(f'Transaction "{description}" deleted successfully.', 'success')
+    return redirect(url_for('admin.financial_period_detail', period_id=period_id))
+
+
+@admin_bp.route('/financial/categories')
+@login_required
+@admin_required
+def financial_categories():
+    """Manage financial categories"""
+    categories = FinancialCategory.query.order_by(
+        FinancialCategory.type.asc(), FinancialCategory.name.asc()
+    ).all()
+    
+    return render_template('admin/financial_categories.html', categories=categories)
+
+
+@admin_bp.route('/financial/categories/add', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def add_financial_category():
+    """Add a new financial category"""
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        category_type = request.form.get('type')
+        description = request.form.get('description', '').strip()
+        
+        if not name or not category_type:
+            flash('Name and type are required.', 'error')
+            return render_template('admin/add_financial_category.html')
+        
+        # Check if category already exists
+        existing = FinancialCategory.query.filter_by(name=name, type=category_type).first()
+        if existing:
+            flash('A category with this name and type already exists.', 'warning')
+            return render_template('admin/add_financial_category.html')
+        
+        category = FinancialCategory(
+            name=name,
+            type=category_type,
+            description=description,
+            is_builtin=False,
+            is_active=True
+        )
+        
+        db.session.add(category)
+        db.session.commit()
+        
+        flash(f'Category "{name}" added successfully!', 'success')
+        return redirect(url_for('admin.financial_categories'))
+    
+    return render_template('admin/add_financial_category.html')
+
+
+@admin_bp.route('/financial/categories/<int:category_id>/edit', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def edit_financial_category(category_id):
+    """Edit a financial category"""
+    category = FinancialCategory.query.get_or_404(category_id)
+    
+    if category.is_builtin:
+        flash('Built-in categories cannot be edited.', 'error')
+        return redirect(url_for('admin.financial_categories'))
+    
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        description = request.form.get('description', '').strip()
+        
+        if not name:
+            flash('Name is required.', 'error')
+            return render_template('admin/edit_financial_category.html', category=category)
+        
+        # Check if another category with same name and type exists
+        existing = FinancialCategory.query.filter(
+            FinancialCategory.name == name,
+            FinancialCategory.type == category.type,
+            FinancialCategory.id != category.id
+        ).first()
+        
+        if existing:
+            flash('A category with this name and type already exists.', 'warning')
+            return render_template('admin/edit_financial_category.html', category=category)
+        
+        category.name = name
+        category.description = description
+        
+        db.session.commit()
+        
+        flash(f'Category "{name}" updated successfully!', 'success')
+        return redirect(url_for('admin.financial_categories'))
+    
+    return render_template('admin/edit_financial_category.html', category=category)
+
+
+@admin_bp.route('/financial/categories/<int:category_id>/toggle', methods=['POST'])
+@login_required
+@admin_required
+def toggle_financial_category(category_id):
+    """Toggle category active status"""
+    category = FinancialCategory.query.get_or_404(category_id)
+    
+    if category.is_builtin:
+        flash('Built-in categories cannot be deactivated.', 'error')
+        return redirect(url_for('admin.financial_categories'))
+    
+    category.is_active = not category.is_active
+    db.session.commit()
+    
+    status = 'activated' if category.is_active else 'deactivated'
+    flash(f'Category "{category.name}" {status} successfully.', 'success')
+    return redirect(url_for('admin.financial_categories'))
+
+
+@admin_bp.route('/financial/reports')
+@login_required
+@admin_required
+def financial_reports():
+    """Comprehensive financial reports"""
+    # Get all periods
+    periods = FinancialPeriod.query.order_by(FinancialPeriod.start_date.desc()).all()
+    
+    # Calculate all-time totals
+    all_time_revenue = db.session.query(db.func.sum(FinancialTransaction.amount)).filter(
+        FinancialTransaction.transaction_type == 'revenue'
+    ).scalar() or 0
+    
+    all_time_expenses = db.session.query(db.func.sum(FinancialTransaction.amount)).filter(
+        FinancialTransaction.transaction_type == 'expense'
+    ).scalar() or 0
+    
+    all_time_balance = all_time_revenue - all_time_expenses
+    
+    # Get category totals across all periods
+    category_totals = db.session.query(
+        FinancialCategory.name,
+        FinancialCategory.type,
+        db.func.sum(FinancialTransaction.amount).label('total')
+    ).join(FinancialTransaction).group_by(
+        FinancialCategory.id, FinancialCategory.name, FinancialCategory.type
+    ).order_by(db.func.sum(FinancialTransaction.amount).desc()).all()
+    
+    return render_template('admin/financial_reports.html',
+                         periods=periods,
+                         all_time_revenue=all_time_revenue,
+                         all_time_expenses=all_time_expenses,
+                         all_time_balance=all_time_balance,
+                         category_totals=category_totals)
+
+
+@admin_bp.route('/financial/export/<int:period_id>')
+@login_required
+@admin_required
+def export_financial_period(period_id):
+    """Export financial period report as CSV"""
+    period = FinancialPeriod.query.get_or_404(period_id)
+    
+    try:
+        from flask import Response
+        import csv
+        import io
+        
+        # Get all transactions for the period
+        transactions = period.transactions.order_by(FinancialTransaction.transaction_date.desc()).all()
+        
+        # Create CSV content
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # Write header
+        writer.writerow([
+            'Date', 'Type', 'Category', 'Description', 'Amount', 'Notes', 'Recorded By'
+        ])
+        
+        # Write data
+        for transaction in transactions:
+            writer.writerow([
+                transaction.transaction_date.strftime('%Y-%m-%d'),
+                transaction.transaction_type.title(),
+                transaction.category.name,
+                transaction.description,
+                f"Tsh {transaction.amount:.2f}",
+                transaction.notes or '',
+                transaction.recorder.email
+            ])
+        
+        # Add summary
+        writer.writerow([])
+        writer.writerow(['SUMMARY'])
+        writer.writerow(['Total Revenue', f"Tsh {period.get_total_revenue():.2f}"])
+        writer.writerow(['Total Expenses', f"Tsh {period.get_total_expenses():.2f}"])
+        writer.writerow(['Net Balance', f"Tsh {period.get_net_balance():.2f}"])
+        
+        # Prepare response
+        output.seek(0)
+        response = Response(
+            output.getvalue(),
+            mimetype='text/csv',
+            headers={
+                'Content-Disposition': f'attachment; filename=financial_report_{period.name.replace(" ", "_")}_{datetime.now().strftime("%Y%m%d")}.csv'
+            }
+        )
+        
+        return response
+        
+    except Exception as e:
+        flash(f'Error exporting report: {str(e)}', 'error')
+        return redirect(url_for('admin.financial_period_detail', period_id=period_id))

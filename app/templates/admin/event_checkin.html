@@ -187,7 +187,7 @@ function updateFilters() {
 function checkinRsvp(rsvpId) {
     if (!confirm('Check in this attendee?')) return;
     
-    fetch(`/admin/rsvps/checkin/${rsvpId}`, {
+    fetch(`/admin/rsvps/checkin/Tsh {rsvpId}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -210,7 +210,7 @@ function checkinRsvp(rsvpId) {
 function undoCheckin(rsvpId) {
     if (!confirm('Undo check-in for this attendee?')) return;
     
-    fetch(`/admin/rsvps/checkin/${rsvpId}/undo`, {
+    fetch(`/admin/rsvps/checkin/Tsh {rsvpId}/undo`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

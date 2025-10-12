@@ -1,0 +1,260 @@
+{% extends "admin/admin_base.html" %}
+
+{% block admin_title %}Edit Transaction{% endblock %}
+{% block page_title %}Edit Transaction{% endblock %}
+{% block breadcrumb %}<span class="breadcrumb-separator">/</span> <a href="{{ url_for('admin.financial') }}">Financial Management</a><span class="breadcrumb-separator">/</span> <a href="{{ url_for('admin.financial_period_detail', period_id=transaction.financial_period_id) }}">{{ transaction.financial_period.name }}</a><span class="breadcrumb-separator">/</span> <span>Edit Transaction</span>{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-1">Edit Transaction</h2>
+        <p class="text-muted mb-0">Modify transaction details for {{ transaction.financial_period.name }}</p>
+    </div>
+    <div>
+        <a href="{{ url_for('admin.financial_period_detail', period_id=transaction.financial_period_id) }}" class="admin-btn admin-btn-outline">
+            <i class="fas fa-arrow-left"></i> Back to Period
+        </a>
+    </div>
+</div>
+
+<!-- Transaction Info -->
+<div class="admin-card mb-4">
+    <div class="admin-card-body">
+        <div class="d-flex align-items-center">
+            <div class="admin-alert-icon info">
+                <i class="fas fa-receipt"></i>
+            </div>
+            <div class="flex-grow-1">
+                <h5 class="mb-1">{{ transaction.description }}</h5>
+                <p class="mb-0 text-muted">
+                    {{ transaction.transaction_date.strftime('%B %d, %Y') }} | 
+                    <span class="{% if transaction.transaction_type == 'revenue' %}text-success{% else %}text-danger{% endif %}">
+                        Tsh {{ "%.2f"|format(transaction.amount) }} {{ transaction.transaction_type.title() }}
+                    </span>
+                </p>
+            </div>
+            <div>
+                <span class="admin-badge {% if transaction.transaction_type == 'revenue' %}admin-badge-success{% else %}admin-badge-danger{% endif %}">
+                    {{ transaction.transaction_type.title() }}
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Transaction Form -->
+<div class="admin-card">
+    <div class="admin-card-header">
+        <h5><i class="fas fa-edit"></i> Transaction Details</h5>
+    </div>
+    <div class="admin-card-body">
+        <form method="POST">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="transaction_type" class="form-label">Transaction Type <span class="text-danger">*</span></label>
+                        <select class="form-control" id="transaction_type" name="transaction_type" required>
+                            <option value="revenue" {% if transaction.transaction_type == 'revenue' %}selected{% endif %}>Revenue (Money Coming In)</option>
+                            <option value="expense" {% if transaction.transaction_type == 'expense' %}selected{% endif %}>Expense (Money Going Out)</option>
+                        </select>
+                        <div class="form-text">Choose whether this is money coming in or going out.</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="category_id" class="form-label">Category <span class="text-danger">*</span></label>
+                        <select class="form-control" id="category_id" name="category_id" required>
+                            {% for category in categories %}
+                            {% if category.type == transaction.transaction_type %}
+                            <option value="{{ category.id }}" {% if category.id == transaction.category_id %}selected{% endif %}>
+                                {{ category.name }}
+                            </option>
+                            {% endif %}
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Choose the appropriate category for this transaction.</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">Amount <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text">Tsh </span>
+                            <input type="number" class="form-control" id="amount" name="amount" 
+                                   step="0.01" min="0.01" required value="{{ transaction.amount }}">
+                        </div>
+                        <div class="form-text">Enter the transaction amount (must be greater than Tsh 0).</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="transaction_date" class="form-label">Transaction Date <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" id="transaction_date" name="transaction_date" 
+                               required value="{{ transaction.transaction_date.strftime('%Y-%m-%d') }}">
+                        <div class="form-text">When this transaction occurred.</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="description" class="form-label">Description <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="description" name="description" required
+                       value="{{ transaction.description }}"
+                       placeholder="Brief description of the transaction">
+                <div class="form-text">Provide a clear description of what this transaction is for.</div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="notes" class="form-label">Notes</label>
+                <textarea class="form-control" id="notes" name="notes" rows="3"
+                          placeholder="Additional details, reference numbers, or context">{{ transaction.notes or '' }}</textarea>
+                <div class="form-text">Optional additional information about this transaction.</div>
+            </div>
+            
+            <div class="d-flex justify-content-between">
+                <a href="{{ url_for('admin.financial_period_detail', period_id=transaction.financial_period_id) }}" class="admin-btn admin-btn-outline">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+                <button type="submit" class="admin-btn admin-btn-primary">
+                    <i class="fas fa-save"></i> Update Transaction
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Transaction History -->
+<div class="admin-card mt-4">
+    <div class="admin-card-header">
+        <h5><i class="fas fa-history"></i> Transaction History</h5>
+    </div>
+    <div class="admin-card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Created:</strong> {{ transaction.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                <p><strong>Created by:</strong> {{ transaction.recorder.email }}</p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>Last Updated:</strong> {{ transaction.updated_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                <p><strong>Period:</strong> {{ transaction.financial_period.name }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+.admin-alert-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+}
+
+.admin-alert-icon.info {
+    background: rgba(0, 255, 255, 0.2);
+    color: #00ffff;
+}
+
+.input-group-text {
+    background-color: #16213e;
+    color: #ffffff;
+    border-color: rgba(0, 255, 255, 0.2);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const transactionTypeSelect = document.getElementById('transaction_type');
+    const categorySelect = document.getElementById('category_id');
+    const amountInput = document.getElementById('amount');
+    
+    // Categories data
+    const categories = {
+        revenue: [
+            {% for category in categories %}
+            {% if category.type == 'revenue' %}
+            {id: {{ category.id }}, name: "{{ category.name }}"},
+            {% endif %}
+            {% endfor %}
+        ],
+        expense: [
+            {% for category in categories %}
+            {% if category.type == 'expense' %}
+            {id: {{ category.id }}, name: "{{ category.name }}"},
+            {% endif %}
+            {% endfor %}
+        ]
+    };
+    
+    // Update categories when transaction type changes
+    transactionTypeSelect.addEventListener('change', function() {
+        const selectedType = this.value;
+        const currentCategoryId = {{ transaction.category_id }};
+        
+        // Clear category select
+        categorySelect.innerHTML = '<option value="">Select Category</option>';
+        
+        if (selectedType && categories[selectedType]) {
+            // Populate categories for selected type
+            categories[selectedType].forEach(function(category) {
+                const option = document.createElement('option');
+                option.value = category.id;
+                option.textContent = category.name;
+                if (category.id == currentCategoryId) {
+                    option.selected = true;
+                }
+                categorySelect.appendChild(option);
+            });
+        }
+    });
+    
+    // Format amount input
+    amountInput.addEventListener('input', function() {
+        // Ensure positive values
+        if (this.value < 0) {
+            this.value = 0;
+        }
+    });
+    
+    // Validate form before submission
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const transactionType = transactionTypeSelect.value;
+        const categoryId = categorySelect.value;
+        const amount = parseFloat(amountInput.value);
+        const description = document.getElementById('description').value.trim();
+        
+        if (!transactionType) {
+            e.preventDefault();
+            alert('Please select a transaction type.');
+            return;
+        }
+        
+        if (!categoryId) {
+            e.preventDefault();
+            alert('Please select a category.');
+            return;
+        }
+        
+        if (!amount || amount <= 0) {
+            e.preventDefault();
+            alert('Please enter a valid amount greater than Tsh 0.');
+            return;
+        }
+        
+        if (!description) {
+            e.preventDefault();
+            alert('Please enter a description.');
+            return;
+        }
+    });
+});
+</script>
+{% endblock %}

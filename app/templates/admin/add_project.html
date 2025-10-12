@@ -179,8 +179,8 @@ function updateSelectedTechsDisplay() {
     
     container.innerHTML = selectedTechnologies.map(tech => `
         <span class="badge bg-primary me-1 mb-1" style="font-size: 0.8rem;">
-            ${tech}
-            <button type="button" class="btn-close btn-close-white" style="font-size: 0.6rem; margin-left: 0.3rem;" onclick="removeTech('${tech}')"></button>
+            Tsh {tech}
+            <button type="button" class="btn-close btn-close-white" style="font-size: 0.6rem; margin-left: 0.3rem;" onclick="removeTech('Tsh {tech}')"></button>
         </span>
     `).join('');
 }

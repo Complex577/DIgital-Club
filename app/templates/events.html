@@ -590,7 +590,7 @@
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth();
         
-        document.getElementById('calendar-title').textContent = `${monthNames[month]} ${year}`;
+        document.getElementById('calendar-title').textContent = `Tsh {monthNames[month]} Tsh {year}`;
         
         const firstDay = new Date(year, month, 1);
         const lastDay = new Date(year, month + 1, 0);
@@ -620,7 +620,7 @@
         const monthStr = (month + 1).toString().padStart(2, '0');
         const yearStr = year.toString();
         const eventsThisMonth = calendarEventsData.filter(event => {
-            return event.date.startsWith(`${yearStr}-${monthStr}`);
+            return event.date.startsWith(`Tsh {yearStr}-Tsh {monthStr}`);
         });
         
         // Add days of the month
@@ -637,12 +637,12 @@
             
             // Check if this day has events
             const dayStr = day.toString().padStart(2, '0');
-            const dateStr = `${yearStr}-${monthStr}-${dayStr}`;
+            const dateStr = `Tsh {yearStr}-Tsh {monthStr}-Tsh {dayStr}`;
             const dayEvents = eventsThisMonth.filter(event => event.date === dateStr);
             
             if (dayEvents.length > 0) {
                 dayElement.classList.add('has-event');
-                dayElement.title = dayEvents.map(e => `${e.time} - ${e.title}`).join('\n');
+                dayElement.title = dayEvents.map(e => `Tsh {e.time} - Tsh {e.title}`).join('\n');
                 dayElement.style.cursor = 'pointer';
                 
                 // Add click handler to show events for this day
@@ -667,9 +667,9 @@
     function showDayEvents(events) {
         let message = 'Events on this day:\n\n';
         events.forEach(event => {
-            message += `${event.time} - ${event.title}\n`;
+            message += `Tsh {event.time} - Tsh {event.title}\n`;
             if (event.location) {
-                message += `Location: ${event.location}\n`;
+                message += `Location: Tsh {event.location}\n`;
             }
             message += '\n';
         });

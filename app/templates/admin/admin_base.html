@@ -124,6 +124,11 @@
                 <span>Payments</span>
             </a>
             
+            <a href="{{ url_for('admin.financial') }}" class="admin-nav-item {% if request.endpoint in ['admin.financial', 'admin.create_financial_period', 'admin.financial_period_detail', 'admin.add_transaction', 'admin.edit_transaction', 'admin.financial_categories', 'admin.add_financial_category', 'admin.edit_financial_category', 'admin.financial_reports', 'admin.export_financial_period'] %}active{% endif %}">
+                <i class="fas fa-chart-line"></i>
+                <span>Financial Management</span>
+            </a>
+            
             <a href="{{ url_for('admin.rewards_history') }}" class="admin-nav-item {% if request.endpoint in ['admin.rewards_history', 'admin.add_points'] %}active{% endif %}">
                 <i class="fas fa-coins"></i>
                 <span>Reward Points</span>

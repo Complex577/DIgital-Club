@@ -38,7 +38,7 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <p class="mb-2">
-                                    <strong>Last Payment:</strong> ${{ "%.2f"|format(latest_payment.amount) }}<br>
+                                    <strong>Last Payment:</strong> Tsh {{ "%.2f"|format(latest_payment.amount) }}<br>
                                     <strong>Payment Date:</strong> {{ latest_payment.payment_date.strftime('%Y-%m-%d') }}<br>
                                     <strong>Valid From:</strong> {{ latest_payment.start_date.strftime('%Y-%m-%d') }}<br>
                                     <strong>Valid Until:</strong> {{ latest_payment.end_date.strftime('%Y-%m-%d') }}
@@ -94,7 +94,7 @@
                         {% for payment in payments %}
                         <tr>
                             <td>{{ payment.payment_date.strftime('%Y-%m-%d') }}</td>
-                            <td><strong>${{ "%.2f"|format(payment.amount) }}</strong></td>
+                            <td><strong>Tsh {{ "%.2f"|format(payment.amount) }}</strong></td>
                             <td>
                                 {{ payment.start_date.strftime('%Y-%m-%d') }} to 
                                 {{ payment.end_date.strftime('%Y-%m-%d') }}
@@ -115,7 +115,7 @@
                 </table>
             </div>
             <div class="mt-3">
-                <strong>Total Paid:</strong> ${{ "%.2f"|format(payments|sum(attribute='amount')) }}
+                <strong>Total Paid:</strong> Tsh {{ "%.2f"|format(payments|sum(attribute='amount')) }}
             </div>
             {% else %}
             <div class="alert alert-info">

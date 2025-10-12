@@ -1,0 +1,174 @@
+{% extends "admin/admin_base.html" %}
+
+{% block admin_title %}Add Financial Category{% endblock %}
+{% block page_title %}Add Financial Category{% endblock %}
+{% block breadcrumb %}<span class="breadcrumb-separator">/</span> <a href="{{ url_for('admin.financial') }}">Financial Management</a><span class="breadcrumb-separator">/</span> <a href="{{ url_for('admin.financial_categories') }}">Categories</a><span class="breadcrumb-separator">/</span> <span>Add Category</span>{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-1">Add Financial Category</h2>
+        <p class="text-muted mb-0">Create a new category for organizing financial transactions</p>
+    </div>
+    <div>
+        <a href="{{ url_for('admin.financial_categories') }}" class="admin-btn admin-btn-outline">
+            <i class="fas fa-arrow-left"></i> Back to Categories
+        </a>
+    </div>
+</div>
+
+<!-- Add Category Form -->
+<div class="admin-card">
+    <div class="admin-card-header">
+        <h5><i class="fas fa-plus"></i> Category Details</h5>
+    </div>
+    <div class="admin-card-body">
+        <form method="POST">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Category Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="name" name="name" required
+                               placeholder="e.g., Equipment, Sponsorships, Venue Costs">
+                        <div class="form-text">Choose a clear, descriptive name for this category.</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="type" class="form-label">Category Type <span class="text-danger">*</span></label>
+                        <select class="form-control" id="type" name="type" required>
+                            <option value="">Select Type</option>
+                            <option value="revenue">Revenue (Money Coming In)</option>
+                            <option value="expense">Expense (Money Going Out)</option>
+                        </select>
+                        <div class="form-text">Choose whether this is for incoming or outgoing money.</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="description" class="form-label">Description</label>
+                <textarea class="form-control" id="description" name="description" rows="3"
+                          placeholder="Optional description explaining what this category is used for"></textarea>
+                <div class="form-text">Provide additional context about when to use this category.</div>
+            </div>
+            
+            <div class="d-flex justify-content-between">
+                <a href="{{ url_for('admin.financial_categories') }}" class="admin-btn admin-btn-outline">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+                <button type="submit" class="admin-btn admin-btn-primary">
+                    <i class="fas fa-plus"></i> Add Category
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Category Examples -->
+<div class="admin-card mt-4">
+    <div class="admin-card-header">
+        <h5><i class="fas fa-lightbulb"></i> Category Examples</h5>
+    </div>
+    <div class="admin-card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6 class="text-success">Revenue Category Examples:</h6>
+                <ul class="mb-0">
+                    <li><strong>Workshop Fees:</strong> Revenue from coding workshops</li>
+                    <li><strong>Hackathon Entry:</strong> Registration fees for hackathons</li>
+                    <li><strong>Merchandise Sales:</strong> Club merchandise and swag</li>
+                    <li><strong>Training Programs:</strong> Revenue from training courses</li>
+                    <li><strong>Consulting Services:</strong> Revenue from external consulting</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-danger">Expense Category Examples:</h6>
+                <ul class="mb-0">
+                    <li><strong>Software Licenses:</strong> Development tools and software</li>
+                    <li><strong>Conference Attendance:</strong> Travel and conference fees</li>
+                    <li><strong>Prizes & Awards:</strong> Competition prizes and awards</li>
+                    <li><strong>Internet & Hosting:</strong> Website and server costs</li>
+                    <li><strong>Professional Development:</strong> Training and certification costs</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Guidelines -->
+<div class="admin-card mt-4">
+    <div class="admin-card-header">
+        <h5><i class="fas fa-info-circle"></i> Guidelines</h5>
+    </div>
+    <div class="admin-card-body">
+        <ul class="mb-0">
+            <li><strong>Naming:</strong> Use clear, specific names that are easy to understand</li>
+            <li><strong>Uniqueness:</strong> Category names must be unique within each type (revenue/expense)</li>
+            <li><strong>Type Selection:</strong> Choose revenue for money coming in, expense for money going out</li>
+            <li><strong>Description:</strong> Optional but helpful for explaining when to use this category</li>
+            <li><strong>Built-in Categories:</strong> System comes with default categories that cannot be deleted</li>
+            <li><strong>Custom Categories:</strong> You can create unlimited custom categories for your needs</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const nameInput = document.getElementById('name');
+    const typeSelect = document.getElementById('type');
+    const descriptionTextarea = document.getElementById('description');
+    
+    // Auto-generate description based on type and name
+    function updateDescription() {
+        const name = nameInput.value.trim();
+        const type = typeSelect.value;
+        
+        if (name && type) {
+            const typeText = type === 'revenue' ? 'incoming money' : 'outgoing money';
+            const suggestedDescription = `Used for tracking Tsh {name.toLowerCase()} - Tsh {typeText} related to Tsh {name.toLowerCase()}.`;
+            
+            if (!descriptionTextarea.value.trim()) {
+                descriptionTextarea.value = suggestedDescription;
+            }
+        }
+    }
+    
+    nameInput.addEventListener('input', updateDescription);
+    typeSelect.addEventListener('change', updateDescription);
+    
+    // Validate form before submission
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const name = nameInput.value.trim();
+        const type = typeSelect.value;
+        
+        if (!name) {
+            e.preventDefault();
+            alert('Please enter a category name.');
+            return;
+        }
+        
+        if (!type) {
+            e.preventDefault();
+            alert('Please select a category type.');
+            return;
+        }
+        
+        // Check for common naming issues
+        if (name.length < 2) {
+            e.preventDefault();
+            alert('Category name must be at least 2 characters long.');
+            return;
+        }
+        
+        if (name.length > 50) {
+            e.preventDefault();
+            alert('Category name must be less than 50 characters.');
+            return;
+        }
+    });
+});
+</script>
+{% endblock %}

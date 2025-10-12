@@ -1,0 +1,260 @@
+{% extends "admin/admin_base.html" %}
+
+{% block admin_title %}Financial Reports{% endblock %}
+{% block page_title %}Financial Reports{% endblock %}
+{% block breadcrumb %}<span class="breadcrumb-separator">/</span> <a href="{{ url_for('admin.financial') }}">Financial Management</a><span class="breadcrumb-separator">/</span> <span>Reports</span>{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-1">Financial Reports</h2>
+        <p class="text-muted mb-0">Comprehensive financial analysis and period comparisons</p>
+    </div>
+    <div>
+        <a href="{{ url_for('admin.financial') }}" class="admin-btn admin-btn-outline">
+            <i class="fas fa-arrow-left"></i> Back to Financial Management
+        </a>
+    </div>
+</div>
+
+<!-- All-Time Summary -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="admin-stat-card success">
+            <h5>Tsh {{ "%.2f"|format(all_time_revenue) }}</h5>
+            <p>All-Time Revenue</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="admin-stat-card danger">
+            <h5>Tsh {{ "%.2f"|format(all_time_expenses) }}</h5>
+            <p>All-Time Expenses</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="admin-stat-card {% if all_time_balance >= 0 %}success{% else %}danger{% endif %}">
+            <h5>Tsh {{ "%.2f"|format(all_time_balance) }}</h5>
+            <p>Net Balance</p>
+        </div>
+    </div>
+</div>
+
+<!-- Period Comparison -->
+<div class="admin-card mb-4">
+    <div class="admin-card-header">
+        <h5><i class="fas fa-chart-line"></i> Period Comparison</h5>
+    </div>
+    <div class="admin-card-body">
+        {% if periods %}
+            <div class="table-responsive">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Period</th>
+                            <th>Duration</th>
+                            <th>Status</th>
+                            <th>Revenue</th>
+                            <th>Expenses</th>
+                            <th>Net Balance</th>
+                            <th>Transactions</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for period in periods %}
+                        <tr>
+                            <td>
+                                <strong>{{ period.name }}</strong>
+                                {% if period.description %}
+                                <br><small class="text-muted">{{ period.description }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {{ period.start_date.strftime('%b %d, %Y') }}<br>
+                                <small class="text-muted">to {{ period.end_date.strftime('%b %d, %Y') }}</small>
+                            </td>
+                            <td>
+                                <span class="admin-badge {% if period.status == 'open' %}admin-badge-success{% else %}admin-badge-secondary{% endif %}">
+                                    {{ period.status.title() }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="text-success">Tsh {{ "%.2f"|format(period.get_total_revenue()) }}</span>
+                            </td>
+                            <td>
+                                <span class="text-danger">Tsh {{ "%.2f"|format(period.get_total_expenses()) }}</span>
+                            </td>
+                            <td>
+                                <span class="{% if period.get_net_balance() >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                    Tsh {{ "%.2f"|format(period.get_net_balance()) }}
+                                </span>
+                            </td>
+                            <td>{{ period.get_transaction_count() }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('admin.financial_period_detail', period_id=period.id) }}" 
+                                       class="admin-btn admin-btn-sm admin-btn-outline">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('admin.export_financial_period', period_id=period.id) }}" 
+                                       class="admin-btn admin-btn-sm admin-btn-outline">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="admin-empty-state">
+                <i class="fas fa-chart-line"></i>
+                <h5>No Financial Periods</h5>
+                <p>Create your first financial period to start generating reports.</p>
+                <a href="{{ url_for('admin.create_financial_period') }}" class="admin-btn admin-btn-primary">
+                    <i class="fas fa-plus"></i> Create First Period
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Category Analysis -->
+{% if category_totals %}
+<div class="admin-card mb-4">
+    <div class="admin-card-header">
+        <h5><i class="fas fa-chart-pie"></i> Category Analysis</h5>
+    </div>
+    <div class="admin-card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6 class="text-success">Top Revenue Categories:</h6>
+                {% set revenue_categories = category_totals | selectattr('1', 'equalto', 'revenue') | list %}
+                {% if revenue_categories %}
+                    <div class="admin-category-list">
+                        {% for category_name, category_type, total in revenue_categories[:5] %}
+                        <div class="admin-category-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>{{ category_name }}</span>
+                                <span class="text-success">Tsh {{ "%.2f"|format(total) }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">No revenue categories with transactions.</p>
+                {% endif %}
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-danger">Top Expense Categories:</h6>
+                {% set expense_categories = category_totals | selectattr('1', 'equalto', 'expense') | list %}
+                {% if expense_categories %}
+                    <div class="admin-category-list">
+                        {% for category_name, category_type, total in expense_categories[:5] %}
+                        <div class="admin-category-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>{{ category_name }}</span>
+                                <span class="text-danger">Tsh {{ "%.2f"|format(total) }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">No expense categories with transactions.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Quick Actions -->
+<div class="row">
+    <div class="col-md-4">
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h5><i class="fas fa-download"></i> Export Reports</h5>
+            </div>
+            <div class="admin-card-body">
+                <p class="text-muted">Export detailed financial reports for external analysis.</p>
+                {% if periods %}
+                <div class="d-grid gap-2">
+                    {% for period in periods[:3] %}
+                    <a href="{{ url_for('admin.export_financial_period', period_id=period.id) }}" 
+                       class="admin-btn admin-btn-outline admin-btn-sm">
+                        <i class="fas fa-file-csv"></i> {{ period.name }}
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">No periods available for export.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h5><i class="fas fa-calendar"></i> Period Management</h5>
+            </div>
+            <div class="admin-card-body">
+                <p class="text-muted">Manage financial periods and transactions.</p>
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('admin.create_financial_period') }}" class="admin-btn admin-btn-primary admin-btn-sm">
+                        <i class="fas fa-plus"></i> New Period
+                    </a>
+                    <a href="{{ url_for('admin.financial') }}" class="admin-btn admin-btn-outline admin-btn-sm">
+                        <i class="fas fa-list"></i> All Periods
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h5><i class="fas fa-cog"></i> Settings</h5>
+            </div>
+            <div class="admin-card-body">
+                <p class="text-muted">Configure financial categories and settings.</p>
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('admin.financial_categories') }}" class="admin-btn admin-btn-outline admin-btn-sm">
+                        <i class="fas fa-tags"></i> Categories
+                    </a>
+                    <a href="{{ url_for('admin.settings') }}" class="admin-btn admin-btn-outline admin-btn-sm">
+                        <i class="fas fa-cog"></i> Settings
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+.admin-category-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.admin-category-item {
+    background: #16213e;
+    border: 1px solid rgba(0, 255, 255, 0.1);
+    border-radius: 4px;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.admin-category-item:hover {
+    border-color: rgba(0, 255, 255, 0.3);
+    background: #1a1a2e;
+}
+
+.admin-category-item:last-child {
+    margin-bottom: 0;
+}
+</style>
+{% endblock %}

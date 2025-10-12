@@ -166,7 +166,7 @@
                         {% for payment in payments %}
                         <tr>
                             <td>{{ payment.payment_date.strftime('%Y-%m-%d') }}</td>
-                            <td><strong>${{ "%.2f"|format(payment.amount) }}</strong></td>
+                            <td><strong>Tsh {{ "%.2f"|format(payment.amount) }}</strong></td>
                             <td>
                                 {{ payment.start_date.strftime('%Y-%m-%d') }} to 
                                 {{ payment.end_date.strftime('%Y-%m-%d') }}

@@ -1,0 +1,184 @@
+{% extends "admin/admin_base.html" %}
+
+{% block admin_title %}Create Financial Period{% endblock %}
+{% block page_title %}Create Financial Period{% endblock %}
+{% block breadcrumb %}<span class="breadcrumb-separator">/</span> <a href="{{ url_for('admin.financial') }}">Financial Management</a><span class="breadcrumb-separator">/</span> <span>Create Period</span>{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-1">Create Financial Period</h2>
+        <p class="text-muted mb-0">Start a new financial period for tracking club finances</p>
+    </div>
+    <div>
+        <a href="{{ url_for('admin.financial') }}" class="admin-btn admin-btn-outline">
+            <i class="fas fa-arrow-left"></i> Back to Financial Management
+        </a>
+    </div>
+</div>
+
+<!-- Warning if there's an existing open period -->
+{% if existing_open %}
+<div class="admin-card mb-4">
+    <div class="admin-card-body">
+        <div class="d-flex align-items-center">
+            <div class="admin-alert-icon warning">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="flex-grow-1">
+                <h5 class="mb-1">Existing Open Period</h5>
+                <p class="mb-0 text-muted">
+                    There is currently an open financial period: <strong>{{ existing_open.name }}</strong>
+                    ({{ existing_open.start_date.strftime('%B %d, %Y') }} - {{ existing_open.end_date.strftime('%B %d, %Y') }})
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Create Period Form -->
+<div class="admin-card">
+    <div class="admin-card-header">
+        <h5><i class="fas fa-calendar-plus"></i> Period Details</h5>
+    </div>
+    <div class="admin-card-body">
+        <form method="POST">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Period Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="name" name="name" required
+                               placeholder="e.g., 2024 Leadership Term, Q1 2024, etc.">
+                        <div class="form-text">Choose a descriptive name for this financial period.</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <input type="text" class="form-control" id="description" name="description"
+                               placeholder="Optional description or notes">
+                        <div class="form-text">Additional information about this period.</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="start_date" class="form-label">Start Date <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" id="start_date" name="start_date" required>
+                        <div class="form-text">When this financial period begins.</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="end_date" class="form-label">End Date <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" id="end_date" name="end_date" required>
+                        <div class="form-text">When this financial period ends.</div>
+                    </div>
+                </div>
+            </div>
+            
+            {% if existing_open %}
+            <div class="mb-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="close_previous" name="close_previous">
+                    <label class="form-check-label" for="close_previous">
+                        <strong>Close Previous Period</strong>
+                    </label>
+                    <div class="form-text">
+                        Automatically close the existing open period ({{ existing_open.name }}) when creating this new one.
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="d-flex justify-content-between">
+                <a href="{{ url_for('admin.financial') }}" class="admin-btn admin-btn-outline">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+                <button type="submit" class="admin-btn admin-btn-primary">
+                    <i class="fas fa-plus"></i> Create Period
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Guidelines -->
+<div class="admin-card mt-4">
+    <div class="admin-card-header">
+        <h5><i class="fas fa-info-circle"></i> Guidelines</h5>
+    </div>
+    <div class="admin-card-body">
+        <ul class="mb-0">
+            <li><strong>Period Names:</strong> Use descriptive names like "2024 Leadership Term", "Q1 2024", or "Spring Semester 2024"</li>
+            <li><strong>Date Ranges:</strong> Choose dates that align with your club's leadership terms or academic periods</li>
+            <li><strong>One Active Period:</strong> Only one financial period can be open at a time for recording transactions</li>
+            <li><strong>Closing Periods:</strong> Once closed, periods become read-only and cannot be modified</li>
+            <li><strong>Historical Data:</strong> Previous periods remain accessible for reporting and comparison</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+.admin-alert-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+}
+
+.admin-alert-icon.warning {
+    background: rgba(255, 165, 0, 0.2);
+    color: #ffa500;
+}
+
+.form-check-input:checked {
+    background-color: #00ffff;
+    border-color: #00ffff;
+}
+
+.form-check-input:focus {
+    border-color: #00ffff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 255, 255, 0.25);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set default start date to today
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('start_date').value = today;
+    
+    // Set default end date to one year from today
+    const oneYearFromNow = new Date();
+    oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+    document.getElementById('end_date').value = oneYearFromNow.toISOString().split('T')[0];
+    
+    // Validate end date is after start date
+    const startDateInput = document.getElementById('start_date');
+    const endDateInput = document.getElementById('end_date');
+    
+    function validateDates() {
+        const startDate = new Date(startDateInput.value);
+        const endDate = new Date(endDateInput.value);
+        
+        if (endDate <= startDate) {
+            endDateInput.setCustomValidity('End date must be after start date');
+        } else {
+            endDateInput.setCustomValidity('');
+        }
+    }
+    
+    startDateInput.addEventListener('change', validateDates);
+    endDateInput.addEventListener('change', validateDates);
+});
+</script>
+{% endblock %}

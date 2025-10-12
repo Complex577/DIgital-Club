@@ -188,7 +188,7 @@ function createParticleBackground() {
         particles.forEach(particle => {
             ctx.beginPath();
             ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(0, 255, 255, ${particle.opacity})`;
+            ctx.fillStyle = `rgba(0, 255, 255, Tsh {particle.opacity})`;
             ctx.fill();
         });
         
@@ -204,7 +204,7 @@ function createParticleBackground() {
                     ctx.beginPath();
                     ctx.moveTo(particle.x, particle.y);
                     ctx.lineTo(otherParticle.x, otherParticle.y);
-                    ctx.strokeStyle = `rgba(0, 255, 255, ${0.1 * (1 - distance / 100)})`;
+                    ctx.strokeStyle = `rgba(0, 255, 255, Tsh {0.1 * (1 - distance / 100)})`;
                     ctx.lineWidth = 1;
                     ctx.stroke();
                 }
@@ -267,9 +267,9 @@ async function handleNewsletterSubmit(e) {
 // Notification System
 function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
-    notification.className = `flash-message flash-${type}`;
+    notification.className = `flash-message flash-Tsh {type}`;
     notification.innerHTML = `
-        <span>${message}</span>
+        <span>Tsh {message}</span>
         <button class="flash-close" onclick="this.parentElement.remove()">
             <i class="fas fa-times"></i>
         </button>

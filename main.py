@@ -149,9 +149,9 @@ def add_sample_data():
             <h3>Prizes</h3>
             <p>This year's hackathon features amazing prizes including:</p>
             <ul>
-                <li>1st Place: $1000 + Internship opportunities</li>
-                <li>2nd Place: $500 + Mentorship program</li>
-                <li>3rd Place: $250 + Tech gadgets</li>
+                <li>1st Place: Tsh 1000 + Internship opportunities</li>
+                <li>2nd Place: Tsh 500 + Mentorship program</li>
+                <li>3rd Place: Tsh 250 + Tech gadgets</li>
             </ul>
             ''',
             'excerpt': 'Everything you need to know about participating in our annual hackathon event.',

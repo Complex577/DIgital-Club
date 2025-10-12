@@ -1,0 +1,227 @@
+{% extends "admin/admin_base.html" %}
+
+{% block admin_title %}Edit Financial Category{% endblock %}
+{% block page_title %}Edit Financial Category{% endblock %}
+{% block breadcrumb %}<span class="breadcrumb-separator">/</span> <a href="{{ url_for('admin.financial') }}">Financial Management</a><span class="breadcrumb-separator">/</span> <a href="{{ url_for('admin.financial_categories') }}">Categories</a><span class="breadcrumb-separator">/</span> <span>Edit Category</span>{% endblock %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-1">Edit Financial Category</h2>
+        <p class="text-muted mb-0">Modify category details for {{ category.name }}</p>
+    </div>
+    <div>
+        <a href="{{ url_for('admin.financial_categories') }}" class="admin-btn admin-btn-outline">
+            <i class="fas fa-arrow-left"></i> Back to Categories
+        </a>
+    </div>
+</div>
+
+<!-- Category Info -->
+<div class="admin-card mb-4">
+    <div class="admin-card-body">
+        <div class="d-flex align-items-center">
+            <div class="admin-alert-icon {% if category.type == 'revenue' %}success{% else %}danger{% endif %}">
+                <i class="fas fa-{% if category.type == 'revenue' %}arrow-up{% else %}arrow-down{% endif %}"></i>
+            </div>
+            <div class="flex-grow-1">
+                <h5 class="mb-1">{{ category.name }}</h5>
+                <p class="mb-0 text-muted">
+                    {{ category.type.title() }} Category | 
+                    {{ category.get_transaction_count() }} transactions | 
+                    Tsh {{ "%.2f"|format(category.get_total_amount()) }} total
+                </p>
+            </div>
+            <div>
+                <span class="admin-badge {% if category.type == 'revenue' %}admin-badge-success{% else %}admin-badge-danger{% endif %}">
+                    {{ category.type.title() }}
+                </span>
+                {% if category.is_builtin %}
+                <span class="admin-badge admin-badge-info">Built-in</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Category Form -->
+<div class="admin-card">
+    <div class="admin-card-header">
+        <h5><i class="fas fa-edit"></i> Category Details</h5>
+    </div>
+    <div class="admin-card-body">
+        <form method="POST">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Category Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="name" name="name" required
+                               value="{{ category.name }}"
+                               placeholder="e.g., Equipment, Sponsorships, Venue Costs">
+                        <div class="form-text">Choose a clear, descriptive name for this category.</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Category Type</label>
+                        <div class="form-control-plaintext">
+                            <span class="admin-badge {% if category.type == 'revenue' %}admin-badge-success{% else %}admin-badge-danger{% endif %}">
+                                {{ category.type.title() }}
+                            </span>
+                            <small class="text-muted">(Type cannot be changed)</small>
+                        </div>
+                        <div class="form-text">Category type is fixed and cannot be modified.</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="description" class="form-label">Description</label>
+                <textarea class="form-control" id="description" name="description" rows="3"
+                          placeholder="Optional description explaining what this category is used for">{{ category.description or '' }}</textarea>
+                <div class="form-text">Provide additional context about when to use this category.</div>
+            </div>
+            
+            <div class="d-flex justify-content-between">
+                <a href="{{ url_for('admin.financial_categories') }}" class="admin-btn admin-btn-outline">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+                <button type="submit" class="admin-btn admin-btn-primary">
+                    <i class="fas fa-save"></i> Update Category
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Category Statistics -->
+<div class="admin-card mt-4">
+    <div class="admin-card-header">
+        <h5><i class="fas fa-chart-bar"></i> Category Statistics</h5>
+    </div>
+    <div class="admin-card-body">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="admin-stat-card">
+                    <h5>{{ category.get_transaction_count() }}</h5>
+                    <p>Total Transactions</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="admin-stat-card {% if category.type == 'revenue' %}success{% else %}danger{% endif %}">
+                    <h5>Tsh {{ "%.2f"|format(category.get_total_amount()) }}</h5>
+                    <p>Total Amount</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="admin-stat-card {% if category.is_active %}success{% else %}secondary{% endif %}">
+                    <h5>{{ 'Active' if category.is_active else 'Inactive' }}</h5>
+                    <p>Status</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Category History -->
+<div class="admin-card mt-4">
+    <div class="admin-card-header">
+        <h5><i class="fas fa-history"></i> Category Information</h5>
+    </div>
+    <div class="admin-card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Created:</strong> {{ category.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                <p><strong>Type:</strong> {{ category.type.title() }}</p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>Status:</strong> 
+                    {% if category.is_active %}
+                    <span class="text-success">Active</span>
+                    {% else %}
+                    <span class="text-muted">Inactive</span>
+                    {% endif %}
+                </p>
+                <p><strong>Built-in:</strong> 
+                    {% if category.is_builtin %}
+                    <span class="text-info">Yes</span>
+                    {% else %}
+                    <span class="text-muted">No</span>
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+.admin-alert-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+}
+
+.admin-alert-icon.success {
+    background: rgba(0, 255, 0, 0.2);
+    color: #00ff00;
+}
+
+.admin-alert-icon.danger {
+    background: rgba(255, 0, 0, 0.2);
+    color: #ff0000;
+}
+
+.form-control-plaintext {
+    color: #ffffff;
+    background-color: transparent;
+    border: none;
+    padding: 0.375rem 0;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const nameInput = document.getElementById('name');
+    const descriptionTextarea = document.getElementById('description');
+    
+    // Validate form before submission
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const name = nameInput.value.trim();
+        
+        if (!name) {
+            e.preventDefault();
+            alert('Please enter a category name.');
+            return;
+        }
+        
+        // Check for common naming issues
+        if (name.length < 2) {
+            e.preventDefault();
+            alert('Category name must be at least 2 characters long.');
+            return;
+        }
+        
+        if (name.length > 50) {
+            e.preventDefault();
+            alert('Category name must be less than 50 characters.');
+            return;
+        }
+        
+        // Check if name has changed
+        const originalName = '{{ category.name }}';
+        if (name !== originalName) {
+            if (!confirm(`Are you sure you want to change the category name from "Tsh {originalName}" to "Tsh {name}"?`)) {
+                e.preventDefault();
+                return;
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

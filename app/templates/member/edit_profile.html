@@ -386,7 +386,7 @@
                 if (preview.tagName === 'IMG') {
                     preview.src = e.target.result;
                 } else {
-                    preview.innerHTML = `<img src="${e.target.result}" alt="Profile Preview" class="profile-image-preview">`;
+                    preview.innerHTML = `<img src="Tsh {e.target.result}" alt="Profile Preview" class="profile-image-preview">`;
                 }
             };
             reader.readAsDataURL(input.files[0]);

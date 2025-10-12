@@ -369,7 +369,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        if (confirm(`Approve ${rsvpIds.length} RSVP(s)?`)) {
+        if (confirm(`Approve Tsh {rsvpIds.length} RSVP(s)?`)) {
             fetch('{{ url_for("admin.bulk_approve_rsvps") }}', {
                 method: 'POST',
                 headers: {
@@ -403,7 +403,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        if (confirm(`Reject ${rsvpIds.length} RSVP(s)?`)) {
+        if (confirm(`Reject Tsh {rsvpIds.length} RSVP(s)?`)) {
             fetch('{{ url_for("admin.bulk_reject_rsvps") }}', {
                 method: 'POST',
                 headers: {
