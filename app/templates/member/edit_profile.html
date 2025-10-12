@@ -3,6 +3,8 @@
 {% block title %}Edit Profile - Digital Club{% endblock %}
 
 {% block extra_head %}
+<!-- Cropper.js CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
 <style>
     .edit-profile-page {
         background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
@@ -167,6 +169,114 @@
         color: var(--text-muted);
         margin-top: 0.5rem;
     }
+    
+    /* Cropper Modal Styles */
+    .crop-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        z-index: 10000;
+        overflow: auto;
+    }
+    
+    .crop-modal.active {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .crop-container {
+        background: var(--bg-secondary);
+        border: 2px solid var(--primary-color);
+        border-radius: 15px;
+        padding: 2rem;
+        max-width: 90%;
+        max-height: 90vh;
+        overflow: auto;
+    }
+    
+    .crop-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+    
+    .crop-header h3 {
+        color: var(--primary-color);
+        margin: 0;
+    }
+    
+    .crop-close {
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        font-size: 1.5rem;
+        cursor: pointer;
+        transition: color 0.3s;
+    }
+    
+    .crop-close:hover {
+        color: var(--primary-color);
+    }
+    
+    .crop-preview-container {
+        max-width: 600px;
+        max-height: 400px;
+        margin: 0 auto 1.5rem;
+        background: #000;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    .crop-preview-container img {
+        max-width: 100%;
+        display: block;
+    }
+    
+    .crop-controls {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-bottom: 1.5rem;
+    }
+    
+    .crop-btn {
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        background: rgba(0, 0, 0, 0.3);
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .crop-btn:hover {
+        border-color: var(--primary-color);
+        color: var(--primary-color);
+    }
+    
+    .crop-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+    }
+    
+    .crop-actions .btn-primary {
+        background: var(--primary-color);
+        border: none;
+        padding: 0.75rem 2rem;
+    }
+    
+    .crop-actions .btn-secondary {
+        background: transparent;
+        border: 1px solid var(--border-color);
+    }
 </style>
 {% endblock %}
 
@@ -206,7 +316,7 @@
                                     <i class="fas fa-upload"></i> Choose Image
                                     <input type="file" name="profile_image" id="profile_image" accept="image/*" onchange="previewImage(this)">
                                 </label>
-                                <div class="help-text">PNG, JPG, JPEG, or GIF (max 5MB)</div>
+                                <div class="help-text">PNG, JPG, JPEG, or GIF - Any size accepted (will be optimized automatically)</div>
                             </div>
                         </div>
                         
@@ -335,7 +445,7 @@
                         </div>
                         
                         <!-- Personal Projects -->
-                        <div class="form-section">
+                        <!-- <div class="form-section">
                             <h4 class="section-title">
                                 <i class="fas fa-project-diagram"></i>
                                 Personal Projects
@@ -357,7 +467,7 @@
                                     Enter your projects in JSON format. Each project should have name, description, technologies, and optional URLs.
                                 </div>
                             </div>
-                        </div>
+                        </div> -->
                         
                         <!-- Form Actions -->
                         <div class="text-center">
@@ -374,24 +484,228 @@
         </div>
     </div>
 </div>
+
+<!-- Image Crop Modal -->
+<div id="cropModal" class="crop-modal">
+    <div class="crop-container">
+        <div class="crop-header">
+            <h3><i class="fas fa-crop"></i> Crop Profile Image</h3>
+            <button class="crop-close" onclick="closeCropModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="crop-preview-container">
+            <img id="cropImage" src="" alt="Crop Preview">
+        </div>
+        
+        <div class="crop-controls">
+            <button class="crop-btn" onclick="cropper.zoom(0.1)" title="Zoom In">
+                <i class="fas fa-search-plus"></i> Zoom In
+            </button>
+            <button class="crop-btn" onclick="cropper.zoom(-0.1)" title="Zoom Out">
+                <i class="fas fa-search-minus"></i> Zoom Out
+            </button>
+            <button class="crop-btn" onclick="cropper.rotate(90)" title="Rotate Right">
+                <i class="fas fa-redo"></i> Rotate Right
+            </button>
+            <button class="crop-btn" onclick="cropper.rotate(-90)" title="Rotate Left">
+                <i class="fas fa-undo"></i> Rotate Left
+            </button>
+            <button class="crop-btn" onclick="cropper.scaleX(-cropper.getData().scaleX || -1)" title="Flip Horizontal">
+                <i class="fas fa-arrows-alt-h"></i> Flip H
+            </button>
+            <button class="crop-btn" onclick="cropper.scaleY(-cropper.getData().scaleY || -1)" title="Flip Vertical">
+                <i class="fas fa-arrows-alt-v"></i> Flip V
+            </button>
+            <button class="crop-btn" onclick="cropper.reset()" title="Reset">
+                <i class="fas fa-sync"></i> Reset
+            </button>
+        </div>
+        
+        <div class="crop-actions">
+            <button class="btn btn-primary" onclick="applyCrop()">
+                <i class="fas fa-check"></i> Apply Crop
+            </button>
+            <button class="btn btn-secondary" onclick="closeCropModal()">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_scripts %}
+<!-- Cropper.js Library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+
 <script>
+    let cropper = null;
+    let currentFile = null;
+    let croppedBlob = null;
+    
     function previewImage(input) {
         if (input.files && input.files[0]) {
+            currentFile = input.files[0];
+            
+            // Check file type only
+            if (!currentFile.type.match('image.*')) {
+                alert('Please select an image file');
+                input.value = '';
+                return;
+            }
+            
+            // Show loading message for large files
+            if (currentFile.size > 10 * 1024 * 1024) {
+                console.log('Large image detected, loading may take a moment...');
+            }
+            
             const reader = new FileReader();
             reader.onload = function(e) {
-                const preview = document.getElementById('image-preview');
-                if (preview.tagName === 'IMG') {
-                    preview.src = e.target.result;
-                } else {
-                    preview.innerHTML = `<img src="Tsh {e.target.result}" alt="Profile Preview" class="profile-image-preview">`;
-                }
+                openCropModal(e.target.result);
             };
-            reader.readAsDataURL(input.files[0]);
+            reader.readAsDataURL(currentFile);
         }
     }
+    
+    function openCropModal(imageData) {
+        const modal = document.getElementById('cropModal');
+        const cropImage = document.getElementById('cropImage');
+        
+        // Destroy previous cropper instance if exists
+        if (cropper) {
+            cropper.destroy();
+        }
+        
+        // Set image source
+        cropImage.src = imageData;
+        
+        // Show modal
+        modal.classList.add('active');
+        
+        // Initialize Cropper.js
+        cropper = new Cropper(cropImage, {
+            aspectRatio: 1, // Square crop for profile images
+            viewMode: 1,
+            dragMode: 'move',
+            autoCropArea: 0.8,
+            restore: false,
+            guides: true,
+            center: true,
+            highlight: false,
+            cropBoxMovable: true,
+            cropBoxResizable: true,
+            toggleDragModeOnDblclick: false,
+            background: false,
+            responsive: true,
+            checkOrientation: true,
+            minContainerWidth: 300,
+            minContainerHeight: 300,
+        });
+    }
+    
+    function closeCropModal() {
+        const modal = document.getElementById('cropModal');
+        modal.classList.remove('active');
+        
+        // Destroy cropper
+        if (cropper) {
+            cropper.destroy();
+            cropper = null;
+        }
+        
+        // Clear file input if no crop was applied
+        if (!croppedBlob) {
+            document.getElementById('profile_image').value = '';
+        }
+    }
+    
+    function applyCrop() {
+        if (!cropper) return;
+        
+        // Get cropped canvas with optimized dimensions
+        const canvas = cropper.getCroppedCanvas({
+            width: 500,  // Output dimensions for profile image
+            height: 500,
+            imageSmoothingEnabled: true,
+            imageSmoothingQuality: 'high',
+        });
+        
+        // Convert to blob with compression
+        // First try with 0.7 quality (good balance)
+        compressAndSave(canvas, 0.7);
+    }
+    
+    function compressAndSave(canvas, quality) {
+        canvas.toBlob(function(blob) {
+            if (!blob) {
+                alert('Failed to crop image. Please try again.');
+                return;
+            }
+            
+            const sizeInKB = blob.size / 1024;
+            const sizeInMB = sizeInKB / 1024;
+            
+            console.log(`Compressed image size: ${sizeInKB.toFixed(2)} KB (${sizeInMB.toFixed(2)} MB)`);
+            console.log(`Compression quality: ${(quality * 100).toFixed(0)}%`);
+            
+            // If still too large (over 1MB), try more aggressive compression
+            if (blob.size > 1024 * 1024 && quality > 0.5) {
+                console.log('Image still large, applying more compression...');
+                compressAndSave(canvas, quality - 0.1);
+                return;
+            }
+            
+            croppedBlob = blob;
+            
+            // Determine file extension and type based on compression
+            const fileName = currentFile.name.replace(/\.[^/.]+$/, '') + '.jpg';
+            const fileType = 'image/jpeg';
+            
+            // Create a new File object from the blob
+            const croppedFile = new File([blob], fileName, {
+                type: fileType,
+                lastModified: Date.now(),
+            });
+            
+            // Update file input with cropped image
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(croppedFile);
+            document.getElementById('profile_image').files = dataTransfer.files;
+            
+            // Update preview
+            const preview = document.getElementById('image-preview');
+            const previewURL = canvas.toDataURL('image/jpeg', quality);
+            
+            if (preview.tagName === 'IMG') {
+                preview.src = previewURL;
+            } else {
+                preview.innerHTML = `<img src="${previewURL}" alt="Profile Preview" class="profile-image-preview">`;
+            }
+            
+            // Close modal
+            closeCropModal();
+            
+            // Show success message with file size
+            const finalSizeKB = (blob.size / 1024).toFixed(2);
+            alert(`Image cropped and compressed successfully!\nFinal size: ${finalSizeKB} KB\n\nClick "Save Changes" to upload.`);
+            
+        }, 'image/jpeg', quality);
+    }
+    
+    // Close modal on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && document.getElementById('cropModal').classList.contains('active')) {
+            closeCropModal();
+        }
+    });
+    
+    // Prevent modal background scroll
+    document.getElementById('cropModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeCropModal();
+        }
+    });
     
     // Initialize AOS animations
     AOS.init({
