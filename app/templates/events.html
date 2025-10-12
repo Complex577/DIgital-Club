@@ -224,6 +224,148 @@
         font-size: 0.9rem;
         opacity: 0.9;
     }
+    
+    /* Modal Styles */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(5px);
+        animation: fadeIn 0.3s ease;
+    }
+    
+    .modal.active {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .modal-content {
+        background: var(--bg-secondary);
+        border: 1px solid rgba(0, 255, 255, 0.3);
+        border-radius: 20px;
+        padding: 2rem;
+        max-width: 600px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+        animation: slideUp 0.3s ease;
+        position: relative;
+        scroll-behavior: smooth;
+    }
+    
+    .modal-content::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    .modal-content::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+    }
+    
+    .modal-content::-webkit-scrollbar-thumb {
+        background: var(--primary-color);
+        border-radius: 10px;
+    }
+    
+    .modal-content::-webkit-scrollbar-thumb:hover {
+        background: var(--secondary-color);
+    }
+    
+    .modal-close {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: rgba(255, 0, 0, 0.2);
+        border: 1px solid rgba(255, 0, 0, 0.4);
+        color: #ff4444;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 1.5rem;
+        transition: all 0.3s ease;
+    }
+    
+    .modal-close:hover {
+        background: rgba(255, 0, 0, 0.4);
+        transform: rotate(90deg);
+    }
+    
+    .modal-header {
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+    }
+    
+    .modal-date {
+        color: var(--primary-color);
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    
+    .modal-event {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(0, 255, 255, 0.2);
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .modal-event:hover {
+        border-color: var(--primary-color);
+        background: rgba(255, 255, 255, 0.08);
+        transform: translateY(-2px);
+    }
+    
+    .modal-event-title {
+        color: var(--text-primary);
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin-bottom: 0.8rem;
+    }
+    
+    .modal-event-info {
+        color: var(--text-secondary);
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .modal-event-description {
+        color: var(--text-secondary);
+        line-height: 1.6;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(0, 255, 255, 0.1);
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    @keyframes slideUp {
+        from { 
+            opacity: 0;
+            transform: translateY(50px);
+        }
+        to { 
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
 </style>
 {% endblock %}
 
@@ -497,6 +639,23 @@
         </div>
     </div>
 </section>
+
+<!-- Event Details Modal -->
+<div id="eventModal" class="modal">
+    <div class="modal-content">
+        <button class="modal-close" onclick="closeModal()">
+            <i class="fas fa-times"></i>
+        </button>
+        <div class="modal-header">
+            <div class="modal-date" id="modalDate">Date</div>
+            <div style="color: var(--text-muted); font-size: 0.9rem;" id="modalEventCount">Events</div>
+        </div>
+        <div id="modalEventsContainer">
+            <!-- Events will be dynamically inserted here -->
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_scripts %}
@@ -620,7 +779,7 @@
         const monthStr = (month + 1).toString().padStart(2, '0');
         const yearStr = year.toString();
         const eventsThisMonth = calendarEventsData.filter(event => {
-            return event.date.startsWith(`Tsh {yearStr}-Tsh {monthStr}`);
+            return event.date.startsWith(`${yearStr}-${monthStr}`);
         });
         
         // Add days of the month
@@ -637,17 +796,17 @@
             
             // Check if this day has events
             const dayStr = day.toString().padStart(2, '0');
-            const dateStr = `Tsh {yearStr}-Tsh {monthStr}-Tsh {dayStr}`;
+            const dateStr = `${yearStr}-${monthStr}-${dayStr}`;
             const dayEvents = eventsThisMonth.filter(event => event.date === dateStr);
             
             if (dayEvents.length > 0) {
                 dayElement.classList.add('has-event');
-                dayElement.title = dayEvents.map(e => `Tsh {e.time} - Tsh {e.title}`).join('\n');
+                dayElement.title = dayEvents.map(e => `${e.time} - ${e.title}`).join('\n');
                 dayElement.style.cursor = 'pointer';
                 
                 // Add click handler to show events for this day
                 dayElement.addEventListener('click', () => {
-                    showDayEvents(dayEvents);
+                    showDayEvents(dayEvents, dateStr);
                 });
             }
             
@@ -664,17 +823,103 @@
         }
     }
 
-    function showDayEvents(events) {
-        let message = 'Events on this day:\n\n';
+    function showDayEvents(events, dateStr) {
+        const modal = document.getElementById('eventModal');
+        const modalDate = document.getElementById('modalDate');
+        const modalEventCount = document.getElementById('modalEventCount');
+        const modalEventsContainer = document.getElementById('modalEventsContainer');
+        
+        // Format the date nicely
+        const date = new Date(dateStr);
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        const formattedDate = date.toLocaleDateString('en-US', options);
+        
+        modalDate.textContent = formattedDate;
+        modalEventCount.textContent = `${events.length} Event${events.length > 1 ? 's' : ''} on this day`;
+        
+        // Clear previous events
+        modalEventsContainer.innerHTML = '';
+        
+        // Add events to modal
         events.forEach(event => {
-            message += `Tsh {event.time} - Tsh {event.title}\n`;
-            if (event.location) {
-                message += `Location: Tsh {event.location}\n`;
-            }
-            message += '\n';
+            const eventDiv = document.createElement('div');
+            eventDiv.className = 'modal-event';
+            
+            // Determine event status
+            const eventDate = new Date(event.date + 'T' + event.time);
+            const now = new Date();
+            const isPast = eventDate < now;
+            const statusClass = isPast ? 'status-completed' : 'status-upcoming';
+            const statusText = isPast ? 'Completed' : 'Upcoming';
+            
+            // Determine category class
+            const categoryClass = `category-${event.category || 'workshop'}`;
+            let categoryLabel = event.category || 'workshop';
+            if (event.category === 'tech_talk') categoryLabel = 'Tech Talk';
+            else if (event.category === 'social_event') categoryLabel = 'Social Event';
+            else categoryLabel = categoryLabel.charAt(0).toUpperCase() + categoryLabel.slice(1);
+            
+            eventDiv.innerHTML = `
+                <div style="display: flex; gap: 0.5rem; margin-bottom: 0.8rem; flex-wrap: wrap;">
+                    <span class="event-category ${categoryClass}">${categoryLabel}</span>
+                    <span class="event-status ${statusClass}">${statusText}</span>
+                </div>
+                <div class="modal-event-title">${event.title}</div>
+                <div class="modal-event-info">
+                    <i class="fas fa-clock"></i>
+                    <span>${event.time}</span>
+                </div>
+                ${event.location ? `
+                <div class="modal-event-info">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span>${event.location}</span>
+                </div>
+                ` : ''}
+                ${event.max_attendees ? `
+                <div class="modal-event-info">
+                    <i class="fas fa-users"></i>
+                    <span>Max Attendees: ${event.max_attendees}</span>
+                </div>
+                ` : ''}
+                ${event.description ? `
+                <div class="modal-event-description">
+                    ${event.description}
+                </div>
+                ` : ''}
+                ${!isPast ? `
+                <div style="margin-top: 1rem;">
+                    <a href="/event/rsvp/${event.id}" class="btn-primary" style="text-decoration: none; display: inline-block; padding: 0.6rem 1.5rem;">
+                        <i class="fas fa-calendar-plus"></i> RSVP for this event
+                    </a>
+                </div>
+                ` : ''}
+            `;
+            
+            modalEventsContainer.appendChild(eventDiv);
         });
-        alert(message);
+        
+        // Show modal
+        modal.classList.add('active');
     }
+    
+    function closeModal() {
+        const modal = document.getElementById('eventModal');
+        modal.classList.remove('active');
+    }
+    
+    // Close modal when clicking outside
+    document.getElementById('eventModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeModal();
+        }
+    });
+    
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeModal();
+        }
+    });
 
     // Calendar navigation
     document.getElementById('prev-month').addEventListener('click', () => {

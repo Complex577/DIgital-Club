@@ -870,8 +870,8 @@ def generate_digital_id_back(member, base_url=None):
     contact_text_y = contact_y + 50
     for icon, text in contact_info:
         draw.text((left_x + 20, contact_text_y), icon, font=fonts['small'])
-        draw.text((left_x + 51, contact_text_y + 1), text, fill=(0, 0, 0, 80), font=fonts['tiny'])
-        draw.text((left_x + 50, contact_text_y), text, fill=TEXT_LIGHT, font=fonts['tiny'])
+        draw.text((left_x + 41, contact_text_y + 1), text, fill=(0, 0, 0, 80), font=fonts['tiny'])
+        draw.text((left_x + 40, contact_text_y), text, fill=TEXT_LIGHT, font=fonts['tiny'])
         contact_text_y += 28
     
     # Right panel - Terms & Conditions with glass effect

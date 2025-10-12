@@ -1131,9 +1131,9 @@
         for (let i = 0; i < streamCount; i++) {
             const stream = document.createElement('div');
             stream.className = 'code-stream';
-            stream.style.left = `Tsh {Math.random() * 100}%`;
-            stream.style.animationDuration = `Tsh {10 + Math.random() * 10}s`;
-            stream.style.animationDelay = `Tsh {Math.random() * 5}s`;
+            stream.style.left = `${Math.random() * 100}%`;
+            stream.style.animationDuration = `${10 + Math.random() * 10}s`;
+            stream.style.animationDelay = `${Math.random() * 5}s`;
             
             let text = '';
             for (let j = 0; j < 10; j++) {
