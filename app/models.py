@@ -120,8 +120,8 @@ class Member(db.Model):
         return total or 0
     
     def get_current_trophies(self):
-        """Get all earned trophies"""
-        return [mt.trophy for mt in self.member_trophies.order_by(MemberTrophy.earned_at.desc()).all()]
+        """Get all earned trophies sorted by display order"""
+        return [mt.trophy for mt in self.member_trophies.join(Trophy).order_by(Trophy.display_order.asc()).all()]
     
     def has_valid_membership(self):
         """Check if any active payment covers today"""

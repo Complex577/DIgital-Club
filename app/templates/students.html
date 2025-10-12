@@ -382,7 +382,7 @@
                             🏆 Achievements
                         </div>
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 1rem; justify-items: center;">
-                            {% for trophy in student.trophies[:4] %}
+                            {% for trophy in student.trophies %}
                             <div style="text-align: center;">
                                 <div style="font-size: 2.5rem; margin-bottom: 0.4rem; filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.7)); transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.2) rotate(5deg)'" onmouseout="this.style.transform='scale(1) rotate(0deg)'">
                                     {% if trophy.icon.startswith('fa') %}
@@ -399,13 +399,6 @@
                                 </div>
                             </div>
                             {% endfor %}
-                            {% if student.trophies|length > 4 %}
-                            <div style="text-align: center; display: flex; align-items: center; justify-content: center;">
-                                <div style="background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 165, 0, 0.2)); border: 2px dashed rgba(255, 215, 0, 0.6); border-radius: 10px; padding: 1rem 0.8rem; color: #FFD700; font-weight: 800; font-size: 1rem; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
-                                    +{{ student.trophies|length - 4 }}<br><span style="font-size: 0.7rem;">more</span>
-                                </div>
-                            </div>
-                            {% endif %}
                         </div>
                     </div>
                     {% endif %}

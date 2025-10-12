@@ -115,7 +115,7 @@
                                 🏆 TROPHIES EARNED
                             </div>
                             <div style="display: flex; gap: 0.8rem; justify-content: center; flex-wrap: wrap;">
-                                {% for trophy in member.trophies[:3] %}
+                                {% for trophy in member.trophies %}
                                 <div style="text-align: center; min-width: 70px;">
                                     <div style="font-size: 2rem; margin-bottom: 0.3rem; filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.6));">
                                         {% if trophy.icon.startswith('fa') %}
@@ -129,13 +129,6 @@
                                     </div>
                                 </div>
                                 {% endfor %}
-                                {% if member.trophies|length > 3 %}
-                                <div style="text-align: center; min-width: 70px; display: flex; align-items: center; justify-content: center;">
-                                    <div style="background: rgba(255, 215, 0, 0.2); border: 2px dashed rgba(255, 215, 0, 0.5); border-radius: 8px; padding: 0.8rem 0.6rem; color: #FFD700; font-weight: 700; font-size: 0.9rem;">
-                                        +{{ member.trophies|length - 3 }}<br>more
-                                    </div>
-                                </div>
-                                {% endif %}
                             </div>
                         </div>
                         {% endif %}
