@@ -107,6 +107,7 @@
         cursor: pointer;
         transition: all 0.3s ease;
         position: relative;
+        font-size: 0.95rem;
     }
     
     .calendar-day:hover {
@@ -365,6 +366,14 @@
             opacity: 1;
             transform: translateY(0);
         }
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .calendar-title { font-size: 1.2rem; }
+        .calendar-day-header { padding: 0.5rem 0.25rem; font-size: 0.75rem; }
+        .calendar-day { font-size: 0.85rem; }
+        .events-header { padding: 3.5rem 0; }
     }
 </style>
 {% endblock %}

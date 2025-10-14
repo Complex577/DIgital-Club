@@ -26,6 +26,7 @@
     {% block extra_head %}{% endblock %}
 </head>
 <body>
+    <a class="visually-hidden-focusable" href="#admin-main">Skip to main content</a>
     <!-- Navigation -->
     <nav class="navbar">
         <div class="nav-container">
@@ -189,7 +190,7 @@
     {% endwith %}
 
     <!-- Main Content -->
-    <main class="main-content">
+    <main class="main-content" id="admin-main" tabindex="-1">
         {% block content %}{% endblock %}
     </main>
 

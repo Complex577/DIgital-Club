@@ -130,7 +130,7 @@
     
     .blogs-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
         gap: 2rem;
         margin-top: 3rem;
     }
@@ -373,11 +373,12 @@
     
     /* Responsive */
     @media (max-width: 768px) {
-        .blog-hero h1 { font-size: 2.5rem; }
+        .blog-hero h1 { font-size: 2.3rem; }
         .blog-hero { padding: 5rem 0 3rem; }
-        .blogs-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+        .blogs-grid { grid-template-columns: 1fr; gap: 1.25rem; }
         .category-filters { gap: 0.5rem; }
         .category-pill { font-size: 0.85rem; padding: 0.5rem 1rem; }
+        .blog-image { height: 200px; }
     }
 </style>
 {% endblock %}

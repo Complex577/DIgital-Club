@@ -15,24 +15,42 @@ import math
 
 def load_fonts():
     """Load fonts with proper fallbacks - includes bold variants"""
-    try:
-        return {
-            'title': ImageFont.truetype("arialbd.ttf", 48),  # Bold
-            'large': ImageFont.truetype("arialbd.ttf", 32),  # Bold
-            'medium': ImageFont.truetype("arial.ttf", 22),
-            'small': ImageFont.truetype("arial.ttf", 18),
-            'tiny': ImageFont.truetype("arial.ttf", 14),
-            'micro': ImageFont.truetype("arial.ttf", 11)
-        }
-    except:
-        return {
-            'title': ImageFont.load_default(),
-            'large': ImageFont.load_default(),
-            'medium': ImageFont.load_default(),
-            'small': ImageFont.load_default(),
-            'tiny': ImageFont.load_default(),
-            'micro': ImageFont.load_default()
-        }
+    fonts = {}
+    
+    # Try to load preferred fonts in order of preference
+    font_configs = [
+        # Arial fonts (Windows)
+        {'title': ("arialbd.ttf", 48), 'large': ("arialbd.ttf", 32), 'medium': ("arial.ttf", 22), 
+         'small': ("arial.ttf", 18), 'tiny': ("arial.ttf", 14), 'micro': ("arial.ttf", 11)},
+        # Liberation fonts (Linux)
+        {'title': ("LiberationSans-Bold.ttf", 48), 'large': ("LiberationSans-Bold.ttf", 32), 
+         'medium': ("LiberationSans-Regular.ttf", 22), 'small': ("LiberationSans-Regular.ttf", 18), 
+         'tiny': ("LiberationSans-Regular.ttf", 14), 'micro': ("LiberationSans-Regular.ttf", 11)},
+        # DejaVu fonts (Linux fallback)
+        {'title': ("DejaVuSans-Bold.ttf", 48), 'large': ("DejaVuSans-Bold.ttf", 32), 
+         'medium': ("DejaVuSans.ttf", 22), 'small': ("DejaVuSans.ttf", 18), 
+         'tiny': ("DejaVuSans.ttf", 14), 'micro': ("DejaVuSans.ttf", 11)},
+    ]
+    
+    for config in font_configs:
+        try:
+            for font_type, (font_name, size) in config.items():
+                fonts[font_type] = ImageFont.truetype(font_name, size)
+            print(f"Successfully loaded fonts: {list(config.keys())}")
+            return fonts
+        except (OSError, IOError):
+            continue
+    
+    # Final fallback to default fonts
+    print("Using default fonts as fallback")
+    return {
+        'title': ImageFont.load_default(),
+        'large': ImageFont.load_default(),
+        'medium': ImageFont.load_default(),
+        'small': ImageFont.load_default(),
+        'tiny': ImageFont.load_default(),
+        'micro': ImageFont.load_default()
+    }
 
 
 def draw_radial_gradient(width, height, center_color, edge_color):
