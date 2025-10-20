@@ -8,3 +8,6 @@ wheels/
 
 # Virtual environments
 .venv
+node_modules/
+.node-persist/
+session/

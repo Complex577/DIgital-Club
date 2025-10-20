@@ -2,6 +2,8 @@
 Digital ID Card Generator - Premium Edition
 Generates stunning, premium-quality digital ID cards with advanced visual effects
 Features: Glass morphism, holographic accents, depth effects, modern design
+Improved with a more appealing color scheme, better contrast, simplified effects for elegance,
+improved layout balance, and adherence to design principles like hierarchy, alignment, and minimalism.
 """
 
 import os
@@ -99,60 +101,58 @@ def draw_gradient_background(draw, width, height, color1, color2, vertical=False
 
 
 def add_premium_patterns(draw, width, height):
-    """Add sophisticated geometric patterns with holographic effect"""
-    # Hexagonal pattern
-    hex_size = 60
-    pattern_color_1 = (255, 255, 255, 8)
-    pattern_color_2 = (100, 200, 255, 12)
+    """Add sophisticated geometric patterns with holographic effect - simplified for minimalism"""
+    # Subtle hexagonal pattern with reduced density and opacity
+    hex_size = 80  # Larger size for less clutter
+    pattern_color = (255, 255, 255, 4)  # Lower opacity
     
     for row in range(-1, height // hex_size + 2):
         for col in range(-1, width // hex_size + 2):
-            x = col * hex_size + (row % 2) * (hex_size // 2)
-            y = row * hex_size * 0.866
-            
-            # Draw hexagon outline
-            color = pattern_color_1 if (row + col) % 2 == 0 else pattern_color_2
-            for i in range(6):
-                angle1 = math.radians(60 * i - 30)
-                angle2 = math.radians(60 * (i + 1) - 30)
-                x1 = x + hex_size * 0.4 * math.cos(angle1)
-                y1 = y + hex_size * 0.4 * math.sin(angle1)
-                x2 = x + hex_size * 0.4 * math.cos(angle2)
-                y2 = y + hex_size * 0.4 * math.sin(angle2)
-                draw.line([(x1, y1), (x2, y2)], fill=color, width=1)
+            if (row + col) % 2 == 0:  # Reduce density by half
+                x = col * hex_size + (row % 2) * (hex_size // 2)
+                y = row * hex_size * 0.866
+                
+                # Draw hexagon outline
+                for i in range(6):
+                    angle1 = math.radians(60 * i - 30)
+                    angle2 = math.radians(60 * (i + 1) - 30)
+                    x1 = x + hex_size * 0.4 * math.cos(angle1)
+                    y1 = y + hex_size * 0.4 * math.sin(angle1)
+                    x2 = x + hex_size * 0.4 * math.cos(angle2)
+                    y2 = y + hex_size * 0.4 * math.sin(angle2)
+                    draw.line([(x1, y1), (x2, y2)], fill=pattern_color, width=1)
     
-    # Add flowing curves for depth
-    for i in range(0, width, 120):
-        for j in range(3):
-            curve_y = height * (0.3 + j * 0.2)
-            curve_offset = math.sin(i / 100) * 30
+    # Simplified flowing curves with lower opacity
+    for i in range(0, width, 180):  # Wider spacing
+        for j in range(2):  # Fewer curves
+            curve_y = height * (0.4 + j * 0.3)
+            curve_offset = math.sin(i / 150) * 20
             draw.arc(
-                [i - 60, curve_y + curve_offset - 60, i + 60, curve_y + curve_offset + 60],
-                0, 180, fill=(255, 255, 255, 6), width=2
+                [i - 80, curve_y + curve_offset - 80, i + 80, curve_y + curve_offset + 80],
+                0, 180, fill=(255, 255, 255, 4), width=1
             )
 
 
 def add_holographic_shine(img):
-    """Add holographic shine effect overlay"""
+    """Add holographic shine effect overlay - toned down for subtlety"""
     width, height = img.size
     shine = Image.new('RGBA', (width, height), (0, 0, 0, 0))
     draw = ImageDraw.Draw(shine)
     
-    # Create diagonal shine bands
-    for i in range(-height, width, 40):
-        # Rainbow holographic colors
+    # Create fewer diagonal shine bands with softer colors
+    for i in range(-height, width, 80):  # Wider spacing
+        # Softer holographic colors
         colors = [
-            (255, 100, 200, 15),  # Pink
-            (100, 200, 255, 15),  # Cyan
-            (200, 255, 100, 15),  # Yellow-green
-            (255, 200, 100, 15),  # Orange
+            (200, 150, 255, 8),  # Soft purple
+            (150, 200, 255, 8),  # Soft cyan
+            (255, 200, 150, 8),  # Soft orange
         ]
-        color = colors[(i // 40) % len(colors)]
+        color = colors[(i // 80) % len(colors)]
         
         points = [
             (i, 0),
-            (i + 20, 0),
-            (i + 20 - height, height),
+            (i + 40, 0),
+            (i + 40 - height, height),
             (i - height, height)
         ]
         draw.polygon(points, fill=color)
@@ -163,24 +163,24 @@ def add_holographic_shine(img):
 
 
 def create_glass_effect(draw, x, y, width, height, radius=20):
-    """Create glass morphism effect panel"""
-    # Semi-transparent background
+    """Create glass morphism effect panel - refined for better contrast"""
+    # Semi-transparent background with higher opacity for readability
     draw.rounded_rectangle(
         [x, y, x + width, y + height],
         radius=radius,
-        fill=(255, 255, 255, 12)
+        fill=(255, 255, 255, 24)
     )
     
-    # Top highlight for glass effect
+    # Subtle top highlight
     draw.rounded_rectangle(
-        [x, y, x + width, y + height // 3],
+        [x, y, x + width, y + height // 4],
         radius=radius,
-        fill=(255, 255, 255, 20)
+        fill=(255, 255, 255, 16)
     )
     
-    # Border with gradient effect
+    # Softer border
     for i in range(2):
-        alpha = 60 - i * 20
+        alpha = 50 - i * 20
         draw.rounded_rectangle(
             [x - i, y - i, x + width + i, y + height + i],
             radius=radius + i,
@@ -256,107 +256,100 @@ def generate_digital_id_front(member, base_url=None):
     CARD_WIDTH = 1016
     CARD_HEIGHT = 640
     
-    # Premium color scheme - enhanced with metallics
-    COLOR_BLUE = (25, 118, 210)  # Deeper blue
-    COLOR_BLUE_LIGHT = (66, 165, 245)  # Lighter accent
-    COLOR_GREEN = (46, 213, 115)  # Vibrant green
-    COLOR_GREEN_DARK = (39, 174, 96)  # Darker green
-    COLOR_CYAN = (0, 184, 212)  # Cyan accent
-    COLOR_PURPLE = (103, 58, 183)  # Purple accent
-    BG_DARK = (10, 15, 35)  # Deeper dark
-    BG_DARKER = (5, 10, 25)
-    TEXT_WHITE = (255, 255, 255)
-    TEXT_LIGHT = (220, 230, 245)
-    TEXT_GOLD = (255, 215, 0)
-    METALLIC_SILVER = (192, 192, 192)
+    # Improved color scheme - modern, appealing, high contrast
+    # Inspired by tech themes: deep navy, vibrant teal, soft gold, neutrals
+    COLOR_PRIMARY = (10, 30, 60)  # Deep navy
+    COLOR_ACCENT = (0, 150, 180)  # Vibrant teal
+    COLOR_ACCENT_LIGHT = (50, 180, 200)  # Lighter teal
+    COLOR_HIGHLIGHT = (255, 200, 100)  # Soft gold
+    BG_DARK = (15, 25, 40)  # Subtle dark background
+    BG_DARKER = (5, 15, 30)  # Deeper for gradients
+    TEXT_PRIMARY = (255, 255, 255)  # White for main text
+    TEXT_SECONDARY = (200, 220, 240)  # Light blue-gray for secondary
+    METALLIC_SILVER = (180, 180, 190)  # Softer silver
     
-    # Create base with radial gradient for depth
-    img = draw_radial_gradient(CARD_WIDTH, CARD_HEIGHT, COLOR_BLUE, BG_DARKER)
+    # Create base with radial gradient for depth - softer transition
+    img = draw_radial_gradient(CARD_WIDTH, CARD_HEIGHT, COLOR_PRIMARY, BG_DARKER)
     draw = ImageDraw.Draw(img, 'RGBA')
     
-    # Add premium geometric patterns
+    # Add premium geometric patterns - simplified
     add_premium_patterns(draw, CARD_WIDTH, CARD_HEIGHT)
     
     # Load fonts
     fonts = load_fonts()
     
-    # Premium header with glass morphism effect
+    # Premium header with glass morphism effect - simplified gradient
     header_height = 160
     header_gradient = Image.new('RGBA', (CARD_WIDTH, header_height), (0, 0, 0, 0))
     header_draw = ImageDraw.Draw(header_gradient)
     
-    # Multi-color gradient header
+    # Two-color gradient for cleaner look
     for i in range(header_height):
         ratio = i / header_height
-        # Mix between green and cyan
-        r = int(COLOR_GREEN[0] * (1 - ratio) + COLOR_CYAN[0] * ratio)
-        g = int(COLOR_GREEN[1] * (1 - ratio) + COLOR_CYAN[1] * ratio)
-        b = int(COLOR_GREEN[2] * (1 - ratio) + COLOR_CYAN[2] * ratio)
-        alpha = int(180 * (1 - ratio * 0.8))
+        r = int(COLOR_ACCENT[0] * (1 - ratio) + COLOR_PRIMARY[0] * ratio)
+        g = int(COLOR_ACCENT[1] * (1 - ratio) + COLOR_PRIMARY[1] * ratio)
+        b = int(COLOR_ACCENT[2] * (1 - ratio) + COLOR_PRIMARY[2] * ratio)
+        alpha = int(160 * (1 - ratio * 0.6))
         header_draw.rectangle([0, i, CARD_WIDTH, i+1], fill=(r, g, b, alpha))
     
     img.paste(header_gradient, (0, 0), header_gradient)
     
-    # Load and add logo with glow effect
+    # Load and add logo with subtle glow
     logo_path = os.path.join(current_app.root_path, 'static', 'DigitalClub_LOGO copy.svg')
     logo = load_and_process_logo(logo_path, (140, 140))
     
     if logo:
-        # Create glow effect for logo
+        # Subtle glow
         glow = logo.copy()
-        for _ in range(3):
-            glow = glow.filter(ImageFilter.GaussianBlur(10))
-        # Position logo at top left with glow
+        glow = glow.filter(ImageFilter.GaussianBlur(8))
+        # Position logo at top left
         img.paste(glow, (45, 25), glow)
         img.paste(logo, (50, 30), logo)
         
-        # Add club name next to logo with shadow
+        # Add club name next to logo with better alignment and no shadow for minimalism
         club_y = 50
-        # Shadow
-        draw.text((210, club_y + 2), "DIGITAL CLUB", fill=(0, 0, 0, 150), font=fonts['title'])
-        # Main text with gradient effect
-        draw.text((208, club_y), "DIGITAL CLUB", fill=TEXT_WHITE, font=fonts['title'])
-        draw.text((208, club_y + 55), "Kampala International University in Tanzania", fill=TEXT_LIGHT, font=fonts['small'])
+        draw.text((210, club_y), "DIGITAL CLUB", fill=TEXT_PRIMARY, font=fonts['title'])
+        draw.text((210, club_y + 55), "Kampala International University in Tanzania", fill=TEXT_SECONDARY, font=fonts['small'])
     else:
         # Fallback text logo
-        draw.text((50, 40), "DIGITAL CLUB", fill=COLOR_GREEN, font=fonts['title'])
-        draw.text((50, 95), "KIUT", fill=TEXT_LIGHT, font=fonts['medium'])
+        draw.text((50, 40), "DIGITAL CLUB", fill=COLOR_ACCENT, font=fonts['title'])
+        draw.text((50, 95), "KIUT", fill=TEXT_SECONDARY, font=fonts['medium'])
     
-    # Premium corner accents with glow
+    # Simplified corner accents - fewer layers
     corner_size = 80
-    # Top right - geometric design
-    for i in range(3):
-        offset = i * 15
-        alpha = 80 - i * 20
+    # Top right
+    for i in range(2):
+        offset = i * 20
+        alpha = 60 - i * 20
         points = [
             (CARD_WIDTH - corner_size + offset, 0),
             (CARD_WIDTH, 0),
             (CARD_WIDTH, corner_size - offset)
         ]
-        draw.polygon(points, fill=(*COLOR_GREEN, alpha))
+        draw.polygon(points, fill=(*COLOR_ACCENT_LIGHT, alpha))
     
-    # Bottom left - geometric design
-    for i in range(3):
-        offset = i * 15
-        alpha = 80 - i * 20
+    # Bottom left
+    for i in range(2):
+        offset = i * 20
+        alpha = 60 - i * 20
         points = [
             (0, CARD_HEIGHT - corner_size + offset),
             (0, CARD_HEIGHT),
             (corner_size - offset, CARD_HEIGHT)
         ]
-        draw.polygon(points, fill=(*COLOR_CYAN, alpha))
+        draw.polygon(points, fill=(*COLOR_ACCENT, alpha))
     
-    # Add floating particles effect for premium feel
+    # Fewer floating particles for cleaner design
     import random
-    random.seed(42)  # Consistent pattern
-    for _ in range(30):
+    random.seed(42)
+    for _ in range(15):  # Reduced from 30
         x = random.randint(0, CARD_WIDTH)
         y = random.randint(0, CARD_HEIGHT)
-        size = random.randint(1, 3)
-        alpha = random.randint(20, 60)
+        size = random.randint(1, 2)
+        alpha = random.randint(10, 40)
         draw.ellipse([x, y, x + size, y + size], fill=(255, 255, 255, alpha))
     
-    # Add member photo with premium frame and glow
+    # Add member photo with premium frame and subtle glow
     photo_size = 220
     photo_x = 50
     photo_y = 240
@@ -374,110 +367,108 @@ def generate_digital_id_front(member, base_url=None):
                 profile_img = profile_img.convert('RGB')
                 profile_img = profile_img.resize((photo_size, photo_size), Image.Resampling.LANCZOS)
                 
-                # Enhance photo with subtle brightness boost
+                # Subtle enhancement
                 from PIL import ImageEnhance
                 enhancer = ImageEnhance.Brightness(profile_img)
-                profile_img = enhancer.enhance(1.1)
+                profile_img = enhancer.enhance(1.05)
                 
-                # Create rounded rectangle mask
+                # Rounded mask
                 mask = Image.new('L', (photo_size, photo_size), 0)
                 mask_draw = ImageDraw.Draw(mask)
                 mask_draw.rounded_rectangle([0, 0, photo_size, photo_size], radius=25, fill=255)
                 
-                # Create rounded image
                 rounded_img = Image.new('RGB', (photo_size, photo_size), BG_DARK)
                 rounded_img.paste(profile_img, (0, 0), mask)
                 
-                # Add glow effect behind photo
-                for i in range(8, 0, -1):
-                    alpha = 40 - i * 4
+                # Subtle glow
+                for i in range(4, 0, -1):
+                    alpha = 30 - i * 6
                     draw.rounded_rectangle(
-                        [photo_x-i*2, photo_y-i*2, photo_x+photo_size+i*2, photo_y+photo_size+i*2],
-                        radius=25+i*2,
-                        fill=(*COLOR_GREEN, alpha)
+                        [photo_x - i, photo_y - i, photo_x + photo_size + i, photo_y + photo_size + i],
+                        radius=25 + i,
+                        fill=(*COLOR_ACCENT_LIGHT, alpha)
                     )
                 
                 # Paste photo
                 img.paste(rounded_img, (photo_x, photo_y))
                 
-                # Multi-layer premium border
-                for i in range(4):
+                # Simplified border - fewer layers
+                for i in range(2):
                     offset = i * 2
-                    alpha = 255 - i * 40
-                    border_color = COLOR_GREEN if i % 2 == 0 else COLOR_CYAN
+                    alpha = 200 - i * 80
+                    border_color = COLOR_ACCENT if i % 2 == 0 else COLOR_ACCENT_LIGHT
                     draw.rounded_rectangle(
-                        [photo_x-offset, photo_y-offset, photo_x+photo_size+offset, photo_y+photo_size+offset],
-                        radius=25+offset,
+                        [photo_x - offset, photo_y - offset, photo_x + photo_size + offset, photo_y + photo_size + offset],
+                        radius=25 + offset,
                         outline=(*border_color, alpha),
-                        width=2
+                        width=1
                     )
                 
-                # Add corner accent decorations with proper orientation
-                accent_size = 20
-                # Top-left corner
-                draw.rectangle([photo_x-5, photo_y-5, photo_x-5+accent_size, photo_y-5+3], 
-                             fill=(*TEXT_GOLD, 200))
-                draw.rectangle([photo_x-5, photo_y-5, photo_x-5+3, photo_y-5+accent_size], 
-                             fill=(*TEXT_GOLD, 200))
+                # Simplified corner accents
+                accent_size = 15
+                accent_alpha = 180
+                # Top-left
+                draw.rectangle([photo_x - 3, photo_y - 3, photo_x - 3 + accent_size, photo_y - 3 + 2], 
+                               fill=(*COLOR_HIGHLIGHT, accent_alpha))
+                draw.rectangle([photo_x - 3, photo_y - 3, photo_x - 3 + 2, photo_y - 3 + accent_size], 
+                               fill=(*COLOR_HIGHLIGHT, accent_alpha))
                 
-                # Top-right corner
-                draw.rectangle([photo_x+photo_size+5-accent_size, photo_y-5, photo_x+photo_size+5, photo_y-5+3], 
-                             fill=(*TEXT_GOLD, 200))
-                draw.rectangle([photo_x+photo_size+2, photo_y-5, photo_x+photo_size+5, photo_y-5+accent_size], 
-                             fill=(*TEXT_GOLD, 200))
+                # Top-right
+                draw.rectangle([photo_x + photo_size + 3 - accent_size, photo_y - 3, photo_x + photo_size + 3, photo_y - 3 + 2], 
+                               fill=(*COLOR_HIGHLIGHT, accent_alpha))
+                draw.rectangle([photo_x + photo_size + 1, photo_y - 3, photo_x + photo_size + 3, photo_y - 3 + accent_size], 
+                               fill=(*COLOR_HIGHLIGHT, accent_alpha))
                 
-                # Bottom-left corner
-                draw.rectangle([photo_x-5, photo_y+photo_size+2, photo_x-5+accent_size, photo_y+photo_size+5], 
-                             fill=(*TEXT_GOLD, 200))
-                draw.rectangle([photo_x-5, photo_y+photo_size+5-accent_size, photo_x-5+3, photo_y+photo_size+5], 
-                             fill=(*TEXT_GOLD, 200))
+                # Bottom-left
+                draw.rectangle([photo_x - 3, photo_y + photo_size + 1, photo_x - 3 + accent_size, photo_y + photo_size + 3], 
+                               fill=(*COLOR_HIGHLIGHT, accent_alpha))
+                draw.rectangle([photo_x - 3, photo_y + photo_size + 3 - accent_size, photo_x - 3 + 2, photo_y + photo_size + 3], 
+                               fill=(*COLOR_HIGHLIGHT, accent_alpha))
                 
-                # Bottom-right corner
-                draw.rectangle([photo_x+photo_size+5-accent_size, photo_y+photo_size+2, photo_x+photo_size+5, photo_y+photo_size+5], 
-                             fill=(*TEXT_GOLD, 200))
-                draw.rectangle([photo_x+photo_size+2, photo_y+photo_size+5-accent_size, photo_x+photo_size+5, photo_y+photo_size+5], 
-                             fill=(*TEXT_GOLD, 200))
+                # Bottom-right
+                draw.rectangle([photo_x + photo_size + 3 - accent_size, photo_y + photo_size + 1, photo_x + photo_size + 3, photo_y + photo_size + 3], 
+                               fill=(*COLOR_HIGHLIGHT, accent_alpha))
+                draw.rectangle([photo_x + photo_size + 1, photo_y + photo_size + 3 - accent_size, photo_x + photo_size + 3, photo_y + photo_size + 3], 
+                               fill=(*COLOR_HIGHLIGHT, accent_alpha))
             else:
-                # Premium placeholder
+                # Placeholder
                 create_glass_effect(draw, photo_x, photo_y, photo_size, photo_size, 25)
                 draw.text((photo_x + 85, photo_y + 85), "📷", font=fonts['title'])
         else:
-            # Premium placeholder
+            # Placeholder
             create_glass_effect(draw, photo_x, photo_y, photo_size, photo_size, 25)
             draw.text((photo_x + 85, photo_y + 85), "📷", font=fonts['title'])
     except Exception as e:
-        # Premium placeholder on error
+        # Placeholder on error
         create_glass_effect(draw, photo_x, photo_y, photo_size, photo_size, 25)
         draw.text((photo_x + 85, photo_y + 85), "📷", font=fonts['title'])
     
-    # Add member information with premium glass panel
+    # Member information with premium glass panel - better spacing
     info_x = 330
     info_y = 195
     panel_width = CARD_WIDTH - info_x - 45
     panel_height = 420
     
-    # Premium glass morphism info panel
+    # Glass effect
     create_glass_effect(draw, info_x - 25, info_y - 25, panel_width, panel_height, 25)
     
-    # Add subtle inner glow
-    for i in range(3):
-        alpha = 30 - i * 8
-        draw.rounded_rectangle(
-            [info_x - 25 + i, info_y - 25 + i, info_x + panel_width - 25 - i, info_y + panel_height - 25 - i],
-            radius=25 - i,
-            outline=(*COLOR_GREEN, alpha),
-            width=1
-        )
+    # Subtle inner border
+    draw.rounded_rectangle(
+        [info_x - 25, info_y - 25, info_x + panel_width - 25, info_y + panel_height - 25],
+        radius=25,
+        outline=(*COLOR_ACCENT_LIGHT, 20),
+        width=1
+    )
     
-    # Member name with shadow and glow
+    # Member name with better hierarchy
     name_lines = []
     name = member.full_name.upper()
-    if len(name) > 18:
+    if len(name) > 20:
         words = name.split()
         line1 = []
         line2 = []
         for word in words:
-            if len(' '.join(line1 + [word])) <= 18:
+            if len(' '.join(line1 + [word])) <= 20:
                 line1.append(word)
             else:
                 line2.append(word)
@@ -488,87 +479,65 @@ def generate_digital_id_front(member, base_url=None):
         name_lines.append(name)
     
     for i, line in enumerate(name_lines):
-        # Shadow
-        draw.text((info_x + 2, info_y + i * 48 + 2), line, fill=(0, 0, 0, 150), font=fonts['large'])
-        # Main text
-        draw.text((info_x, info_y + i * 48), line, fill=TEXT_WHITE, font=fonts['large'])
-        # Subtle glow
-        draw.text((info_x, info_y + i * 48), line, fill=(*COLOR_GREEN, 30), font=fonts['large'])
+        draw.text((info_x, info_y + i * 48), line, fill=TEXT_PRIMARY, font=fonts['large'])
     
-    info_y += len(name_lines) * 48 + 25
+    info_y += len(name_lines) * 48 + 30  # Increased spacing
     
-    # Premium separator with gradient
-    separator_gradient = Image.new('RGBA', (panel_width - 30, 3), (0, 0, 0, 0))
-    sep_draw = ImageDraw.Draw(separator_gradient)
-    for x in range(panel_width - 30):
-        ratio = x / (panel_width - 30)
-        alpha = int(255 * math.sin(ratio * math.pi))
-        sep_draw.line([(x, 0), (x, 3)], fill=(*COLOR_GREEN, alpha))
-    img.paste(separator_gradient, (info_x, info_y), separator_gradient)
-    info_y += 20
+    # Simplified separator
+    draw.line([(info_x, info_y), (info_x + panel_width - 50, info_y)], fill=(*COLOR_ACCENT, 100), width=1)
+    info_y += 25
     
-    # Member ID with premium badge
+    # Member ID with cleaner badge
     id_badge_width = panel_width - 30
     id_badge_height = 80
-    # Create gradient background for ID
     id_badge = Image.new('RGBA', (id_badge_width, id_badge_height), (0, 0, 0, 0))
     id_draw = ImageDraw.Draw(id_badge)
     for i in range(id_badge_height):
         ratio = i / id_badge_height
-        alpha = int(60 * (1 - ratio * 0.5))
-        id_draw.rectangle([0, i, id_badge_width, i+1], fill=(*COLOR_BLUE_LIGHT, alpha))
+        alpha = int(40 * (1 - ratio * 0.4))
+        id_draw.rectangle([0, i, id_badge_width, i+1], fill=(*COLOR_ACCENT_LIGHT, alpha))
     img.paste(id_badge, (info_x, info_y), id_badge)
     
-    draw.text((info_x + 10, info_y + 8), "MEMBER ID", fill=COLOR_CYAN, font=fonts['tiny'])
-    # Shadow for ID
-    draw.text((info_x + 12, info_y + 30), member.member_id_number, fill=(0, 0, 0, 120), font=fonts['large'])
-    # Main ID with gradient effect
-    draw.text((info_x + 10, info_y + 28), member.member_id_number, fill=TEXT_GOLD, font=fonts['large'])
+    draw.text((info_x + 10, info_y + 8), "MEMBER ID", fill=COLOR_ACCENT, font=fonts['tiny'])
+    draw.text((info_x + 10, info_y + 28), member.member_id_number, fill=COLOR_HIGHLIGHT, font=fonts['large'])
     info_y += 95
     
-    # Course and Year in modern cards
+    # Course and Year with better alignment
     if member.course:
-        # Course card
-        draw.text((info_x, info_y), "COURSE", fill=COLOR_CYAN, font=fonts['tiny'])
+        draw.text((info_x, info_y), "COURSE", fill=COLOR_ACCENT, font=fonts['tiny'])
         info_y += 22
-        course_text = member.course[:28]  # Limit length
-        # Shadow
-        draw.text((info_x + 1, info_y + 1), course_text, fill=(0, 0, 0, 100), font=fonts['small'])
-        draw.text((info_x, info_y), course_text, fill=TEXT_WHITE, font=fonts['small'])
-        info_y += 38
+        course_text = member.course[:28]
+        draw.text((info_x, info_y), course_text, fill=TEXT_PRIMARY, font=fonts['small'])
+        info_y += 40  # Increased spacing
     
     if member.year:
-        draw.text((info_x, info_y), "ACADEMIC YEAR", fill=COLOR_CYAN, font=fonts['tiny'])
+        draw.text((info_x, info_y), "ACADEMIC YEAR", fill=COLOR_ACCENT, font=fonts['tiny'])
         info_y += 22
-        # Shadow
-        draw.text((info_x + 1, info_y + 1), member.year, fill=(0, 0, 0, 100), font=fonts['small'])
-        draw.text((info_x, info_y), member.year, fill=TEXT_WHITE, font=fonts['small'])
-        info_y += 38
+        draw.text((info_x, info_y), member.year, fill=TEXT_PRIMARY, font=fonts['small'])
+        info_y += 40
     
-    # Premium status badge with glow
+    # Status badge - simplified
     status_text = member.status.upper()
-    status_color = COLOR_GREEN if member.status == 'student' else TEXT_GOLD
+    status_color = COLOR_ACCENT if member.status == 'student' else COLOR_HIGHLIGHT
     
     badge_width = 160
     badge_height = 42
     badge_x = info_x
     badge_y = info_y + 15
     
-    # Badge glow
-    for i in range(5, 0, -1):
-        alpha = 50 - i * 8
-        draw.rounded_rectangle(
-            [badge_x - i, badge_y - i, badge_x + badge_width + i, badge_y + badge_height + i],
-            radius=21 + i,
-            fill=(*status_color, alpha)
-        )
+    # Subtle glow
+    draw.rounded_rectangle(
+        [badge_x - 2, badge_y - 2, badge_x + badge_width + 2, badge_y + badge_height + 2],
+        radius=21 + 2,
+        fill=(*status_color, 20)
+    )
     
-    # Badge background with gradient
+    # Badge background
     badge_img = Image.new('RGBA', (badge_width, badge_height), (0, 0, 0, 0))
     badge_draw = ImageDraw.Draw(badge_img)
     for i in range(badge_height):
         ratio = i / badge_height
-        alpha = int(60 * (1 - ratio * 0.3))
+        alpha = int(50 * (1 - ratio * 0.2))
         badge_draw.rectangle([0, i, badge_width, i+1], fill=(*status_color, alpha))
     img.paste(badge_img, (badge_x, badge_y), badge_img)
     
@@ -577,15 +546,14 @@ def generate_digital_id_front(member, base_url=None):
         [badge_x, badge_y, badge_x + badge_width, badge_y + badge_height],
         radius=21,
         outline=status_color,
-        width=3
+        width=2
     )
     
-    # Badge text with shadow
+    # Badge text
     text_x = badge_x + (badge_width - len(status_text) * 12) // 2
-    draw.text((text_x + 1, badge_y + 9), status_text, fill=(0, 0, 0, 150), font=fonts['medium'])
-    draw.text((text_x, badge_y + 8), status_text, fill=status_color, font=fonts['medium'])
+    draw.text((text_x, badge_y + 8), status_text, fill=TEXT_PRIMARY, font=fonts['medium'])
     
-    # Generate premium QR code with frame
+    # Generate QR code with simpler frame
     if not base_url:
         try:
             base_url = request.url_root.rstrip('/')
@@ -602,147 +570,122 @@ def generate_digital_id_front(member, base_url=None):
     qr.add_data(qr_url)
     qr.make(fit=True)
     
-    qr_img = qr.make_image(fill_color=(10, 15, 35), back_color=(255, 255, 255))
+    qr_img = qr.make_image(fill_color=BG_DARK, back_color=TEXT_PRIMARY)
     qr_img = qr_img.resize((150, 150), Image.Resampling.LANCZOS)
     
-    # QR position - bottom right with premium frame
+    # QR position
     qr_x = CARD_WIDTH - 350
     qr_y = CARD_HEIGHT - 290
     qr_size = 150
     
-    # QR outer glow
-    for i in range(8, 0, -1):
-        alpha = 60 - i * 6
-        draw.rounded_rectangle(
-            [qr_x - 15 - i*2, qr_y - 15 - i*2, qr_x + qr_size + 15 + i*2, qr_y + qr_size + 15 + i*2],
-            radius=18 + i*2,
-            fill=(*COLOR_CYAN, alpha)
-        )
+    # Subtle glow
+    draw.rounded_rectangle(
+        [qr_x - 15, qr_y - 15, qr_x + qr_size + 15, qr_y + qr_size + 15],
+        radius=18,
+        fill=(*COLOR_ACCENT_LIGHT, 30)
+    )
     
-    # Premium QR frame with gradient
+    # Simple frame
     frame_padding = 12
     qr_frame = Image.new('RGBA', (qr_size + frame_padding*2, qr_size + frame_padding*2), (0, 0, 0, 0))
     qr_frame_draw = ImageDraw.Draw(qr_frame)
     
-    # Frame gradient
     for i in range(qr_size + frame_padding*2):
         ratio = i / (qr_size + frame_padding*2)
-        r = int(255 * (1 - ratio * 0.1))
-        qr_frame_draw.rectangle([0, i, qr_size + frame_padding*2, i+1], fill=(r, r, r, 255))
+        r = int(240 * (1 - ratio * 0.05))
+        qr_frame_draw.rectangle([0, i, qr_size + frame_padding*2, i+1], fill=(r, r, r, 200))
     
-    # Paste QR frame
     img.paste(qr_frame, (qr_x - frame_padding, qr_y - frame_padding), qr_frame)
     
-    # Paste QR code
+    # Paste QR
     img.paste(qr_img, (qr_x, qr_y))
     
-    # Premium frame borders
-    for i in range(3):
-        offset = i * 2
-        alpha = 255 - i * 60
-        border_color = COLOR_GREEN if i % 2 == 0 else COLOR_CYAN
-        draw.rounded_rectangle(
-            [qr_x - frame_padding - offset, qr_y - frame_padding - offset, 
-             qr_x + qr_size + frame_padding + offset, qr_y + qr_size + frame_padding + offset],
-            radius=15 + offset,
-            outline=(*border_color, alpha),
-            width=2
-        )
+    # Simplified border
+    draw.rounded_rectangle(
+        [qr_x - frame_padding, qr_y - frame_padding, 
+         qr_x + qr_size + frame_padding, qr_y + qr_size + frame_padding],
+        radius=15,
+        outline=(*COLOR_ACCENT, 180),
+        width=1
+    )
     
-    # Corner accents for QR with proper orientation
-    accent_len = 25
+    # Simplified corner accents
+    accent_len = 20
+    accent_alpha = 200
+    # Top-left
+    draw.rectangle([qr_x - frame_padding - 4, qr_y - frame_padding - 4, 
+                    qr_x - frame_padding - 4 + accent_len, qr_y - frame_padding - 4 + 2], 
+                   fill=(*COLOR_HIGHLIGHT, accent_alpha))
+    draw.rectangle([qr_x - frame_padding - 4, qr_y - frame_padding - 4, 
+                    qr_x - frame_padding - 4 + 2, qr_y - frame_padding - 4 + accent_len], 
+                   fill=(*COLOR_HIGHLIGHT, accent_alpha))
     
-    # Top-left corner
-    draw.rectangle([qr_x - frame_padding - 6, qr_y - frame_padding - 6, 
-                   qr_x - frame_padding - 6 + accent_len, qr_y - frame_padding - 6 + 3], 
-                  fill=(*TEXT_GOLD, 255))
-    draw.rectangle([qr_x - frame_padding - 6, qr_y - frame_padding - 6, 
-                   qr_x - frame_padding - 6 + 3, qr_y - frame_padding - 6 + accent_len], 
-                  fill=(*TEXT_GOLD, 255))
+    # Top-right
+    draw.rectangle([qr_x + qr_size + frame_padding + 4 - accent_len, qr_y - frame_padding - 4, 
+                    qr_x + qr_size + frame_padding + 4, qr_y - frame_padding - 4 + 2], 
+                   fill=(*COLOR_HIGHLIGHT, accent_alpha))
+    draw.rectangle([qr_x + qr_size + frame_padding + 2, qr_y - frame_padding - 4, 
+                    qr_x + qr_size + frame_padding + 4, qr_y - frame_padding - 4 + accent_len], 
+                   fill=(*COLOR_HIGHLIGHT, accent_alpha))
     
-    # Top-right corner
-    draw.rectangle([qr_x + qr_size + frame_padding + 6 - accent_len, qr_y - frame_padding - 6, 
-                   qr_x + qr_size + frame_padding + 6, qr_y - frame_padding - 6 + 3], 
-                  fill=(*TEXT_GOLD, 255))
-    draw.rectangle([qr_x + qr_size + frame_padding + 3, qr_y - frame_padding - 6, 
-                   qr_x + qr_size + frame_padding + 6, qr_y - frame_padding - 6 + accent_len], 
-                  fill=(*TEXT_GOLD, 255))
+    # Bottom-left
+    draw.rectangle([qr_x - frame_padding - 4, qr_y + qr_size + frame_padding + 2, 
+                    qr_x - frame_padding - 4 + accent_len, qr_y + qr_size + frame_padding + 4], 
+                   fill=(*COLOR_HIGHLIGHT, accent_alpha))
+    draw.rectangle([qr_x - frame_padding - 4, qr_y + qr_size + frame_padding + 4 - accent_len, 
+                    qr_x - frame_padding - 4 + 2, qr_y + qr_size + frame_padding + 4], 
+                   fill=(*COLOR_HIGHLIGHT, accent_alpha))
     
-    # Bottom-left corner
-    draw.rectangle([qr_x - frame_padding - 6, qr_y + qr_size + frame_padding + 3, 
-                   qr_x - frame_padding - 6 + accent_len, qr_y + qr_size + frame_padding + 6], 
-                  fill=(*TEXT_GOLD, 255))
-    draw.rectangle([qr_x - frame_padding - 6, qr_y + qr_size + frame_padding + 6 - accent_len, 
-                   qr_x - frame_padding - 6 + 3, qr_y + qr_size + frame_padding + 6], 
-                  fill=(*TEXT_GOLD, 255))
+    # Bottom-right
+    draw.rectangle([qr_x + qr_size + frame_padding + 4 - accent_len, qr_y + qr_size + frame_padding + 2, 
+                    qr_x + qr_size + frame_padding + 4, qr_y + qr_size + frame_padding + 4], 
+                   fill=(*COLOR_HIGHLIGHT, accent_alpha))
+    draw.rectangle([qr_x + qr_size + frame_padding + 2, qr_y + qr_size + frame_padding + 4 - accent_len, 
+                    qr_x + qr_size + frame_padding + 4, qr_y + qr_size + frame_padding + 4], 
+                   fill=(*COLOR_HIGHLIGHT, accent_alpha))
     
-    # Bottom-right corner
-    draw.rectangle([qr_x + qr_size + frame_padding + 6 - accent_len, qr_y + qr_size + frame_padding + 3, 
-                   qr_x + qr_size + frame_padding + 6, qr_y + qr_size + frame_padding + 6], 
-                  fill=(*TEXT_GOLD, 255))
-    draw.rectangle([qr_x + qr_size + frame_padding + 3, qr_y + qr_size + frame_padding + 6 - accent_len, 
-                   qr_x + qr_size + frame_padding + 6, qr_y + qr_size + frame_padding + 6], 
-                  fill=(*TEXT_GOLD, 255))
-    
-    # QR label with glow
+    # QR label
     label_text = "SCAN TO VERIFY"
     label_x = qr_x - frame_padding + 45
     label_y = qr_y + qr_size + frame_padding + 18
-    draw.text((label_x + 1, label_y + 1), label_text, fill=(0, 0, 0, 120), font=fonts['micro'])
-    draw.text((label_x, label_y), label_text, fill=TEXT_WHITE, font=fonts['micro'])
+    draw.text((label_x, label_y), label_text, fill=TEXT_SECONDARY, font=fonts['micro'])
     
-    # Validity information in premium card (bottom left)
+    # Validity information - simplified
     if member.created_at:
         valid_x = 50
         valid_y = CARD_HEIGHT - 150
         valid_width = 200
         valid_height = 100
         
-        # Glass effect card
         create_glass_effect(draw, valid_x, valid_y, valid_width, valid_height, 15)
         
-        # Content
-        draw.text((valid_x + 15, valid_y + 15), "VALID FROM", fill=COLOR_CYAN, font=fonts['tiny'])
+        draw.text((valid_x + 15, valid_y + 15), "VALID FROM", fill=COLOR_ACCENT, font=fonts['tiny'])
         valid_from = member.created_at.strftime('%B %Y')
-        draw.text((valid_x + 16, valid_y + 36), valid_from, fill=(0, 0, 0, 120), font=fonts['small'])
-        draw.text((valid_x + 15, valid_y + 35), valid_from, fill=TEXT_WHITE, font=fonts['small'])
+        draw.text((valid_x + 15, valid_y + 35), valid_from, fill=TEXT_PRIMARY, font=fonts['small'])
         
-        draw.text((valid_x + 15, valid_y + 62), "STATUS", fill=COLOR_CYAN, font=fonts['tiny'])
-        draw.text((valid_x + 16, valid_y + 78), "ACTIVE", fill=(0, 0, 0, 120), font=fonts['tiny'])
-        draw.text((valid_x + 15, valid_y + 77), "● ACTIVE", fill=COLOR_GREEN, font=fonts['tiny'])
+        draw.text((valid_x + 15, valid_y + 62), "STATUS", fill=COLOR_ACCENT, font=fonts['tiny'])
+        draw.text((valid_x + 15, valid_y + 77), "● ACTIVE", fill=COLOR_ACCENT_LIGHT, font=fonts['tiny'])
     
-    # Premium holographic bottom accent
+    # Bottom accent - simplified wave
     accent_height = 20
     holographic_accent = Image.new('RGBA', (CARD_WIDTH, accent_height), (0, 0, 0, 0))
     holo_draw = ImageDraw.Draw(holographic_accent)
     
     for x in range(CARD_WIDTH):
-        # Create wave pattern
         ratio = (x / CARD_WIDTH) * 2 * math.pi
-        wave = (math.sin(ratio * 3) + 1) / 2
-        
-        # Rainbow colors
-        if x % 200 < 50:
-            color = COLOR_GREEN
-        elif x % 200 < 100:
-            color = COLOR_CYAN
-        elif x % 200 < 150:
-            color = COLOR_BLUE_LIGHT
-        else:
-            color = COLOR_PURPLE
-        
-        alpha = int(80 * wave)
+        wave = (math.sin(ratio * 2) + 1) / 2  # Smoother wave
+        color = COLOR_ACCENT_LIGHT
+        alpha = int(60 * wave)
         holo_draw.line([(x, 0), (x, accent_height)], fill=(*color, alpha))
     
     img.paste(holographic_accent, (0, CARD_HEIGHT - accent_height), holographic_accent)
     
-    # Apply holographic shine effect
+    # Apply holographic shine - toned down
     img = add_holographic_shine(img)
     
-    # Convert back to RGB for saving
+    # Convert back to RGB
     if img.mode == 'RGBA':
-        # Create white background
-        bg = Image.new('RGB', img.size, (10, 15, 35))
+        bg = Image.new('RGB', img.size, (15, 25, 40))
         bg.paste(img, mask=img.split()[3] if len(img.split()) == 4 else None)
         img = bg
     
@@ -764,121 +707,100 @@ def generate_digital_id_back(member, base_url=None):
     CARD_WIDTH = 1016
     CARD_HEIGHT = 640
     
-    # Premium color scheme
-    COLOR_BLUE = (25, 118, 210)
-    COLOR_BLUE_LIGHT = (66, 165, 245)
-    COLOR_GREEN = (46, 213, 115)
-    COLOR_CYAN = (0, 184, 212)
-    COLOR_PURPLE = (103, 58, 183)
-    BG_DARK = (10, 15, 35)
-    BG_DARKER = (5, 10, 25)
-    TEXT_WHITE = (255, 255, 255)
-    TEXT_LIGHT = (220, 230, 245)
-    TEXT_GOLD = (255, 215, 0)
+    # Improved color scheme matching front
+    COLOR_PRIMARY = (10, 30, 60)
+    COLOR_ACCENT = (0, 150, 180)
+    COLOR_ACCENT_LIGHT = (50, 180, 200)
+    COLOR_HIGHLIGHT = (255, 200, 100)
+    BG_DARK = (15, 25, 40)
+    BG_DARKER = (5, 15, 30)
+    TEXT_PRIMARY = (255, 255, 255)
+    TEXT_SECONDARY = (200, 220, 240)
     
-    # Create base with radial gradient
+    # Base gradient
     img = draw_radial_gradient(CARD_WIDTH, CARD_HEIGHT, BG_DARK, BG_DARKER)
     draw = ImageDraw.Draw(img, 'RGBA')
     
-    # Add diagonal gradient overlay for depth
+    # Subtle diagonal overlay
     overlay = Image.new('RGBA', (CARD_WIDTH, CARD_HEIGHT), (0, 0, 0, 0))
     overlay_draw = ImageDraw.Draw(overlay)
     for i in range(CARD_WIDTH + CARD_HEIGHT):
         ratio = i / (CARD_WIDTH + CARD_HEIGHT)
-        alpha = int(40 * (1 - ratio))
+        alpha = int(30 * (1 - ratio))
         for x in range(max(0, i - CARD_HEIGHT), min(CARD_WIDTH, i)):
             y = i - x
             if 0 <= y < CARD_HEIGHT:
-                overlay_draw.point((x, y), fill=(*COLOR_BLUE, alpha))
+                overlay_draw.point((x, y), fill=(*COLOR_PRIMARY, alpha))
     img.paste(overlay, (0, 0), overlay)
     
-    # Add premium geometric patterns
+    # Premium patterns - simplified
     add_premium_patterns(draw, CARD_WIDTH, CARD_HEIGHT)
     
-    # Load fonts
+    # Fonts
     fonts = load_fonts()
     
-    # Premium header with multi-color gradient
+    # Header gradient - simplified
     header_height = 120
     header_gradient = Image.new('RGBA', (CARD_WIDTH, header_height), (0, 0, 0, 0))
     header_draw = ImageDraw.Draw(header_gradient)
     
     for i in range(header_height):
         ratio = i / header_height
-        # Mix between purple and cyan
-        r = int(COLOR_PURPLE[0] * (1 - ratio) + COLOR_CYAN[0] * ratio)
-        g = int(COLOR_PURPLE[1] * (1 - ratio) + COLOR_CYAN[1] * ratio)
-        b = int(COLOR_PURPLE[2] * (1 - ratio) + COLOR_CYAN[2] * ratio)
-        alpha = int(120 * (1 - ratio * 0.7))
+        r = int(COLOR_ACCENT[0] * (1 - ratio) + COLOR_PRIMARY[0] * ratio)
+        g = int(COLOR_ACCENT[1] * (1 - ratio) + COLOR_PRIMARY[1] * ratio)
+        b = int(COLOR_ACCENT[2] * (1 - ratio) + COLOR_PRIMARY[2] * ratio)
+        alpha = int(100 * (1 - ratio * 0.5))
         header_draw.rectangle([0, i, CARD_WIDTH, i+1], fill=(r, g, b, alpha))
     
     img.paste(header_gradient, (0, 0), header_gradient)
     
-    # Load and add logo at top center with glow
+    # Logo at top center with subtle glow
     logo_path = os.path.join(current_app.root_path, 'static', 'DigitalClub_LOGO copy.svg')
     logo = load_and_process_logo(logo_path, (100, 100))
     
     if logo:
-        # Create glow effect
         glow = logo.copy()
-        for _ in range(3):
-            glow = glow.filter(ImageFilter.GaussianBlur(8))
-        # Position logo at top center
+        glow = glow.filter(ImageFilter.GaussianBlur(6))
         logo_x = CARD_WIDTH // 2 - 50
-        img.paste(glow, (logo_x - 5, 15), glow)
+        img.paste(glow, (logo_x - 3, 15), glow)
         img.paste(logo, (logo_x, 20), logo)
     
-    # Premium separator with gradient
+    # Simplified separator
     separator_y = 130
-    sep_gradient = Image.new('RGBA', (CARD_WIDTH - 160, 3), (0, 0, 0, 0))
-    sep_draw = ImageDraw.Draw(sep_gradient)
-    for x in range(CARD_WIDTH - 160):
-        ratio = x / (CARD_WIDTH - 160)
-        alpha = int(255 * math.sin(ratio * math.pi))
-        sep_draw.line([(x, 0), (x, 3)], fill=(*COLOR_GREEN, alpha))
-    img.paste(sep_gradient, (80, separator_y), sep_gradient)
+    draw.line([(80, separator_y), (CARD_WIDTH - 80, separator_y)], fill=(*COLOR_ACCENT, 80), width=1)
     
-    # Premium content panels
+    # Content panels - better spacing and alignment
     left_x = 60
     right_x = CARD_WIDTH // 2 + 30
     content_y = 160
     panel_width = (CARD_WIDTH // 2) - 90
     
-    # Left panel - About section with glass effect
+    # Left panel - About
     left_panel_height = 180
     create_glass_effect(draw, left_x, content_y, panel_width, left_panel_height, 20)
     
-    # About title with glow
-    draw.text((left_x + 21, content_y + 16), "ABOUT THE CLUB", fill=(0, 0, 0, 120), font=fonts['medium'])
-    draw.text((left_x + 20, content_y + 15), "ABOUT THE CLUB", fill=COLOR_GREEN, font=fonts['medium'])
+    draw.text((left_x + 20, content_y + 15), "ABOUT THE CLUB", fill=COLOR_ACCENT_LIGHT, font=fonts['medium'])
     
-    # About content
     about_text = [
-        "The Digital Club is a vibrant",
-        "community of tech enthusiasts,",
+        "The Digital Club is a vibrant community of tech enthusiasts,",
         "developers, and innovators at KIUT.",
-        "",
-        "We foster learning, collaboration,",
-        "and innovation in technology."
+        # "",
+        "We foster learning, collaboration and innovation in technology."
     ]
     
     about_y = content_y + 50
     for line in about_text:
-        if line:  # Skip empty lines for spacing
-            draw.text((left_x + 21, about_y + 1), line, fill=(0, 0, 0, 80), font=fonts['tiny'])
-            draw.text((left_x + 20, about_y), line, fill=TEXT_LIGHT, font=fonts['tiny'])
-        about_y += 20
+        if line:
+            draw.text((left_x + 20, about_y), line, fill=TEXT_SECONDARY, font=fonts['tiny'])
+        about_y += 22  # Adjusted spacing
     
     # Contact panel
-    contact_y = content_y + left_panel_height + 25
+    contact_y = content_y + left_panel_height + 30  # Increased spacing
     contact_height = 140
     create_glass_effect(draw, left_x, contact_y, panel_width, contact_height, 20)
     
-    # Contact title
-    draw.text((left_x + 21, contact_y + 16), "CONTACT INFO", fill=(0, 0, 0, 120), font=fonts['medium'])
-    draw.text((left_x + 20, contact_y + 15), "CONTACT INFO", fill=COLOR_CYAN, font=fonts['medium'])
+    draw.text((left_x + 20, contact_y + 15), "CONTACT INFO", fill=COLOR_ACCENT_LIGHT, font=fonts['medium'])
     
-    # Contact details with icons
     contact_info = [
         ("📧", "info@digitalclub.kiut.ac.tz"),
         ("🌐", "www.digitalclub.kiut.ac.tz"),
@@ -888,44 +810,36 @@ def generate_digital_id_back(member, base_url=None):
     contact_text_y = contact_y + 50
     for icon, text in contact_info:
         draw.text((left_x + 20, contact_text_y), icon, font=fonts['small'])
-        draw.text((left_x + 41, contact_text_y + 1), text, fill=(0, 0, 0, 80), font=fonts['tiny'])
-        draw.text((left_x + 40, contact_text_y), text, fill=TEXT_LIGHT, font=fonts['tiny'])
-        contact_text_y += 28
+        draw.text((left_x + 40, contact_text_y), text, fill=TEXT_SECONDARY, font=fonts['tiny'])
+        contact_text_y += 30
     
-    # Right panel - Terms & Conditions with glass effect
+    # Right panel - Terms
     terms_panel_height = 180
     create_glass_effect(draw, right_x, content_y, panel_width, terms_panel_height, 20)
     
-    # Terms title
-    draw.text((right_x + 21, content_y + 16), "TERMS & CONDITIONS", fill=(0, 0, 0, 120), font=fonts['medium'])
-    draw.text((right_x + 20, content_y + 15), "TERMS & CONDITIONS", fill=COLOR_PURPLE, font=fonts['medium'])
+    draw.text((right_x + 20, content_y + 15), "TERMS & CONDITIONS", fill=COLOR_ACCENT_LIGHT, font=fonts['medium'])
     
-    # Terms list
     terms = [
         "• This card is non-transferable",
         "• Valid for current members only",
         "• Must be presented at events",
         "• Report if lost or stolen",
-        "• Subject to club regulations",
+        # "• Subject to club regulations",
         "• Expires upon graduation"
     ]
     
     terms_text_y = content_y + 50
     for term in terms:
-        draw.text((right_x + 21, terms_text_y + 1), term, fill=(0, 0, 0, 80), font=fonts['tiny'])
-        draw.text((right_x + 20, terms_text_y), term, fill=TEXT_LIGHT, font=fonts['tiny'])
-        terms_text_y += 22
+        draw.text((right_x + 20, terms_text_y), term, fill=TEXT_SECONDARY, font=fonts['tiny'])
+        terms_text_y += 24  # Adjusted
     
-    # Security features panel (right bottom)
-    security_y = content_y + terms_panel_height + 25
+    # Security panel
+    security_y = content_y + terms_panel_height + 30
     security_height = 140
     create_glass_effect(draw, right_x, security_y, panel_width, security_height, 20)
     
-    # Security title
-    draw.text((right_x + 21, security_y + 16), "SECURITY FEATURES", fill=(0, 0, 0, 120), font=fonts['medium'])
-    draw.text((right_x + 20, security_y + 15), "SECURITY FEATURES", fill=TEXT_GOLD, font=fonts['medium'])
+    draw.text((right_x + 20, security_y + 15), "SECURITY FEATURES", fill=COLOR_ACCENT_LIGHT, font=fonts['medium'])
     
-    # Security features
     security_features = [
         "✓ Holographic elements",
         "✓ QR code verification",
@@ -935,141 +849,73 @@ def generate_digital_id_back(member, base_url=None):
     
     security_text_y = security_y + 50
     for feature in security_features:
-        draw.text((right_x + 21, security_text_y + 1), feature, fill=(0, 0, 0, 80), font=fonts['tiny'])
-        draw.text((right_x + 20, security_text_y), feature, fill=TEXT_LIGHT, font=fonts['tiny'])
-        security_text_y += 22
+        draw.text((right_x + 20, security_text_y), feature, fill=TEXT_SECONDARY, font=fonts['tiny'])
+        security_text_y += 24
     
-    # # Premium QR code for club website
-    # if not base_url:
-    #     try:
-    #         base_url = request.url_root.rstrip('/')
-    #     except:
-    #         base_url = "https://digitalclub.kiut.ac.tz"
-    
-    # club_qr = qrcode.QRCode(
-    #     version=1,
-    #     error_correction=qrcode.constants.ERROR_CORRECT_H,
-    #     box_size=8,
-    #     border=2,
-    # )
-    # club_qr.add_data(base_url)
-    # club_qr.make(fit=True)
-    
-    # qr_img = club_qr.make_image(fill_color=(10, 15, 35), back_color=(255, 255, 255))
-    # qr_img = qr_img.resize((120, 120), Image.Resampling.LANCZOS)
-    
-    # # Position QR in center bottom area
-    # qr_x = CARD_WIDTH // 2 - 60
-    # qr_y = CARD_HEIGHT - 170
-    # qr_size = 120
-    
-    # # QR outer glow
-    # for i in range(6, 0, -1):
-    #     alpha = 50 - i * 6
-    #     draw.rounded_rectangle(
-    #         [qr_x - 12 - i*2, qr_y - 12 - i*2, qr_x + qr_size + 12 + i*2, qr_y + qr_size + 12 + i*2],
-    #         radius=15 + i*2,
-    #         fill=(*COLOR_GREEN, alpha)
-    #     )
-    
-    # # Premium QR frame
-    # frame_padding = 10
-    # qr_frame = Image.new('RGBA', (qr_size + frame_padding*2, qr_size + frame_padding*2), (255, 255, 255, 250))
-    # img.paste(qr_frame, (qr_x - frame_padding, qr_y - frame_padding), qr_frame)
-    # img.paste(qr_img, (qr_x, qr_y))
-    
-    # # Frame borders with multi-color
-    # for i in range(3):
-    #     offset = i * 2
-    #     alpha = 255 - i * 60
-    #     border_colors = [COLOR_GREEN, COLOR_CYAN, COLOR_BLUE_LIGHT]
-    #     border_color = border_colors[i % 3]
-    #     draw.rounded_rectangle(
-    #         [qr_x - frame_padding - offset, qr_y - frame_padding - offset,
-    #          qr_x + qr_size + frame_padding + offset, qr_y + qr_size + frame_padding + offset],
-    #         radius=12 + offset,
-    #         outline=(*border_color, alpha),
-    #         width=2
-    #     )
-    
-    # # QR label with style
-    # label_text = "VISIT OUR WEBSITE"
-    # label_x = qr_x - frame_padding + 10
-    # label_y = qr_y + qr_size + frame_padding + 5
-    # draw.text((label_x + 1, label_y + 1), label_text, fill=(0, 0, 0, 120), font=fonts['micro'])
-    # draw.text((label_x, label_y), label_text, fill=COLOR_GREEN, font=fonts['micro'])
-    
-    # Signature line in premium style
+    # Signature line - simplified
     sig_y = CARD_HEIGHT - 130
     sig_line_start = 100
     sig_line_end = 380
     
-    draw.text((sig_line_start, sig_y - 20), "AUTHORIZED SIGNATURE", fill=COLOR_CYAN, font=fonts['micro'])
-    # Signature line with gradient
-    for i in range(sig_line_end - sig_line_start):
-        ratio = i / (sig_line_end - sig_line_start)
-        alpha = int(255 * math.sin(ratio * math.pi))
-        draw.line([(sig_line_start + i, sig_y), (sig_line_start + i + 1, sig_y)], 
-                 fill=(*TEXT_LIGHT, alpha), width=2)
+    # draw.text((sig_line_start, sig_y - 20), "AUTHORIZED SIGNATURE", fill=COLOR_ACCENT, font=fonts['micro'])
+    # draw.line([(sig_line_start, sig_y), (sig_line_end, sig_y)], 
+    #           fill=(*TEXT_SECONDARY, 150), width=1)
     
-    # Premium magnetic strip effect
+    # Magnetic strip - softer
     strip_y = CARD_HEIGHT - 75
     strip_height = 60
     
-    # Gradient magnetic strip
     strip_img = Image.new('RGBA', (CARD_WIDTH, strip_height), (0, 0, 0, 0))
     strip_draw = ImageDraw.Draw(strip_img)
     for i in range(strip_height):
         ratio = i / strip_height
-        # Dark metallic gradient
-        darkness = int(30 + 25 * math.sin(ratio * math.pi))
-        alpha = 200
+        darkness = int(25 + 20 * math.sin(ratio * math.pi))
+        alpha = 180
         strip_draw.rectangle([0, i, CARD_WIDTH, i+1], fill=(darkness, darkness, darkness + 5, alpha))
     
-    # Add holographic lines to magnetic strip
-    for x in range(0, CARD_WIDTH, 15):
-        line_alpha = 40
+    # Fewer holographic lines
+    for x in range(0, CARD_WIDTH, 30):
+        line_alpha = 30
         strip_draw.line([(x, 0), (x, strip_height)], fill=(100, 150, 200, line_alpha), width=1)
     
     img.paste(strip_img, (0, strip_y), strip_img)
     
-    # Footer with copyright
+    # Footer
     footer_y = CARD_HEIGHT - 95
     footer_text = f"© {member.created_at.year if member.created_at else '2024'} KIUT DIGITAL CLUB  •  ALL RIGHTS RESERVED"
     footer_x = CARD_WIDTH // 2 - len(footer_text) * 3
-    draw.text((footer_x + 1, footer_y + 1), footer_text, fill=(0, 0, 0, 150), font=fonts['micro'])
-    draw.text((footer_x, footer_y), footer_text, fill=TEXT_LIGHT, font=fonts['micro'])
+    draw.text((footer_x, footer_y), footer_text, fill=TEXT_SECONDARY, font=fonts['micro'])
     
-    # Premium corner accents
+    # Simplified corner accents
     corner_size = 80
     # Top right
-    for i in range(3):
-        offset = i * 15
-        alpha = 80 - i * 20
+    for i in range(2):
+        offset = i * 20
+        alpha = 60 - i * 20
         points = [
             (CARD_WIDTH - corner_size + offset, 0),
             (CARD_WIDTH, 0),
             (CARD_WIDTH, corner_size - offset)
         ]
-        draw.polygon(points, fill=(*COLOR_PURPLE, alpha))
+        draw.polygon(points, fill=(*COLOR_ACCENT_LIGHT, alpha))
     
     # Bottom left
-    for i in range(3):
-        offset = i * 15
-        alpha = 80 - i * 20
+    for i in range(2):
+        offset = i * 20
+        alpha = 60 - i * 20
         points = [
             (0, CARD_HEIGHT - corner_size + offset),
             (0, CARD_HEIGHT),
             (corner_size - offset, CARD_HEIGHT)
         ]
-        draw.polygon(points, fill=(*COLOR_CYAN, alpha))
+        draw.polygon(points, fill=(*COLOR_ACCENT, alpha))
     
-    # Apply holographic shine
+    # Holographic shine
     img = add_holographic_shine(img)
     
-    # Convert back to RGB
+    # Convert to RGB
     if img.mode == 'RGBA':
-        bg = Image.new('RGB', img.size, (10, 15, 35))
+        bg = Image.new('RGB', img.size, (15, 25, 40))
         bg.paste(img, mask=img.split()[3] if len(img.split()) == 4 else None)
         img = bg
     
@@ -1147,4 +993,3 @@ def delete_digital_id(member):
             os.remove(back_path)
     except Exception as e:
         print(f"Error deleting digital ID: {e}")
-
