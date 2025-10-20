@@ -411,17 +411,28 @@
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label for="course" class="form-label">Course</label>
-                                        <input type="text" class="form-control" id="course" name="course"
-                                               value="{{ member.course if member else '' }}" 
-                                               placeholder="e.g., Computer Science, Information Technology">
+                                      
+                                        <select name="course" class="form-control" style="width: 100%;">
+                                            <option value="">Select your course</option>
+                                            <option value="Bachelor of Computer Science" {% if member and member.course == 'Bachelor of Computer Science' %}selected{% endif %}>Bachelor of Computer Science</option>
+                                            <option value="Bachelor of Information Technology" {% if member and member.course == 'Bachelor of Information Technology' %}selected{% endif %}>Bachelor of Information Technology</option>
+                                            <option value="Diploma in Computer Science" {% if member and member.course == 'Diploma in Computer Science' %}selected{% endif %}>Diploma in Computer Science</option>
+                                            <option value="Diploma in Information Technology" {% if member and member.course == 'Diploma in Information Technology' %}selected{% endif %}>Diploma in Information Technology</option>
+                                            <option value="Certificate in Computer Science" {% if member and member.course == 'Certificate in Computer Science' %}selected{% endif %}>Certificate in Computer Science</option>
+                                            <option value="Certificate in Information Technology" {% if member and member.course == 'Certificate in Information Technology' %}selected{% endif %}>Certificate in Information Technology</option>
+                                        </select>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label for="year" class="form-label">Year</label>
-                                        <input type="text" class="form-control" id="year" name="year"
-                                               value="{{ member.year if member else '' }}" 
-                                               placeholder="e.g., Year 2, Graduate">
+                                        <select name="year" class="form-control" style="width: 100%;">
+                                            <option value="">Select your year</option>
+                                            <option value="Year 1" {% if member and member.year == 'Year 1' %}selected{% endif %}>Year 1</option>
+                                            <option value="Year 2" {% if member and member.year == 'Year 2' %}selected{% endif %}>Year 2</option>
+                                            <option value="Year 3" {% if member and member.year == 'Year 3' %}selected{% endif %}>Year 3</option>
+                                            <option value="Alumni" {% if member and member.year == 'Alumni' %}selected{% endif %}>Alumni</option>
+                                        </select>
                                     </div>
                                 </div>
                             </div>

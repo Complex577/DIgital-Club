@@ -10,37 +10,43 @@
         </h1>
         
         <!-- Filters -->
-        <div style="display: flex; gap: 1rem; justify-content: center; margin-bottom: 3rem; flex-wrap: wrap;" data-aos="fade-up">
-            <form method="GET" style="display: flex; gap: 1rem; align-items: center;">
-                <select name="status" class="form-control" style="width: auto;">
-                    <option value="">All Members</option>
-                    <option value="student" {% if request.args.get('status') == 'student' %}selected{% endif %}>Students</option>
-                    <option value="alumni" {% if request.args.get('status') == 'alumni' %}selected{% endif %}>Alumni</option>
-                </select>
-                
-                <select name="course" class="form-control" style="width: auto;">
-                    <option value="">All Courses</option>
-                    {% for course in courses %}
-                    <option value="{{ course }}" {% if request.args.get('course') == course %}selected{% endif %}>{{ course }}</option>
-                    {% endfor %}
-                </select>
-                
-                <select name="year" class="form-control" style="width: auto;">
-                    <option value="">All Years</option>
-                    {% for year in years %}
-                    <option value="{{ year }}" {% if request.args.get('year') == year %}selected{% endif %}>{{ year }}</option>
-                    {% endfor %}
-                </select>
-                
-                <button type="submit" class="btn-primary">
-                    <i class="fas fa-filter"></i> Filter
-                </button>
-                
-                {% if request.args.get('course') or request.args.get('year') or request.args.get('status') %}
-                <a href="{{ url_for('main.members') }}" class="btn-secondary">
-                    <i class="fas fa-times"></i> Clear
-                </a>
-                {% endif %}
+        <div style="margin-bottom: 3rem;" data-aos="fade-up">
+            <form method="GET">
+                <div class="row" style="row-gap: 1rem; column-gap: 0; justify-content: center;">
+                    <div class="col-3 md-col-6 sm-col-12">
+                        <select name="status" class="form-control" style="width: 100%;">
+                            <option value="">All Members</option>
+                            <option value="student" {% if request.args.get('status') == 'student' %}selected{% endif %}>Students</option>
+                            <option value="alumni" {% if request.args.get('status') == 'alumni' %}selected{% endif %}>Alumni</option>
+                        </select>
+                    </div>
+                    <div class="col-3 md-col-6 sm-col-12">
+                        <select name="course" class="form-control" style="width: 100%;">
+                            <option value="">All Courses</option>
+                            {% for course in courses %}
+                            <option value="{{ course }}" {% if request.args.get('course') == course %}selected{% endif %}>{{ course }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-3 md-col-6 sm-col-12">
+                        <select name="year" class="form-control" style="width: 100%;">
+                            <option value="">All Years</option>
+                            {% for year in years %}
+                            <option value="{{ year }}" {% if request.args.get('year') == year %}selected{% endif %}>{{ year }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-3 md-col-6 sm-col-12" style="display: flex; gap: 0.75rem; align-items: center; justify-content: center;">
+                        <button type="submit" class="btn-primary" style="width: 100%; max-width: 200px; justify-content: center;">
+                            <i class="fas fa-filter"></i> Filter
+                        </button>
+                        {% if request.args.get('course') or request.args.get('year') or request.args.get('status') %}
+                        <a href="{{ url_for('main.members') }}" class="btn-secondary" style="width: 100%; max-width: 160px; justify-content: center; text-align: center;">
+                            <i class="fas fa-times"></i> Clear
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
             </form>
         </div>
         

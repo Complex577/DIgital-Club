@@ -434,7 +434,7 @@
         <!-- Upcoming Events Content -->
         <div class="events-content active" id="upcoming-events">
             {% if upcoming_events %}
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 2rem;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
                 {% for event in upcoming_events %}
                 <div class="card" data-aos="fade-up" data-aos-delay="{{ loop.index * 100 }}">
                     {% if event.image %}
