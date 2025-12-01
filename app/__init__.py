@@ -21,6 +21,13 @@ def create_app():
     app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
     app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
     
+    # URL generation (for emails, etc.)
+    # In production, set SERVER_NAME and PREFERRED_URL_SCHEME via environment variables:
+    #   SERVER_NAME=digitalclub.kiut.ac.tz
+    #   PREFERRED_URL_SCHEME=https
+    app.config['SERVER_NAME'] = "digitalclub.kiut.ac.tz" # os.environ.get('SERVER_NAME')
+    app.config['PREFERRED_URL_SCHEME'] = "https" #os.environ.get('PREFERRED_URL_SCHEME', 'https')
+    
     # Initialize extensions
     db.init_app(app)
     login_manager.init_app(app)
