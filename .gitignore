@@ -7,7 +7,7 @@ dist/
 wheels/
 *.egg-info
 instance/
-
+instance/
 # Virtual environments
 .venv
 node_modules/
