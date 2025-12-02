@@ -33,6 +33,9 @@ services:
       - 1.1.1.1
     dns_search:
       - .
+    extra_hosts:                     # ← ADD THIS BLOCK
+      - "smtp.gmail.com:173.194.76.109"
+      - "smtp.gmail.com:173.194.76.108"
     dns_opt:
       - "attempts:3"
       - "timeout:2"
