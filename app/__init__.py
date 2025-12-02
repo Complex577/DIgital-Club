@@ -11,6 +11,37 @@ db = SQLAlchemy()
 login_manager = LoginManager()
 migrate = Migrate()
 
+def _migrate_password_hash_column():
+    """Migrate password_hash column from varchar(128) to varchar(256) if needed"""
+    try:
+        from sqlalchemy import text
+        
+        # Check if using PostgreSQL
+        db_uri = db.engine.url
+        if 'postgresql' in str(db_uri):
+            # PostgreSQL: Use ALTER TABLE
+            with db.engine.connect() as conn:
+                # Check current column type
+                result = conn.execute(text("""
+                    SELECT character_maximum_length 
+                    FROM information_schema.columns 
+                    WHERE table_name = 'user' 
+                    AND column_name = 'password_hash'
+                """))
+                row = result.fetchone()
+                
+                if row and row[0] == 128:
+                    print("Migrating password_hash column from varchar(128) to varchar(256)...")
+                    conn.execute(text("ALTER TABLE \"user\" ALTER COLUMN password_hash TYPE VARCHAR(256)"))
+                    conn.commit()
+                    print("✓ Successfully migrated password_hash column to VARCHAR(256)")
+                elif row and row[0] == 256:
+                    pass  # Already correct, no action needed
+        # SQLite doesn't need migration as it doesn't enforce length constraints
+    except Exception as e:
+        # Silently fail - migration is optional and might fail if column doesn't exist yet
+        pass
+
 def create_app():
     app = Flask(__name__)
     
@@ -36,6 +67,8 @@ def create_app():
     # Create tables
     with app.app_context():
         db.create_all()
+        # Migrate password_hash column if needed (for existing databases)
+        _migrate_password_hash_column()
     
     # Configure login manager
     login_manager.login_view = 'auth.login'

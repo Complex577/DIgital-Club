@@ -1,5 +1,6 @@
 from app import create_app, db
 from app.models import User, Topic, News, Event, Blog
+import os
 
 app = create_app()
 
@@ -238,4 +239,6 @@ if __name__ == "__main__":
     # When running directly with `python main.py`, also ensure DB is initialized
     with app.app_context():
         init_db()
-    app.run(debug=True)
+    # Bind to 0.0.0.0 to accept connections from outside the container
+    port = int(os.environ.get('PORT', 5051))
+    app.run(host='0.0.0.0', port=port, debug=True)
