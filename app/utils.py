@@ -1,6 +1,7 @@
 import smtplib
 import socket
 import requests
+import time
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from flask import current_app
@@ -67,22 +68,110 @@ class NotificationService:
             else:
                 msg.attach(MIMEText(message, 'plain'))
 
-            # Use a timeout so Docker/network issues don't hang forever
+            # Explicit DNS resolution before SMTP connection
+            smtp_host = self.smtp_server
             try:
-                server = smtplib.SMTP(self.smtp_server, self.smtp_port, timeout=10)
-                server.starttls()
-                server.login(self.smtp_username, self.smtp_password)
-                text = msg.as_string()
-                server.sendmail(self.from_email, to_email, text)
-                server.quit()
-            except (smtplib.SMTPException, OSError, socket.error) as e:
-                # Log failure but don't raise – callers should see False return
+                # Resolve hostname to IP address explicitly
+                smtp_ip = socket.gethostbyname(self.smtp_server)
                 try:
-                    current_app.logger.error(f"Failed to send email to {to_email}: {e}")
+                    current_app.logger.debug(f"Resolved {self.smtp_server} to {smtp_ip}")
                 except RuntimeError:
-                    logging.error(f"Failed to send email to {to_email}: {e}")
+                    logging.debug(f"Resolved {self.smtp_server} to {smtp_ip}")
+                # Option to use IP directly (some networks prefer this)
+                # smtp_host = smtp_ip  # Uncomment if direct IP connection works better
+            except socket.gaierror as dns_error:
+                # DNS resolution failed
+                error_msg = f"DNS resolution failed for {self.smtp_server}: {dns_error}"
+                try:
+                    current_app.logger.error(f"Failed to send email to {to_email}: {error_msg}")
+                except RuntimeError:
+                    logging.error(f"Failed to send email to {to_email}: {error_msg}")
                 return False
+            except Exception as dns_error:
+                # Other DNS-related errors
+                error_msg = f"DNS error for {self.smtp_server}: {dns_error}"
+                try:
+                    current_app.logger.warning(f"DNS resolution issue for {self.smtp_server}, proceeding with hostname: {error_msg}")
+                except RuntimeError:
+                    logging.warning(f"DNS resolution issue for {self.smtp_server}, proceeding with hostname: {error_msg}")
 
+            # Retry mechanism with exponential backoff
+            max_retries = 3
+            retry_delays = [2, 4]  # 2s, 4s delays
+            last_error = None
+            
+            for attempt in range(max_retries):
+                try:
+                    # Use a timeout so Docker/network issues don't hang forever
+                    server = smtplib.SMTP(smtp_host, self.smtp_port, timeout=10)
+                    server.starttls()
+                    server.login(self.smtp_username, self.smtp_password)
+                    text = msg.as_string()
+                    server.sendmail(self.from_email, to_email, text)
+                    server.quit()
+                    
+                    # Success - break out of retry loop
+                    break
+                    
+                except socket.gaierror as e:
+                    # DNS resolution error during connection
+                    error_type = "DNS resolution"
+                    last_error = e
+                    error_msg = f"{error_type} error connecting to {smtp_host}:{self.smtp_port} - {e}"
+                    
+                except socket.timeout as e:
+                    # Connection timeout
+                    error_type = "Connection timeout"
+                    last_error = e
+                    error_msg = f"{error_type} connecting to {smtp_host}:{self.smtp_port} - {e}"
+                    
+                except ConnectionRefusedError as e:
+                    # Connection refused (port might be blocked)
+                    error_type = "Connection refused (port may be blocked)"
+                    last_error = e
+                    error_msg = f"{error_type} on {smtp_host}:{self.smtp_port} - {e}"
+                    
+                except OSError as e:
+                    # Network errors (including errno -3)
+                    error_type = "Network/OS error"
+                    last_error = e
+                    error_msg = f"{error_type} connecting to {smtp_host}:{self.smtp_port} - {e}"
+                    
+                except smtplib.SMTPAuthenticationError as e:
+                    # Authentication error - don't retry
+                    error_type = "SMTP authentication"
+                    last_error = e
+                    error_msg = f"{error_type} error: {e}"
+                    try:
+                        current_app.logger.error(f"Failed to send email to {to_email}: {error_msg}")
+                    except RuntimeError:
+                        logging.error(f"Failed to send email to {to_email}: {error_msg}")
+                    return False
+                    
+                except (smtplib.SMTPException, Exception) as e:
+                    # Other SMTP errors
+                    error_type = "SMTP error"
+                    last_error = e
+                    error_msg = f"{error_type}: {e}"
+                    
+                # If we get here, the attempt failed
+                if attempt < max_retries - 1:
+                    # Wait before retrying (exponential backoff)
+                    delay = retry_delays[attempt] if attempt < len(retry_delays) else retry_delays[-1]
+                    try:
+                        current_app.logger.warning(f"Email send attempt {attempt + 1}/{max_retries} failed: {error_msg}. Retrying in {delay}s...")
+                    except RuntimeError:
+                        logging.warning(f"Email send attempt {attempt + 1}/{max_retries} failed: {error_msg}. Retrying in {delay}s...")
+                    time.sleep(delay)
+                else:
+                    # Last attempt failed
+                    try:
+                        current_app.logger.error(f"Failed to send email to {to_email} after {max_retries} attempts. Last error: {error_msg}")
+                    except RuntimeError:
+                        logging.error(f"Failed to send email to {to_email} after {max_retries} attempts. Last error: {error_msg}")
+                    return False
+            
+            # If we get here, email was sent successfully (we broke out of the retry loop)
             try:
                 current_app.logger.info(f"Email sent successfully to {to_email}")
             except RuntimeError:
