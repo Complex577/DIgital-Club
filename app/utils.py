@@ -1,4 +1,5 @@
 import smtplib
+import socket
 import requests
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -48,7 +49,12 @@ class NotificationService:
                 self._load_config()
             
             if not self.smtp_username or not self.smtp_password:
-                current_app.logger.warning("SMTP credentials not configured. Email not sent.")
+                # Missing credentials – log and fail gracefully
+                try:
+                    current_app.logger.warning("SMTP credentials not configured. Email not sent.")
+                except RuntimeError:
+                    # Outside app context – best effort logging
+                    logging.warning("SMTP credentials not configured. Email not sent.")
                 return False
             
             msg = MIMEMultipart()
@@ -60,19 +66,35 @@ class NotificationService:
                 msg.attach(MIMEText(message, 'html'))
             else:
                 msg.attach(MIMEText(message, 'plain'))
-            
-            server = smtplib.SMTP(self.smtp_server, self.smtp_port)
-            server.starttls()
-            server.login(self.smtp_username, self.smtp_password)
-            text = msg.as_string()
-            server.sendmail(self.from_email, to_email, text)
-            server.quit()
-            
-            current_app.logger.info(f"Email sent successfully to {to_email}")
+
+            # Use a timeout so Docker/network issues don't hang forever
+            try:
+                server = smtplib.SMTP(self.smtp_server, self.smtp_port, timeout=10)
+                server.starttls()
+                server.login(self.smtp_username, self.smtp_password)
+                text = msg.as_string()
+                server.sendmail(self.from_email, to_email, text)
+                server.quit()
+            except (smtplib.SMTPException, OSError, socket.error) as e:
+                # Log failure but don't raise – callers should see False return
+                try:
+                    current_app.logger.error(f"Failed to send email to {to_email}: {e}")
+                except RuntimeError:
+                    logging.error(f"Failed to send email to {to_email}: {e}")
+                return False
+
+            try:
+                current_app.logger.info(f"Email sent successfully to {to_email}")
+            except RuntimeError:
+                logging.info(f"Email sent successfully to {to_email}")
             return True
-            
+
         except Exception as e:
-            current_app.logger.error(f"Failed to send email to {to_email}: {str(e)}")
+            # Catch-all to ensure no unhandled exceptions escape
+            try:
+                current_app.logger.error(f"Unexpected error in send_email for {to_email}: {e}")
+            except RuntimeError:
+                logging.error(f"Unexpected error in send_email for {to_email}: {e}")
             return False
     
     def send_sms(self, phone_number, message):
