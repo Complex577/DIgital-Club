@@ -4,6 +4,7 @@ import requests
 import time
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.message import EmailMessage
 from flask import current_app
 import logging
 
@@ -114,10 +115,17 @@ class NotificationService:
                 try:
                     # Use a timeout so Docker/network issues don't hang forever
                     server = smtplib.SMTP(smtp_host, self.smtp_port, timeout=10)
+                    server.ehlo()
                     server.starttls()
+                    server.ehlo()
                     server.login(self.smtp_username, self.smtp_password)
                     text = msg.as_string()
-                    server.sendmail(self.from_email, to_email, text)
+                    email_message = EmailMessage()
+                    email_message['From'] = self.from_email
+                    email_message['To'] = to_email
+                    email_message['Subject'] = subject
+                    email_message.set_content(text)
+                    server.send_message(email_message)
                     server.quit()
                     
                     # Success - break out of retry loop
