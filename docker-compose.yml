@@ -27,6 +27,10 @@ services:
       - ./instance:/app/instance
       # Persist uploaded files
       - ./app/static/uploads:/app/app/static/uploads
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import requests; requests.get('http://127.0.0.1:5051')"]
