@@ -598,18 +598,7 @@ a:hover, .nav-link:hover { color: var(--primary-color); }
         padding: 0 2rem;
     }
     
-    .nav-user::before {
-        content: 'Account';
-        font-size: 0.7rem;
-        color: var(--text-muted);
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        margin-bottom: 0.5rem;
-        font-weight: 600;
-        display: block;
-        text-align: center;
-        padding: 0 2rem;
-    }
+    
 }
 
 .nav-toggle {
@@ -1640,6 +1629,7 @@ select:-webkit-autofill {
         min-height: 44px;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         position: relative;
+        color: var(--text-secondary);
     }
 
     .nav-link::before {
@@ -1655,8 +1645,18 @@ select:-webkit-autofill {
         transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
+    .nav-link:hover {
+        color: var(--primary-color);
+        background: rgba(0, 255, 255, 0.1);
+    }
+
+    .nav-link:hover::before {
+        height: 60%;
+    }
+
     .nav-link:active,
     .nav-link:focus {
+        color: var(--primary-color);
         transform: scale(0.98);
         background: rgba(0, 255, 255, 0.15);
     }
@@ -1671,6 +1671,58 @@ select:-webkit-autofill {
         padding: 1rem 1.25rem;
         justify-content: center;
         min-height: 44px;
+        margin: 0.5rem 0;
+    }
+
+    .nav-link.user-action:hover {
+        color: var(--primary-color);
+    }
+
+    .nav-link.user-action.login {
+        background: rgba(0, 255, 0, 0.1);
+        border: 1px solid rgba(0, 255, 0, 0.3);
+        color: var(--success-color);
+    }
+
+    .nav-link.user-action.login:hover {
+        background: rgba(0, 255, 0, 0.2);
+        border-color: var(--success-color);
+        color: var(--success-color);
+    }
+
+    .nav-link.user-action.register {
+        background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+        color: var(--bg-primary);
+        border: none;
+    }
+
+    .nav-link.user-action.register:hover {
+        background: linear-gradient(45deg, var(--secondary-color), var(--accent-color));
+        color: var(--bg-primary);
+    }
+
+    .nav-link.user-action.admin {
+        background: rgba(255, 0, 255, 0.1);
+        border: 1px solid rgba(255, 0, 255, 0.3);
+        color: var(--secondary-color);
+    }
+
+    .nav-link.user-action.admin:hover {
+        background: rgba(255, 0, 255, 0.2);
+        border-color: var(--secondary-color);
+        color: var(--secondary-color);
+    }
+
+    .nav-link.user-action.logout {
+        background: rgba(255, 0, 0, 0.1);
+        border: 1px solid rgba(255, 0, 0, 0.3);
+        color: var(--error-color);
+    }
+
+    .nav-link.user-action.logout:hover {
+        background: rgba(255, 0, 0, 0.2);
+        border-color: var(--error-color);
+        color: var(--error-color);
     }
 
     /* Mobile Dropdown Styles - Accordion */
@@ -1704,7 +1756,15 @@ select:-webkit-autofill {
         background: rgba(0, 255, 255, 0.1);
     }
 
+    .nav-dropdown .dropdown-toggle:focus {
+        color: var(--primary-color);
+        background: rgba(0, 255, 255, 0.1);
+        outline: 2px solid var(--primary-color);
+        outline-offset: 2px;
+    }
+
     .nav-dropdown .dropdown-toggle:active {
+        color: var(--primary-color);
         transform: scale(0.98);
         background: rgba(0, 255, 255, 0.15);
     }
@@ -1729,7 +1789,7 @@ select:-webkit-autofill {
         opacity: 1;
         visibility: visible;
         transform: none;
-        background: rgba(0, 0, 0, 0.2);
+        background: rgba(0, 0, 0, 0.3);
         border: none;
         border-radius: 0;
         box-shadow: none;
@@ -1762,7 +1822,7 @@ select:-webkit-autofill {
         display: flex;
         align-items: center;
         gap: 0.75rem;
-        transition: all 0.2s ease;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         color: var(--text-secondary);
         text-decoration: none;
     }
@@ -1783,6 +1843,7 @@ select:-webkit-autofill {
     }
 
     .dropdown-item:active {
+        color: var(--primary-color);
         transform: translateX(4px) scale(0.98);
         background: rgba(0, 255, 255, 0.15);
     }
@@ -1820,17 +1881,8 @@ select:-webkit-autofill {
         transform-origin: center;
     }
 
-    .nav-toggle.active .bar:nth-child(1) {
-        transform: translateY(10px) rotate(45deg);
-    }
-
-    .nav-toggle.active .bar:nth-child(2) {
+    .nav-toggle.active .bar {
         opacity: 0;
-        transform: scale(0);
-    }
-
-    .nav-toggle.active .bar:nth-child(3) {
-        transform: translateY(-10px) rotate(-45deg);
     }
 
     /* Modern close button */
@@ -1863,7 +1915,9 @@ select:-webkit-autofill {
     }
 
     .nav-close:active {
+        color: var(--primary-color);
         transform: rotate(90deg) scale(0.95);
+        background: rgba(0, 255, 255, 0.2);
     }
 
     /* Body scroll lock and backdrop */
