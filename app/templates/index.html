@@ -378,10 +378,28 @@
     }
     
     .news-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
         gap: 2rem;
         margin-top: 3rem;
+    }
+
+    .news-grid .news-card {
+        flex: 0 1 calc(33.333% - 1.34rem);
+        min-width: 300px;
+    }
+
+    @media (max-width: 992px) {
+        .news-grid .news-card {
+            flex: 0 1 calc(50% - 1rem);
+        }
+    }
+
+    @media (max-width: 576px) {
+        .news-grid .news-card {
+            flex: 0 1 100%;
+        }
     }
     
     .news-card {
@@ -452,10 +470,28 @@
     }
     
     .projects-showcase {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
         gap: 2rem;
         margin-top: 3rem;
+    }
+
+    .projects-showcase .project-card {
+        flex: 0 1 calc(33.333% - 1.34rem);
+        min-width: 250px;
+    }
+
+    @media (max-width: 992px) {
+        .projects-showcase .project-card {
+            flex: 0 1 calc(50% - 1rem);
+        }
+    }
+
+    @media (max-width: 576px) {
+        .projects-showcase .project-card {
+            flex: 0 1 100%;
+        }
     }
     
     .project-card {
@@ -491,10 +527,28 @@
     
     /* Statistics Section */
     .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
         gap: 2rem;
         margin-top: 3rem;
+    }
+
+    .stats-grid .stat-card {
+        flex: 0 1 calc(25% - 1.5rem);
+        min-width: 200px;
+    }
+
+    @media (max-width: 992px) {
+        .stats-grid .stat-card {
+            flex: 0 1 calc(50% - 1rem);
+        }
+    }
+
+    @media (max-width: 576px) {
+        .stats-grid .stat-card {
+            flex: 0 1 100%;
+        }
     }
     
     .stat-card {
@@ -631,10 +685,28 @@
     
     /* Partners Section */
     .partners-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
         gap: 2rem;
         margin-top: 3rem;
+    }
+
+    .partners-grid .partner-card {
+        flex: 0 1 calc(33.333% - 1.34rem);
+        min-width: 250px;
+    }
+
+    @media (max-width: 992px) {
+        .partners-grid .partner-card {
+            flex: 0 1 calc(50% - 1rem);
+        }
+    }
+
+    @media (max-width: 576px) {
+        .partners-grid .partner-card {
+            flex: 0 1 100%;
+        }
     }
     
     .partner-card {
@@ -670,10 +742,28 @@
     
     /* Achievements Section */
     .achievements-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
         gap: 2rem;
         margin-top: 3rem;
+    }
+
+    .achievements-grid .achievement-card {
+        flex: 0 1 calc(33.333% - 1.34rem);
+        min-width: 300px;
+    }
+
+    @media (max-width: 992px) {
+        .achievements-grid .achievement-card {
+            flex: 0 1 calc(50% - 1rem);
+        }
+    }
+
+    @media (max-width: 576px) {
+        .achievements-grid .achievement-card {
+            flex: 0 1 100%;
+        }
     }
     
     .achievement-card {
@@ -715,6 +805,444 @@
         font-size: 0.8rem;
         font-weight: 600;
     }
+
+    /* Tech Stack Section */
+    .tech-stack-grid {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 1.5rem;
+        margin-top: 3rem;
+    }
+
+    .tech-stack-grid .tech-item {
+        flex: 0 1 calc(16.666% - 1.25rem);
+        min-width: 120px;
+    }
+
+    @media (max-width: 1200px) {
+        .tech-stack-grid .tech-item {
+            flex: 0 1 calc(20% - 1.2rem);
+        }
+    }
+
+    @media (max-width: 992px) {
+        .tech-stack-grid .tech-item {
+            flex: 0 1 calc(25% - 1.125rem);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .tech-stack-grid .tech-item {
+            flex: 0 1 calc(33.333% - 1rem);
+        }
+    }
+
+    @media (max-width: 576px) {
+        .tech-stack-grid .tech-item {
+            flex: 0 1 calc(50% - 0.75rem);
+        }
+    }
+
+    .tech-item {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 15px;
+        padding: 1.5rem;
+        text-align: center;
+        border: 1px solid rgba(0, 255, 255, 0.2);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .tech-item::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(0, 255, 255, 0.1) 0%, transparent 70%);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .tech-item:hover::before {
+        opacity: 1;
+    }
+
+    .tech-item:hover {
+        transform: translateY(-10px) scale(1.05);
+        border-color: #00ffff;
+        box-shadow: 0 15px 40px rgba(0, 255, 255, 0.3);
+    }
+
+    .tech-icon {
+        font-size: 3rem;
+        color: #00ffff;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+
+    .tech-name {
+        color: #ffffff;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    /* Learning Paths Section */
+    .learning-paths-grid {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 2rem;
+        margin-top: 3rem;
+    }
+
+    .learning-paths-grid .path-card {
+        flex: 0 1 calc(33.333% - 1.34rem);
+        min-width: 280px;
+    }
+
+    @media (max-width: 992px) {
+        .learning-paths-grid .path-card {
+            flex: 0 1 calc(50% - 1rem);
+        }
+    }
+
+    @media (max-width: 576px) {
+        .learning-paths-grid .path-card {
+            flex: 0 1 100%;
+        }
+    }
+
+    .path-card {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 15px;
+        padding: 2rem;
+        border: 1px solid rgba(0, 255, 255, 0.2);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .path-card::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: linear-gradient(90deg, #00ffff, #ff00ff);
+        transform: scaleX(0);
+        transition: transform 0.3s ease;
+    }
+
+    .path-card:hover::after {
+        transform: scaleX(1);
+    }
+
+    .path-card:hover {
+        transform: translateY(-5px);
+        border-color: #00ffff;
+        box-shadow: 0 10px 30px rgba(0, 255, 255, 0.2);
+    }
+
+    .path-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .path-icon {
+        font-size: 2.5rem;
+        color: #00ffff;
+        min-width: 60px;
+    }
+
+    .path-title {
+        color: #ffffff;
+        font-size: 1.3rem;
+        margin: 0;
+    }
+
+    .path-description {
+        color: #cccccc;
+        line-height: 1.6;
+        margin-bottom: 1rem;
+    }
+
+    .path-skills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+
+    .skill-badge {
+        background: rgba(0, 255, 255, 0.1);
+        color: #00ffff;
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        border: 1px solid rgba(0, 255, 255, 0.3);
+    }
+
+    /* Hackathons Section */
+    .hackathons-grid {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 2rem;
+        margin-top: 3rem;
+    }
+
+    .hackathons-grid .hackathon-card {
+        flex: 0 1 calc(33.333% - 1.34rem);
+        min-width: 300px;
+    }
+
+    @media (max-width: 992px) {
+        .hackathons-grid .hackathon-card {
+            flex: 0 1 calc(50% - 1rem);
+        }
+    }
+
+    @media (max-width: 576px) {
+        .hackathons-grid .hackathon-card {
+            flex: 0 1 100%;
+        }
+    }
+
+    .hackathon-card {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 15px;
+        padding: 2rem;
+        border: 1px solid rgba(0, 255, 255, 0.2);
+        transition: all 0.3s ease;
+        position: relative;
+    }
+
+    .hackathon-card:hover {
+        transform: translateY(-5px);
+        border-color: #00ffff;
+        box-shadow: 0 10px 30px rgba(0, 255, 255, 0.2);
+    }
+
+    .hackathon-badge {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: linear-gradient(45deg, #ff00ff, #00ffff);
+        color: #000;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 700;
+    }
+
+    .hackathon-title {
+        color: #ffffff;
+        font-size: 1.3rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .hackathon-date {
+        color: #00ffff;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+
+    .hackathon-description {
+        color: #cccccc;
+        line-height: 1.6;
+        margin-bottom: 1rem;
+    }
+
+    /* Mentorship Section */
+    .mentorship-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 20px;
+        padding: 3rem;
+        border: 1px solid rgba(0, 255, 255, 0.2);
+        margin-top: 3rem;
+    }
+
+    .mentorship-grid {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    .mentorship-grid .mentorship-item {
+        flex: 0 1 calc(25% - 1.5rem);
+        min-width: 250px;
+    }
+
+    @media (max-width: 992px) {
+        .mentorship-grid .mentorship-item {
+            flex: 0 1 calc(50% - 1rem);
+        }
+    }
+
+    @media (max-width: 576px) {
+        .mentorship-grid .mentorship-item {
+            flex: 0 1 100%;
+        }
+    }
+
+    .mentorship-item {
+        text-align: center;
+        padding: 1.5rem;
+    }
+
+    .mentorship-icon {
+        font-size: 3rem;
+        color: #00ffff;
+        margin-bottom: 1rem;
+    }
+
+    .mentorship-item h4 {
+        color: #ffffff;
+        margin-bottom: 0.5rem;
+    }
+
+    .mentorship-item p {
+        color: #cccccc;
+        font-size: 0.9rem;
+    }
+
+    /* Resources Section */
+    .resources-grid {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 2rem;
+        margin-top: 3rem;
+    }
+
+    .resources-grid .resource-card {
+        flex: 0 1 calc(33.333% - 1.34rem);
+        min-width: 250px;
+    }
+
+    @media (max-width: 992px) {
+        .resources-grid .resource-card {
+            flex: 0 1 calc(50% - 1rem);
+        }
+    }
+
+    @media (max-width: 576px) {
+        .resources-grid .resource-card {
+            flex: 0 1 100%;
+        }
+    }
+
+    .resource-card {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 15px;
+        padding: 2rem;
+        border: 1px solid rgba(0, 255, 255, 0.2);
+        transition: all 0.3s ease;
+        text-align: center;
+    }
+
+    .resource-card:hover {
+        transform: translateY(-5px);
+        border-color: #00ffff;
+        box-shadow: 0 10px 30px rgba(0, 255, 255, 0.2);
+    }
+
+    .resource-icon {
+        font-size: 3rem;
+        color: #00ffff;
+        margin-bottom: 1rem;
+    }
+
+    .resource-card h4 {
+        color: #ffffff;
+        margin-bottom: 0.5rem;
+    }
+
+    .resource-card p {
+        color: #cccccc;
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+    }
+
+    .resource-link {
+        color: #00ffff;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .resource-link:hover {
+        color: #ff00ff;
+    }
+
+    /* Why Join Section */
+    .why-join-grid {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 2rem;
+        margin-top: 3rem;
+    }
+
+    .why-join-grid .why-item {
+        flex: 0 1 calc(33.333% - 1.34rem);
+        min-width: 250px;
+    }
+
+    @media (max-width: 992px) {
+        .why-join-grid .why-item {
+            flex: 0 1 calc(50% - 1rem);
+        }
+    }
+
+    @media (max-width: 576px) {
+        .why-join-grid .why-item {
+            flex: 0 1 100%;
+        }
+    }
+
+    .why-item {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 15px;
+        padding: 2rem;
+        border: 1px solid rgba(0, 255, 255, 0.2);
+        transition: all 0.3s ease;
+        text-align: center;
+    }
+
+    .why-item:hover {
+        transform: translateY(-5px);
+        border-color: #00ffff;
+        box-shadow: 0 10px 30px rgba(0, 255, 255, 0.2);
+    }
+
+    .why-icon {
+        font-size: 3rem;
+        color: #00ffff;
+        margin-bottom: 1rem;
+    }
+
+    .why-item h4 {
+        color: #ffffff;
+        margin-bottom: 0.5rem;
+    }
+
+    .why-item p {
+        color: #cccccc;
+        font-size: 0.9rem;
+        line-height: 1.6;
+    }
 </style>
 {% endblock %}
 
@@ -750,7 +1278,7 @@
         <p class="hero-tagline">KIUT Digital Club</p>
         <h1 class="hero-title">Digital Club</h1>
         <p class="hero-subtitle">
-            Where innovation meets collaboration. Join a community of passionate developers, designers, and tech enthusiasts shaping the future.
+            Empowering IT & CS students through hands-on projects, coding competitions, mentorship, and real-world tech experience. Build your future in technology with us.
         </p>
         
         <!-- Quick Stats -->
@@ -830,13 +1358,230 @@
     </div>
 </section>
 
-<!-- Featured Projects Section -->
+<!-- Why Join Section -->
 <section class="section">
     <div class="container">
+        <h2 class="section-title" data-aos="fade-up">Why Join Digital Club?</h2>
+        <div class="why-join-grid" data-aos="fade-up" data-aos-delay="200">
+            <div class="why-item">
+                <div class="why-icon">
+                    <i class="fas fa-code"></i>
+                </div>
+                <h4>Hands-On Coding</h4>
+                <p>Work on real projects, build your portfolio, and gain practical programming experience in multiple languages and frameworks.</p>
+            </div>
+            <div class="why-item">
+                <div class="why-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h4>Peer Learning</h4>
+                <p>Collaborate with fellow IT and CS students, share knowledge, and learn from each other in a supportive environment.</p>
+            </div>
+            <div class="why-item">
+                <div class="why-icon">
+                    <i class="fas fa-trophy"></i>
+                </div>
+                <h4>Competitions</h4>
+                <p>Participate in hackathons, coding challenges, and tech competitions to test your skills and win prizes.</p>
+            </div>
+            <div class="why-item">
+                <div class="why-icon">
+                    <i class="fas fa-user-tie"></i>
+                </div>
+                <h4>Mentorship</h4>
+                <p>Get guidance from experienced developers, alumni, and industry professionals to accelerate your career growth.</p>
+            </div>
+            <div class="why-item">
+                <div class="why-icon">
+                    <i class="fas fa-briefcase"></i>
+                </div>
+                <h4>Career Opportunities</h4>
+                <p>Access internships, job opportunities, and networking events with leading tech companies and startups.</p>
+            </div>
+            <div class="why-item">
+                <div class="why-icon">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <h4>Skill Development</h4>
+                <p>Attend workshops on cutting-edge technologies, best practices, and industry trends to stay ahead.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Tech Stack Section -->
+<section class="section" style="background: rgba(255, 255, 255, 0.02);">
+    <div class="container">
+        <h2 class="section-title" data-aos="fade-up">Technologies We Work With</h2>
+        <p style="text-align: center; color: var(--text-secondary); margin-bottom: 3rem; font-size: 1.1rem;" data-aos="fade-up" data-aos-delay="200">
+            Master the tools and technologies used in the industry
+        </p>
+        <div class="tech-stack-grid" data-aos="fade-up" data-aos-delay="400">
+            <div class="tech-item">
+                <i class="fab fa-python tech-icon"></i>
+                <div class="tech-name">Python</div>
+            </div>
+            <div class="tech-item">
+                <i class="fab fa-js tech-icon"></i>
+                <div class="tech-name">JavaScript</div>
+            </div>
+            <div class="tech-item">
+                <i class="fab fa-java tech-icon"></i>
+                <div class="tech-name">Java</div>
+            </div>
+            <div class="tech-item">
+                <i class="fab fa-react tech-icon"></i>
+                <div class="tech-name">React</div>
+            </div>
+            <div class="tech-item">
+                <i class="fab fa-node tech-icon"></i>
+                <div class="tech-name">Node.js</div>
+            </div>
+            <div class="tech-item">
+                <i class="fab fa-docker tech-icon"></i>
+                <div class="tech-name">Docker</div>
+            </div>
+            <div class="tech-item">
+                <i class="fab fa-aws tech-icon"></i>
+                <div class="tech-name">AWS</div>
+            </div>
+            <div class="tech-item">
+                <i class="fab fa-git-alt tech-icon"></i>
+                <div class="tech-name">Git</div>
+            </div>
+            <div class="tech-item">
+                <i class="fab fa-linux tech-icon"></i>
+                <div class="tech-name">Linux</div>
+            </div>
+            <div class="tech-item">
+                <i class="fas fa-database tech-icon"></i>
+                <div class="tech-name">Databases</div>
+            </div>
+            <div class="tech-item">
+                <i class="fab fa-html5 tech-icon"></i>
+                <div class="tech-name">HTML/CSS</div>
+            </div>
+            <div class="tech-item">
+                <i class="fas fa-mobile-alt tech-icon"></i>
+                <div class="tech-name">Mobile Dev</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Learning Paths Section -->
+<section class="section">
+    <div class="container">
+        <h2 class="section-title" data-aos="fade-up">Learning Paths</h2>
+        <p style="text-align: center; color: var(--text-secondary); margin-bottom: 3rem; font-size: 1.1rem;" data-aos="fade-up" data-aos-delay="200">
+            Choose your specialization and build expertise in your chosen field
+        </p>
+        <div class="learning-paths-grid" data-aos="fade-up" data-aos-delay="400">
+            <div class="path-card">
+                <div class="path-header">
+                    <div class="path-icon">
+                        <i class="fas fa-laptop-code"></i>
+                    </div>
+                    <h3 class="path-title">Web Development</h3>
+                </div>
+                <p class="path-description">Master frontend and backend development. Build responsive websites and web applications using modern frameworks.</p>
+                <div class="path-skills">
+                    <span class="skill-badge">HTML/CSS</span>
+                    <span class="skill-badge">JavaScript</span>
+                    <span class="skill-badge">React</span>
+                    <span class="skill-badge">Node.js</span>
+                    <span class="skill-badge">MongoDB</span>
+                </div>
+            </div>
+            <div class="path-card">
+                <div class="path-header">
+                    <div class="path-icon">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <h3 class="path-title">Mobile Development</h3>
+                </div>
+                <p class="path-description">Create native and cross-platform mobile applications for iOS and Android using industry-standard tools.</p>
+                <div class="path-skills">
+                    <span class="skill-badge">React Native</span>
+                    <span class="skill-badge">Flutter</span>
+                    <span class="skill-badge">Swift</span>
+                    <span class="skill-badge">Kotlin</span>
+                </div>
+            </div>
+            <div class="path-card">
+                <div class="path-header">
+                    <div class="path-icon">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <h3 class="path-title">AI & Machine Learning</h3>
+                </div>
+                <p class="path-description">Explore artificial intelligence, machine learning, and data science. Build intelligent systems and predictive models.</p>
+                <div class="path-skills">
+                    <span class="skill-badge">Python</span>
+                    <span class="skill-badge">TensorFlow</span>
+                    <span class="skill-badge">PyTorch</span>
+                    <span class="skill-badge">Data Science</span>
+                </div>
+            </div>
+            <div class="path-card">
+                <div class="path-header">
+                    <div class="path-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3 class="path-title">Cybersecurity</h3>
+                </div>
+                <p class="path-description">Learn ethical hacking, network security, and digital forensics. Protect systems and data from threats.</p>
+                <div class="path-skills">
+                    <span class="skill-badge">Ethical Hacking</span>
+                    <span class="skill-badge">Network Security</span>
+                    <span class="skill-badge">Penetration Testing</span>
+                    <span class="skill-badge">Cryptography</span>
+                </div>
+            </div>
+            <div class="path-card">
+                <div class="path-header">
+                    <div class="path-icon">
+                        <i class="fas fa-cloud"></i>
+                    </div>
+                    <h3 class="path-title">Cloud Computing</h3>
+                </div>
+                <p class="path-description">Master cloud platforms and DevOps. Deploy scalable applications and manage infrastructure in the cloud.</p>
+                <div class="path-skills">
+                    <span class="skill-badge">AWS</span>
+                    <span class="skill-badge">Azure</span>
+                    <span class="skill-badge">Docker</span>
+                    <span class="skill-badge">Kubernetes</span>
+                </div>
+            </div>
+            <div class="path-card">
+                <div class="path-header">
+                    <div class="path-icon">
+                        <i class="fas fa-gamepad"></i>
+                    </div>
+                    <h3 class="path-title">Game Development</h3>
+                </div>
+                <p class="path-description">Create engaging games using game engines and programming. Learn game design principles and mechanics.</p>
+                <div class="path-skills">
+                    <span class="skill-badge">Unity</span>
+                    <span class="skill-badge">Unreal Engine</span>
+                    <span class="skill-badge">C#</span>
+                    <span class="skill-badge">Game Design</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Projects Section -->
+<section class="section" style="background: rgba(255, 255, 255, 0.02);">
+    <div class="container">
         <h2 class="section-title" data-aos="fade-up">Featured Projects</h2>
-        <div class="projects-showcase">
+        <p style="text-align: center; color: var(--text-secondary); margin-bottom: 3rem; font-size: 1.1rem;" data-aos="fade-up" data-aos-delay="200">
+            Showcasing innovative projects built by our members
+        </p>
+        <div class="projects-showcase" data-aos="fade-up" data-aos-delay="400">
             {% for project in featured_projects %}
-            <div class="project-card" data-aos="fade-up" data-aos-delay="{{ loop.index * 100 }}">
+            <div class="project-card">
                 <div class="project-icon">
                     <i class="fas fa-code"></i>
                 </div>
@@ -853,8 +1598,97 @@
     </div>
 </section>
 
-<!-- Statistics Counter Section -->
+<!-- Hackathons & Competitions Section -->
+<section class="section">
+    <div class="container">
+        <h2 class="section-title" data-aos="fade-up">Hackathons & Competitions</h2>
+        <p style="text-align: center; color: var(--text-secondary); margin-bottom: 3rem; font-size: 1.1rem;" data-aos="fade-up" data-aos-delay="200">
+            Test your skills, compete with peers, and win amazing prizes
+        </p>
+        <div class="hackathons-grid" data-aos="fade-up" data-aos-delay="400">
+            <div class="hackathon-card">
+                <span class="hackathon-badge">Upcoming</span>
+                <h3 class="hackathon-title">KIUT Code Challenge 2024</h3>
+                <div class="hackathon-date">March 15-17, 2024</div>
+                <p class="hackathon-description">48-hour coding competition open to all IT and CS students. Build innovative solutions and compete for cash prizes and tech gadgets.</p>
+                <a href="{{ url_for('main.events') }}" class="btn-secondary" style="display: inline-block; margin-top: 1rem;">
+                    Learn More <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            <div class="hackathon-card">
+                <span class="hackathon-badge">Ongoing</span>
+                <h3 class="hackathon-title">Weekly Coding Challenges</h3>
+                <div class="hackathon-date">Every Friday</div>
+                <p class="hackathon-description">Weekly programming challenges covering algorithms, data structures, and problem-solving. Improve your coding skills and climb the leaderboard.</p>
+                <a href="{{ url_for('main.events') }}" class="btn-secondary" style="display: inline-block; margin-top: 1rem;">
+                    Participate <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            <div class="hackathon-card">
+                <span class="hackathon-badge">Annual</span>
+                <h3 class="hackathon-title">National Tech Competition</h3>
+                <div class="hackathon-date">May 2024</div>
+                <p class="hackathon-description">Represent KIUT in the national inter-university tech competition. Showcase your skills and network with students from across Tanzania.</p>
+                <a href="{{ url_for('main.events') }}" class="btn-secondary" style="display: inline-block; margin-top: 1rem;">
+                    Register <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Mentorship Program Section -->
 <section class="section" style="background: rgba(255, 255, 255, 0.02);">
+    <div class="container">
+        <h2 class="section-title" data-aos="fade-up">Mentorship Program</h2>
+        <p style="text-align: center; color: var(--text-secondary); margin-bottom: 2rem; font-size: 1.1rem;" data-aos="fade-up" data-aos-delay="200">
+            Get personalized guidance from experienced professionals and alumni
+        </p>
+        <div class="mentorship-container" data-aos="fade-up" data-aos-delay="400">
+            <div class="mentorship-grid">
+                <div class="mentorship-item">
+                    <div class="mentorship-icon">
+                        <i class="fas fa-user-graduate"></i>
+                    </div>
+                    <h4>1-on-1 Sessions</h4>
+                    <p>Personalized mentoring sessions tailored to your learning goals and career aspirations.</p>
+                </div>
+                <div class="mentorship-item">
+                    <div class="mentorship-icon">
+                        <i class="fas fa-code-branch"></i>
+                    </div>
+                    <h4>Code Reviews</h4>
+                    <p>Get feedback on your projects and code from experienced developers to improve your skills.</p>
+                </div>
+                <div class="mentorship-item">
+                    <div class="mentorship-icon">
+                        <i class="fas fa-briefcase"></i>
+                    </div>
+                    <h4>Career Guidance</h4>
+                    <p>Receive advice on resume building, interview preparation, and career path planning.</p>
+                </div>
+                <div class="mentorship-item">
+                    <div class="mentorship-icon">
+                        <i class="fas fa-network-wired"></i>
+                    </div>
+                    <h4>Industry Connections</h4>
+                    <p>Connect with alumni and professionals working at top tech companies worldwide.</p>
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 2rem;">
+                <a href="{{ url_for('auth.register') }}" class="btn-primary">
+                    Join as Mentee <i class="fas fa-user-plus"></i>
+                </a>
+                <a href="{{ url_for('main.contact') }}" class="btn-secondary" style="margin-left: 1rem;">
+                    Become a Mentor <i class="fas fa-hand-holding-heart"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Statistics Counter Section -->
+<section class="section">
     <div class="container">
         <h2 class="section-title" data-aos="fade-up">Our Impact</h2>
         <div class="stats-grid" data-aos="fade-up" data-aos-delay="200">
@@ -890,6 +1724,78 @@
     </div>
 </section>
 
+<!-- Resources Section -->
+<section class="section" style="background: rgba(255, 255, 255, 0.02);">
+    <div class="container">
+        <h2 class="section-title" data-aos="fade-up">Learning Resources</h2>
+        <p style="text-align: center; color: var(--text-secondary); margin-bottom: 3rem; font-size: 1.1rem;" data-aos="fade-up" data-aos-delay="200">
+            Access curated resources to accelerate your learning journey
+        </p>
+        <div class="resources-grid" data-aos="fade-up" data-aos-delay="400">
+            <div class="resource-card">
+                <div class="resource-icon">
+                    <i class="fas fa-book"></i>
+                </div>
+                <h4>Study Materials</h4>
+                <p>Comprehensive notes, tutorials, and study guides for various programming languages and CS topics.</p>
+                <a href="{{ url_for('main.topics') }}" class="resource-link">
+                    Explore Topics <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            <div class="resource-card">
+                <div class="resource-icon">
+                    <i class="fas fa-video"></i>
+                </div>
+                <h4>Workshop Recordings</h4>
+                <p>Access recordings of past workshops and tech talks to learn at your own pace.</p>
+                <a href="{{ url_for('main.gallery') }}" class="resource-link">
+                    Watch Now <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            <div class="resource-card">
+                <div class="resource-icon">
+                    <i class="fab fa-github"></i>
+                </div>
+                <h4>Code Repository</h4>
+                <p>Browse our GitHub organization with sample projects, templates, and starter code.</p>
+                <a href="#" class="resource-link" target="_blank">
+                    Visit GitHub <i class="fas fa-external-link-alt"></i>
+                </a>
+            </div>
+            <div class="resource-card">
+                <div class="resource-icon">
+                    <i class="fas fa-laptop-code"></i>
+                </div>
+                <h4>Development Tools</h4>
+                <p>Get access to premium development tools, cloud credits, and software licenses.</p>
+                <a href="{{ url_for('main.contact') }}" class="resource-link">
+                    Request Access <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            <div class="resource-card">
+                <div class="resource-icon">
+                    <i class="fas fa-newspaper"></i>
+                </div>
+                <h4>Tech Blog</h4>
+                <p>Read articles, tutorials, and insights written by our members and mentors.</p>
+                <a href="{{ url_for('main.blogs') }}" class="resource-link">
+                    Read Blog <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            <div class="resource-card">
+                <div class="resource-icon">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <h4>Event Calendar</h4>
+                <p>Stay updated with upcoming workshops, hackathons, and networking events.</p>
+                <a href="{{ url_for('main.events') }}" class="resource-link">
+                    View Events <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
 <!-- Testimonials Section -->
 <section class="section">
     <div class="container">
@@ -901,14 +1807,14 @@
                         <div class="quote-icon">
                             <i class="fas fa-quote-left"></i>
                         </div>
-                        <p>"Digital Club transformed my understanding of technology. The hands-on workshops and collaborative projects gave me the skills I needed to land my dream job at a tech startup."</p>
+                        <p>"As a CS student, Digital Club gave me the practical experience I needed. The React workshop helped me build my first full-stack application, which landed me an internship at a leading tech company in Dar es Salaam."</p>
                         <div class="testimonial-author">
                             <div class="author-avatar">
                                 <i class="fas fa-user"></i>
                             </div>
                             <div class="author-info">
                                 <h4>Sarah Mwangi</h4>
-                                <span>Software Engineer at TechStart Tanzania</span>
+                                <span>CS Student | Software Engineering Intern</span>
                             </div>
                         </div>
                     </div>
@@ -918,14 +1824,14 @@
                         <div class="quote-icon">
                             <i class="fas fa-quote-left"></i>
                         </div>
-                        <p>"The hackathons and coding competitions pushed me beyond my limits. I learned more in one semester with Digital Club than in two years of regular coursework."</p>
+                        <p>"The weekly coding challenges improved my problem-solving skills significantly. I went from struggling with basic algorithms to solving complex data structure problems. The peer learning environment is amazing!"</p>
                         <div class="testimonial-author">
                             <div class="author-avatar">
                                 <i class="fas fa-user"></i>
                             </div>
                             <div class="author-info">
                                 <h4>Ahmed Hassan</h4>
-                                <span>Full-Stack Developer</span>
+                                <span>IT Student | Competitive Programmer</span>
                             </div>
                         </div>
                     </div>
@@ -935,14 +1841,14 @@
                         <div class="quote-icon">
                             <i class="fas fa-quote-left"></i>
                         </div>
-                        <p>"Digital Club provided the perfect environment to explore AI and machine learning. The mentorship and resources helped me build my first ML model and publish a research paper."</p>
+                        <p>"Through Digital Club's mentorship program, I got guidance on my machine learning project. My mentor helped me understand neural networks better, and now I'm working on an AI startup. The support here is incredible!"</p>
                         <div class="testimonial-author">
                             <div class="author-avatar">
                                 <i class="fas fa-user"></i>
                             </div>
                             <div class="author-info">
                                 <h4>Grace Kimaro</h4>
-                                <span>AI Research Assistant</span>
+                                <span>CS Student | AI Enthusiast</span>
                             </div>
                         </div>
                     </div>
@@ -1050,12 +1956,34 @@
     </div>
 </section>
 
+<!-- Call to Action Section -->
+<section class="section" style="background: linear-gradient(135deg, rgba(0, 255, 255, 0.1) 0%, rgba(138, 43, 226, 0.1) 100%);">
+    <div class="container">
+        <div style="text-align: center; background: rgba(255, 255, 255, 0.05); border-radius: 20px; padding: 4rem 2rem; border: 1px solid rgba(0, 255, 255, 0.3); backdrop-filter: blur(10px);" data-aos="fade-up">
+            <h2 style="color: #ffffff; font-size: 2.5rem; margin-bottom: 1rem; background: linear-gradient(135deg, #00ffff, #ff00ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+                Ready to Start Your Tech Journey?
+            </h2>
+            <p style="color: #cccccc; font-size: 1.2rem; margin-bottom: 2.5rem; max-width: 700px; margin-left: auto; margin-right: auto;">
+                Join hundreds of IT and CS students building the future. Whether you're a beginner or advanced coder, there's a place for you here.
+            </p>
+            <div style="display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap;">
+                <a href="{{ url_for('auth.register') }}" class="btn-primary" style="font-size: 1.2rem; padding: 1.3rem 3rem;">
+                    <i class="fas fa-rocket"></i> Join Now - It's Free
+                </a>
+                <a href="{{ url_for('main.about') }}" class="btn-secondary" style="font-size: 1.2rem; padding: 1.3rem 3rem;">
+                    <i class="fas fa-info-circle"></i> Learn More
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
 <!-- Newsletter Signup Section -->
 <section class="section" style="background: rgba(255, 255, 255, 0.02);">
     <div class="container">
         <div style="text-align: center; background: rgba(255, 255, 255, 0.05); border-radius: 15px; padding: 3rem; border: 1px solid rgba(0, 255, 255, 0.2);" data-aos="fade-up">
             <h2 style="color: #ffffff; margin-bottom: 1rem;">Stay Updated</h2>
-            <p style="color: #cccccc; margin-bottom: 2rem;">Subscribe to our newsletter for the latest updates on events, workshops, and opportunities.</p>
+            <p style="color: #cccccc; margin-bottom: 2rem;">Subscribe to our newsletter for the latest updates on events, workshops, hackathons, and tech opportunities.</p>
             <form class="newsletter-form" id="homepage-newsletter-form" style="max-width: 400px; margin: 0 auto;">
                 <div style="display: flex; gap: 1rem;">
                     <input type="email" placeholder="Enter your email" name="email" required style="flex: 1; padding: 1rem; border: 1px solid #00ffff; border-radius: 50px; background: rgba(0, 0, 0, 0.3); color: #ffffff; outline: none;">
@@ -1187,37 +2115,40 @@
         const heroLogo = document.querySelector('.hero-logo');
         
         if (orbitContainer) {
-            orbitContainer.style.transform = `translate(-50%, -50%) translate(Tsh {mouseX * 20}px, Tsh {mouseY * 20}px)`;
+            orbitContainer.style.transform = `translate(-50%, -50%) translate(${mouseX * 20}px, ${mouseY * 20}px)`;
         }
         
         if (heroLogo) {
-            heroLogo.style.transform = `translateY(-20px) translate(Tsh {mouseX * 10}px, Tsh {mouseY * 10}px)`;
+            heroLogo.style.transform = `translateY(-20px) translate(${mouseX * 10}px, ${mouseY * 10}px)`;
         }
     });
 
     // Newsletter form handling
-    document.getElementById('homepage-newsletter-form').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const formData = new FormData(this);
-        
-        try {
-            const response = await fetch('{{ url_for("main.newsletter_subscribe") }}', {
-                method: 'POST',
-                body: formData
-            });
+    const newsletterForm = document.getElementById('homepage-newsletter-form');
+    if (newsletterForm) {
+        newsletterForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
             
-            const result = await response.json();
-            
-            if (result.success) {
-                alert('Successfully subscribed to newsletter!');
-                this.reset();
-            } else {
-                alert(result.message);
+            try {
+                const response = await fetch('{{ url_for("main.newsletter_subscribe") }}', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Successfully subscribed to newsletter!');
+                    this.reset();
+                } else {
+                    alert(result.message);
+                }
+            } catch (error) {
+                alert('An error occurred. Please try again.');
             }
-        } catch (error) {
-            alert('An error occurred. Please try again.');
-        }
-    });
+        });
+    }
 
     // Smooth scrolling for anchor links
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
@@ -1251,10 +2182,10 @@
         const gridLines = document.querySelector('.grid-lines');
         
         if (heroBg) {
-            heroBg.style.transform = `translateY(Tsh {scrolled * 0.3}px)`;
+            heroBg.style.transform = `translateY(${scrolled * 0.3}px)`;
         }
         if (gridLines) {
-            gridLines.style.transform = `perspective(500px) rotateX(60deg) translateY(Tsh {scrolled * 0.4}px)`;
+            gridLines.style.transform = `perspective(500px) rotateX(60deg) translateY(${scrolled * 0.4}px)`;
         }
     });
 </script>
