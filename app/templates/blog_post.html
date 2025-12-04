@@ -49,9 +49,15 @@
                     <!-- Featured Image -->
                     {% if blog.featured_image %}
                     <div class="featured-image-container mb-4" data-aos="zoom-in">
+                        {% if blog.featured_image.startswith('http://') or blog.featured_image.startswith('https://') %}
+                        <img src="{{ blog.featured_image }}" 
+                             alt="{{ blog.title }}" 
+                             class="featured-image">
+                        {% else %}
                         <img src="{{ url_for('static', filename=blog.featured_image) }}" 
                              alt="{{ blog.title }}" 
                              class="featured-image">
+                        {% endif %}
                     </div>
                     {% endif %}
                     

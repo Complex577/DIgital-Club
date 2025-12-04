@@ -18,7 +18,7 @@
                 </div>
             </div>
             
-            <form method="POST" enctype="multipart/form-data">
+            <form method="POST">
                 <div class="row">
                     <div class="col-lg-8">
                         <div class="admin-form-group">
@@ -29,21 +29,28 @@
                         
                         <div class="admin-form-group">
                             <label for="featured_image" class="admin-form-label">
-                                <i class="fas fa-image"></i> Featured Image
+                                <i class="fas fa-image"></i> Featured Image URL
                             </label>
                             
                             {% if blog.featured_image %}
                             <div style="margin-bottom: 1rem;">
+                                {% if blog.featured_image.startswith('http://') or blog.featured_image.startswith('https://') %}
+                                <img src="{{ blog.featured_image }}" 
+                                     alt="Current featured image" 
+                                     style="max-width: 100%; max-height: 200px; border-radius: 10px; border: 2px solid var(--admin-border-color);">
+                                {% else %}
                                 <img src="{{ url_for('static', filename=blog.featured_image) }}" 
                                      alt="Current featured image" 
                                      style="max-width: 100%; max-height: 200px; border-radius: 10px; border: 2px solid var(--admin-border-color);">
+                                {% endif %}
                                 <p class="text-muted mt-2 mb-0"><i class="fas fa-check-circle text-success"></i> Current featured image</p>
                             </div>
                             {% endif %}
                             
-                            <input type="file" class="admin-form-control" id="featured_image" name="featured_image" 
-                                   accept="image/*" onchange="previewImage(event)">
-                            <small class="text-muted">Upload a new thumbnail image to replace the current one (JPG, PNG, WEBP recommended)</small>
+                            <input type="url" class="admin-form-control" id="featured_image" name="featured_image" 
+                                   value="{% if blog.featured_image and (blog.featured_image.startswith('http://') or blog.featured_image.startswith('https://')) %}{{ blog.featured_image }}{% endif %}"
+                                   placeholder="https://example.com/image.jpg" onchange="previewImageFromUrl(event)">
+                            <small class="text-muted">Enter the URL of the featured image for this blog post</small>
                             
                             <!-- Image Preview -->
                             <div id="imagePreview" style="display: none; margin-top: 1rem;">
@@ -151,18 +158,20 @@
 
 {% block extra_scripts %}
 <script>
-    function previewImage(event) {
+    function previewImageFromUrl(event) {
         const preview = document.getElementById('preview');
         const previewContainer = document.getElementById('imagePreview');
-        const file = event.target.files[0];
+        const imageUrl = event.target.value;
         
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                preview.src = e.target.result;
+        if (imageUrl && imageUrl.trim() !== '') {
+            preview.src = imageUrl;
+            preview.onload = function() {
                 previewContainer.style.display = 'block';
-            }
-            reader.readAsDataURL(file);
+            };
+            preview.onerror = function() {
+                previewContainer.style.display = 'none';
+                alert('Failed to load image. Please check the URL.');
+            };
         } else {
             previewContainer.style.display = 'none';
         }

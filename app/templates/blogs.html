@@ -429,7 +429,11 @@
             <article class="blog-card" data-aos="fade-up" data-aos-delay="{{ loop.index0 * 100 }}">
                 {% if blog.featured_image %}
                 <a href="{{ url_for('main.blog_post', slug=blog.slug) }}" class="blog-image-link">
+                    {% if blog.featured_image.startswith('http://') or blog.featured_image.startswith('https://') %}
+                    <div class="blog-image" style="background-image: url('{{ blog.featured_image }}');"></div>
+                    {% else %}
                     <div class="blog-image" style="background-image: url('{{ url_for('static', filename=blog.featured_image) }}');"></div>
+                    {% endif %}
                 </a>
                 {% endif %}
                 
