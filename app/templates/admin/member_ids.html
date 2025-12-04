@@ -1,0 +1,404 @@
+{% extends "admin/admin_base.html" %}
+
+{% block admin_title %}Member Digital IDs{% endblock %}
+{% block page_title %}Member Digital IDs{% endblock %}
+{% block breadcrumb %}<span class="breadcrumb-separator">/</span> <a href="{{ url_for('admin.dashboard') }}">Dashboard</a><span class="breadcrumb-separator">/</span> <span>Member Digital IDs</span>{% endblock %}
+
+{% block admin_content %}
+<!-- Header with Actions -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="mb-1"><i class="fas fa-id-card"></i> Member Digital IDs</h2>
+        <p class="text-muted mb-0">View, flip, and export all member digital ID cards</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button onclick="window.print()" class="admin-btn admin-btn-outline">
+            <i class="fas fa-print"></i> Print
+        </button>
+        <div class="dropdown" id="exportDropdownContainer" style="position: relative; display: inline-block;">
+            <button class="admin-btn admin-btn-primary" type="button" id="exportDropdown" style="position: relative; z-index: 1;">
+                <i class="fas fa-file-pdf"></i> Export PDF <i class="fas fa-chevron-down ms-1"></i>
+            </button>
+            <ul class="dropdown-menu" id="exportDropdownMenu" aria-labelledby="exportDropdown" style="position: absolute; top: 100%; right: 0; margin-top: 0.5rem; z-index: 10000; display: none;">
+                <li style="list-style: none; margin: 0; padding: 0;"><a class="dropdown-item" href="{{ url_for('admin.export_member_ids_pdf', layout='bundle', status=current_status, search=search_query) }}">Bundle (4 per page)</a></li>
+                <li style="list-style: none; margin: 0; padding: 0;"><a class="dropdown-item" href="{{ url_for('admin.export_member_ids_pdf', layout='standard', status=current_status, search=search_query) }}">Standard (2 per page)</a></li>
+                <li style="list-style: none; margin: 0; padding: 0;"><a class="dropdown-item" href="{{ url_for('admin.export_member_ids_pdf', layout='single', status=current_status, search=search_query) }}">Single (1 per page)</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Filters and Search -->
+<div class="admin-card mb-4">
+    <div class="admin-card-body">
+        <form method="GET" action="{{ url_for('admin.member_ids') }}" class="row g-3">
+            <div class="col-md-4">
+                <label for="search" class="admin-form-label">Search</label>
+                <input type="text" class="admin-form-control" id="search" name="search" 
+                       value="{{ search_query }}" placeholder="Name, ID number, or email">
+            </div>
+            <div class="col-md-3">
+                <label for="status" class="admin-form-label">Membership Status</label>
+                <select class="admin-form-control" id="status" name="status">
+                    <option value="all" {% if current_status == 'all' %}selected{% endif %}>All</option>
+                    <option value="valid" {% if current_status == 'valid' %}selected{% endif %}>Valid</option>
+                    <option value="expired" {% if current_status == 'expired' %}selected{% endif %}>Expired</option>
+                    <option value="none" {% if current_status == 'none' %}selected{% endif %}>No Payment</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="admin-btn admin-btn-primary w-100">
+                    <i class="fas fa-search"></i> Filter
+                </button>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <a href="{{ url_for('admin.member_ids') }}" class="admin-btn admin-btn-outline w-100">
+                    <i class="fas fa-redo"></i> Reset
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Statistics -->
+<div class="admin-stats-grid mb-4">
+    <div class="admin-stat-card primary">
+        <div class="admin-stat-icon">
+            <i class="fas fa-id-card"></i>
+        </div>
+        <h3 class="admin-stat-value">{{ members|length }}</h3>
+        <p class="admin-stat-label">Displayed IDs</p>
+    </div>
+    <div class="admin-stat-card info">
+        <div class="admin-stat-icon">
+            <i class="fas fa-users"></i>
+        </div>
+        <h3 class="admin-stat-value">{{ total_with_ids }}</h3>
+        <p class="admin-stat-label">Total with IDs</p>
+    </div>
+</div>
+
+<!-- Member IDs Grid -->
+{% if members %}
+<div class="member-ids-grid">
+    {% for member in members %}
+    <div class="member-id-card-wrapper" data-aos="fade-up" data-aos-delay="{{ loop.index0 * 50 }}">
+        <div class="member-id-header">
+            <h5 class="mb-1">{{ member.full_name }}</h5>
+            <p class="text-muted mb-0 small">
+                <i class="fas fa-id-badge"></i> {{ member.member_id_number }}
+                {% if member.course %}
+                <br><i class="fas fa-graduation-cap"></i> {{ member.course }} - {{ member.year }}
+                {% endif %}
+            </p>
+        </div>
+        
+        <div class="flip-container" onclick="flipCard(this)">
+            <div class="flipper">
+                <!-- Front Side -->
+                <div class="card-face card-front">
+                    <img src="{{ url_for('static', filename='uploads/digital_ids/' + member.digital_id_path) }}" 
+                         alt="Digital ID - Front - {{ member.full_name }}"
+                         loading="lazy">
+                </div>
+                
+                <!-- Back Side -->
+                <div class="card-face card-back">
+                    {% set back_filename = member.digital_id_path.replace('_front.png', '_back.png') %}
+                    <img src="{{ url_for('static', filename='uploads/digital_ids/' + back_filename) }}" 
+                         alt="Digital ID - Back - {{ member.full_name }}"
+                         loading="lazy">
+                </div>
+            </div>
+        </div>
+        
+        <div class="member-id-footer">
+            <small class="text-muted">
+                <i class="fas fa-hand-pointer"></i> Click to flip
+            </small>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="admin-empty-state">
+    <i class="fas fa-id-card"></i>
+    <h5>No Member IDs Found</h5>
+    <p>{% if search_query or current_status != 'all' %}Try adjusting your filters.{% else %}No members have digital ID cards generated yet.{% endif %}</p>
+    {% if search_query or current_status != 'all' %}
+    <a href="{{ url_for('admin.member_ids') }}" class="admin-btn admin-btn-primary">
+        <i class="fas fa-redo"></i> Clear Filters
+    </a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_head %}
+<style>
+.member-ids-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.member-id-card-wrapper {
+    background: var(--admin-bg-secondary);
+    border: 1px solid var(--admin-border-color);
+    border-radius: 10px;
+    padding: 1.5rem;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.member-id-card-wrapper:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 255, 255, 0.1);
+}
+
+.member-id-header {
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.member-id-header h5 {
+    color: var(--admin-text-primary);
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.member-id-footer {
+    margin-top: 1rem;
+    text-align: center;
+}
+
+/* Flip Card Styles */
+.flip-container {
+    perspective: 2000px;
+    cursor: pointer;
+    margin: 0 auto;
+    max-width: 100%;
+}
+
+.flip-container:hover {
+    transform: scale(1.02);
+    transition: transform 0.3s ease;
+}
+
+.flipper {
+    position: relative;
+    width: 100%;
+    padding-top: 62.99%; /* Aspect ratio 1016:640 */
+    transform-style: preserve-3d;
+    transition: transform 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.flip-container.flipped .flipper {
+    transform: rotateY(180deg);
+}
+
+.card-face {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.card-face img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+.card-back {
+    transform: rotateY(180deg);
+}
+
+/* Print Styles */
+@media print {
+    body {
+        background: white;
+    }
+    
+    .admin-sidebar,
+    .admin-header,
+    .admin-quick-actions,
+    .member-id-header,
+    .member-id-footer,
+    .admin-btn,
+    .dropdown,
+    .admin-card:first-of-type {
+        display: none !important;
+    }
+    
+    .member-ids-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        page-break-inside: avoid;
+    }
+    
+    .member-id-card-wrapper {
+        page-break-inside: avoid;
+        break-inside: avoid;
+        border: 1px solid #ccc;
+        padding: 0.5rem;
+    }
+    
+    .flip-container {
+        page-break-inside: avoid;
+    }
+    
+    @page {
+        margin: 0.5in;
+        size: letter;
+    }
+}
+
+/* Dropdown Menu Styles */
+#exportDropdownContainer {
+    position: relative !important;
+    display: inline-block !important;
+}
+
+#exportDropdownMenu {
+    position: absolute !important;
+    top: calc(100% + 0.5rem) !important;
+    right: 0 !important;
+    left: auto !important;
+    z-index: 9999 !important;
+    min-width: 220px !important;
+    display: none !important;
+    background-color: #1a1a2e !important;
+    border: 1px solid rgba(0, 255, 255, 0.3) !important;
+    border-radius: 8px !important;
+    padding: 0.5rem 0 !important;
+    margin: 0 !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+    list-style: none !important;
+}
+
+#exportDropdownMenu.show {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+#exportDropdownMenu li {
+    margin: 0 !important;
+    padding: 0 !important;
+    list-style: none !important;
+}
+
+.dropdown-item {
+    color: #ffffff !important;
+    padding: 0.75rem 1.25rem !important;
+    display: block !important;
+    text-decoration: none !important;
+    transition: all 0.2s ease !important;
+    cursor: pointer !important;
+    border: none !important;
+    background: transparent !important;
+    width: 100% !important;
+    text-align: left !important;
+}
+
+.dropdown-item:hover {
+    background-color: rgba(0, 255, 255, 0.15) !important;
+    color: #00ffff !important;
+}
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function flipCard(element) {
+    element.classList.toggle('flipped');
+}
+
+// Initialize dropdown functionality
+(function() {
+    function initDropdown() {
+        const exportDropdown = document.getElementById('exportDropdown');
+        const dropdownMenu = document.getElementById('exportDropdownMenu');
+        const dropdownContainer = document.getElementById('exportDropdownContainer');
+        
+        if (!exportDropdown || !dropdownMenu || !dropdownContainer) {
+            console.error('Dropdown elements not found');
+            return;
+        }
+        
+        console.log('Initializing dropdown...');
+        
+        // Function to show dropdown
+        function showDropdown() {
+            dropdownMenu.style.display = 'block';
+            dropdownMenu.classList.add('show');
+            console.log('Dropdown shown');
+        }
+        
+        // Function to hide dropdown
+        function hideDropdown() {
+            dropdownMenu.style.display = 'none';
+            dropdownMenu.classList.remove('show');
+            console.log('Dropdown hidden');
+        }
+        
+        // Toggle dropdown on button click
+        exportDropdown.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const isVisible = dropdownMenu.style.display === 'block' || dropdownMenu.classList.contains('show');
+            console.log('Button clicked, current state:', isVisible);
+            
+            if (isVisible) {
+                hideDropdown();
+            } else {
+                showDropdown();
+            }
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (dropdownContainer && !dropdownContainer.contains(e.target)) {
+                hideDropdown();
+            }
+        });
+        
+        // Prevent dropdown from closing when clicking inside it
+        dropdownMenu.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+        
+        // Close dropdown when clicking on a menu item (but allow navigation)
+        const dropdownItems = dropdownMenu.querySelectorAll('.dropdown-item');
+        dropdownItems.forEach(function(item) {
+            item.addEventListener('click', function(e) {
+                console.log('Menu item clicked:', item.textContent);
+                // Allow navigation, close menu after a short delay
+                setTimeout(function() {
+                    hideDropdown();
+                }, 100);
+            });
+        });
+        
+        console.log('Dropdown initialized successfully');
+    }
+    
+    // Try to initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initDropdown);
+    } else {
+        // DOM already loaded, initialize immediately
+        setTimeout(initDropdown, 100);
+    }
+})();
+</script>
+{% endblock %}
+

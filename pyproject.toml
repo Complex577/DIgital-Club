@@ -17,4 +17,5 @@ dependencies = [
     "qrcode[pil]>=7.4.2",
     "cairosvg>=2.8.2",
     "psycopg2-binary>=2.9.9",
+    "reportlab>=4.0.0",
 ]

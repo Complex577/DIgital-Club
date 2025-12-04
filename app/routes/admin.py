@@ -10,6 +10,7 @@ from app.models import (
 )
 from app import db
 from app.utils import get_notification_service
+from app.pdf_generator import generate_member_ids_pdf
 from datetime import datetime, timedelta
 import os
 import json
@@ -1067,6 +1068,117 @@ def members():
                          admin_count=admin_count,
                          member_count=member_count,
                          super_admin_count=super_admin_count)
+
+
+@admin_bp.route('/member-ids')
+@login_required
+@admin_required
+def member_ids():
+    """View all member digital IDs with flip functionality"""
+    search = request.args.get('search', '')
+    status_filter = request.args.get('status', 'all')  # all, valid, expired, none
+    
+    # Query members with digital IDs
+    query = Member.query.join(User).filter(
+        User.is_approved == True,
+        Member.digital_id_path.isnot(None)
+    )
+    
+    # Apply search filter
+    if search:
+        query = query.filter(
+            db.or_(
+                Member.full_name.ilike(f'%{search}%'),
+                Member.member_id_number.ilike(f'%{search}%'),
+                User.email.ilike(f'%{search}%')
+            )
+        )
+    
+    members = query.order_by(Member.full_name.asc()).all()
+    
+    # Filter by payment status if needed
+    if status_filter != 'all':
+        filtered_members = []
+        for member in members:
+            member_status = member.get_membership_status()
+            if status_filter == member_status:
+                filtered_members.append(member)
+        members = filtered_members
+    
+    # Get statistics
+    all_members_with_ids = Member.query.join(User).filter(
+        User.is_approved == True,
+        Member.digital_id_path.isnot(None)
+    ).all()
+    
+    total_with_ids = len(all_members_with_ids)
+    
+    return render_template('admin/member_ids.html',
+                         members=members,
+                         search_query=search,
+                         current_status=status_filter,
+                         total_with_ids=total_with_ids)
+
+
+@admin_bp.route('/member-ids/export-pdf')
+@login_required
+@admin_required
+def export_member_ids_pdf():
+    """Export member IDs as PDF bundle"""
+    layout = request.args.get('layout', 'bundle')  # single, standard, bundle
+    page_size = request.args.get('page_size', 'letter')  # letter, a4
+    status_filter = request.args.get('status', 'all')
+    search = request.args.get('search', '')
+    
+    # Query members with digital IDs
+    query = Member.query.join(User).filter(
+        User.is_approved == True,
+        Member.digital_id_path.isnot(None)
+    )
+    
+    # Apply search filter
+    if search:
+        query = query.filter(
+            db.or_(
+                Member.full_name.ilike(f'%{search}%'),
+                Member.member_id_number.ilike(f'%{search}%'),
+                User.email.ilike(f'%{search}%')
+            )
+        )
+    
+    members = query.order_by(Member.full_name.asc()).all()
+    
+    # Filter by payment status if needed
+    if status_filter != 'all':
+        filtered_members = []
+        for member in members:
+            member_status = member.get_membership_status()
+            if status_filter == member_status:
+                filtered_members.append(member)
+        members = filtered_members
+    
+    try:
+        # Generate PDF
+        pdf_buffer = generate_member_ids_pdf(members, layout=layout, page_size=page_size)
+        
+        # Create response
+        from flask import Response
+        filename = f"member_ids_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        
+        response = Response(
+            pdf_buffer.getvalue(),
+            mimetype='application/pdf',
+            headers={
+                'Content-Disposition': f'attachment; filename={filename}'
+            }
+        )
+        
+        return response
+        
+    except Exception as e:
+        current_app.logger.error(f"Error generating PDF: {str(e)}")
+        flash(f'Error generating PDF: {str(e)}', 'error')
+        return redirect(url_for('admin.member_ids'))
 
 
 @admin_bp.route('/members/<int:member_id>')
