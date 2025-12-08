@@ -3,7 +3,16 @@ from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from werkzeug.security import check_password_hash, generate_password_hash
 from app.routes import member_bp
-from app.models import Member, Project, User, RewardTransaction, Trophy, MembershipPayment, RSVP
+from app.models import (
+    Member,
+    Project,
+    User,
+    RewardTransaction,
+    Trophy,
+    MembershipPayment,
+    RSVP,
+    FinancialPeriod,
+)
 from app import db
 from app.id_generator import generate_digital_id, delete_digital_id
 import os
@@ -26,7 +35,27 @@ def profile():
         flash('Please complete your profile first.', 'warning')
         return redirect(url_for('member.edit_profile'))
     
-    return render_template('member/profile.html', member=current_user.member)
+    # Fetch current financial period summary for members to view
+    current_period = FinancialPeriod.query.filter_by(status='open').order_by(FinancialPeriod.start_date.desc()).first()
+    period_totals = None
+    if current_period:
+        total_revenue = current_period.get_total_revenue()
+        total_expenses = current_period.get_total_expenses()
+        period_totals = {
+            'revenue': total_revenue,
+            'expenses': total_expenses,
+            'net': total_revenue - total_expenses,
+            'revenue_count': current_period.transactions.filter_by(transaction_type='revenue').count(),
+            'expense_count': current_period.transactions.filter_by(transaction_type='expense').count(),
+            'transaction_count': current_period.get_transaction_count(),
+        }
+    
+    return render_template(
+        'member/profile.html',
+        member=current_user.member,
+        current_period=current_period,
+        period_totals=period_totals,
+    )
 
 @member_bp.route('/edit-profile', methods=['GET', 'POST'])
 @login_required

@@ -147,6 +147,37 @@
         font-size: 1.5rem;
         margin-right: 0.5rem;
     }
+    
+    .finance-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .finance-card {
+        background: rgba(0, 255, 255, 0.06);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 1rem 1.25rem;
+    }
+    
+    .finance-card h6 {
+        font-size: 0.95rem;
+        color: var(--text-secondary);
+        margin-bottom: 0.35rem;
+    }
+    
+    .finance-card .amount {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+    
+    .finance-meta {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+    }
 </style>
 {% endblock %}
 
@@ -177,6 +208,47 @@
             
             {% if member.bio %}
                 <p class="lead text-secondary mt-3">{{ member.bio }}</p>
+            {% endif %}
+        </div>
+
+        <!-- Financial Period Summary -->
+        <div class="profile-content" data-aos="fade-up">
+            <div class="d-flex justify-content-between align-items-center flex-wrap">
+                <div>
+                    <h4 class="mb-1"><i class="fas fa-coins text-primary"></i> Current Financial Period</h4>
+                    {% if current_period %}
+                        <div class="finance-meta">
+                            {{ current_period.name }} ({{ current_period.start_date.strftime('%b %d, %Y') }} - {{ current_period.end_date.strftime('%b %d, %Y') }})
+                        </div>
+                    {% endif %}
+                </div>
+                {% if not current_period %}
+                    <span class="badge bg-secondary">No open period</span>
+                {% endif %}
+            </div>
+            
+            {% if current_period and period_totals %}
+            <div class="finance-grid mt-3">
+                <div class="finance-card">
+                    <h6>Total Revenue Collected</h6>
+                    <div class="amount">Tsh {{ "{:,.0f}".format(period_totals.revenue) }}</div>
+                    <div class="finance-meta">{{ period_totals.revenue_count }} revenue record{{ '' if period_totals.revenue_count == 1 else 's' }}</div>
+                </div>
+                <div class="finance-card">
+                    <h6>Total Expenses</h6>
+                    <div class="amount text-danger">Tsh {{ "{:,.0f}".format(period_totals.expenses) }}</div>
+                    <div class="finance-meta">{{ period_totals.expense_count }} expense record{{ '' if period_totals.expense_count == 1 else 's' }}</div>
+                </div>
+                <div class="finance-card">
+                    <h6>Net Balance</h6>
+                    <div class="amount {{ 'text-success' if period_totals.net >= 0 else 'text-danger' }}">
+                        Tsh {{ "{:,.0f}".format(period_totals.net) }}
+                    </div>
+                    <div class="finance-meta">{{ period_totals.transaction_count }} total transactions</div>
+                </div>
+            </div>
+            {% else %}
+            <p class="text-secondary mb-0 mt-3">Financial data is unavailable right now. Please check back later.</p>
             {% endif %}
         </div>
 
