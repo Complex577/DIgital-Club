@@ -556,14 +556,15 @@
         
         <!-- Advanced Controls -->
         <div class="members-controls" data-aos="fade-up" data-aos-delay="100">
-            <!-- Search Bar -->
-            <div class="search-bar">
-                <i class="fas fa-search"></i>
-                <input type="text" id="member-search" placeholder="Search members by name, course, or interests..." autocomplete="off">
-            </div>
-            
             <!-- Filters -->
             <form method="GET" id="filters-form">
+                <!-- Search Bar -->
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" name="search" id="member-search" placeholder="Search members by name, course, or interests..." 
+                           value="{{ search_query if search_query else '' }}" autocomplete="off">
+                </div>
+                
                 <div class="filters-row">
                     <select name="status" class="form-control">
                         <option value="">All Members</option>
@@ -590,7 +591,7 @@
                     </button>
                 </div>
                 
-                {% if request.args.get('course') or request.args.get('year') or request.args.get('status') %}
+                {% if request.args.get('course') or request.args.get('year') or request.args.get('status') or search_query %}
                 <div style="text-align: center; margin-top: 1rem;">
                     <a href="{{ url_for('main.members') }}" class="btn-secondary" style="display: inline-flex; align-items: center; gap: 0.5rem;">
                         <i class="fas fa-times"></i> Clear Filters
@@ -718,7 +719,7 @@
         <div class="pagination-wrapper">
             <div class="pagination">
                 {% if members.has_prev %}
-                <a href="{{ url_for('main.members', page=members.prev_num, status=request.args.get('status'), course=request.args.get('course'), year=request.args.get('year')) }}" 
+                <a href="{{ url_for('main.members', page=members.prev_num, status=request.args.get('status'), course=request.args.get('course'), year=request.args.get('year'), search=search_query if search_query else '') }}" 
                    class="btn-secondary" aria-label="Previous page">
                     <i class="fas fa-chevron-left"></i>
                 </a>
@@ -727,7 +728,7 @@
                 {% for page_num in members.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
                     {% if page_num %}
                         {% if page_num != members.page %}
-                        <a href="{{ url_for('main.members', page=page_num, status=request.args.get('status'), course=request.args.get('course'), year=request.args.get('year')) }}">
+                        <a href="{{ url_for('main.members', page=page_num, status=request.args.get('status'), course=request.args.get('course'), year=request.args.get('year'), search=search_query if search_query else '') }}">
                             {{ page_num }}
                         </a>
                         {% else %}
@@ -739,7 +740,7 @@
                 {% endfor %}
                 
                 {% if members.has_next %}
-                <a href="{{ url_for('main.members', page=members.next_num, status=request.args.get('status'), course=request.args.get('course'), year=request.args.get('year')) }}" 
+                <a href="{{ url_for('main.members', page=members.next_num, status=request.args.get('status'), course=request.args.get('course'), year=request.args.get('year'), search=search_query if search_query else '') }}" 
                    class="btn-secondary" aria-label="Next page">
                     <i class="fas fa-chevron-right"></i>
                 </a>
@@ -767,6 +768,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const viewButtons = document.querySelectorAll('.view-btn');
     const sortSelect = document.getElementById('sort-select');
     const memberCards = document.querySelectorAll('.member-card');
+    const filtersForm = document.getElementById('filters-form');
+    let searchTimeout = null;
     
     // View Toggle
     viewButtons.forEach(btn => {
@@ -788,31 +791,62 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Search Functionality
-    if (searchInput) {
-        searchInput.addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase().trim();
+    // Search Functionality with Debounce
+    if (searchInput && filtersForm) {
+        let isSubmitting = false;
+        
+        // Debounced search submission
+        function submitSearch() {
+            if (isSubmitting) return;
+            isSubmitting = true;
             
-            memberCards.forEach(card => {
-                const name = card.dataset.name || '';
-                const course = card.dataset.course || '';
-                const year = card.dataset.year || '';
-                const interests = card.dataset.interests || '';
-                
-                const matches = name.includes(searchTerm) || 
-                              course.includes(searchTerm) || 
-                              year.includes(searchTerm) ||
-                              interests.includes(searchTerm);
-                
-                if (matches || searchTerm === '') {
-                    card.style.display = '';
-                    card.style.opacity = '1';
-                } else {
-                    card.style.display = 'none';
-                    card.style.opacity = '0';
-                }
-            });
+            // Reset to page 1 when searching by removing page from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            urlParams.delete('page');
+            
+            // Get current form values
+            const formData = new FormData(filtersForm);
+            const searchValue = formData.get('search') || '';
+            const statusValue = formData.get('status') || '';
+            const courseValue = formData.get('course') || '';
+            const yearValue = formData.get('year') || '';
+            
+            // Build new URL with form values
+            const newParams = new URLSearchParams();
+            if (searchValue) newParams.set('search', searchValue);
+            if (statusValue) newParams.set('status', statusValue);
+            if (courseValue) newParams.set('course', courseValue);
+            if (yearValue) newParams.set('year', yearValue);
+            
+            // Navigate to new URL (this will trigger a page reload with search results)
+            const newUrl = window.location.pathname + (newParams.toString() ? '?' + newParams.toString() : '');
+            window.location.href = newUrl;
+        }
+        
+        // Handle input with debounce (500ms delay)
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(submitSearch, 500);
         });
+        
+        // Handle Enter key (submit immediately)
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                clearTimeout(searchTimeout);
+                submitSearch();
+            }
+        });
+        
+        // Handle search icon click
+        const searchIcon = searchInput.parentElement.querySelector('i.fa-search');
+        if (searchIcon) {
+            searchIcon.style.cursor = 'pointer';
+            searchIcon.addEventListener('click', function() {
+                clearTimeout(searchTimeout);
+                submitSearch();
+            });
+        }
     }
     
     // Sort Functionality
@@ -861,10 +895,17 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Smooth scroll to top on filter change
-    const filtersForm = document.getElementById('filters-form');
+    // Smooth scroll to top on filter change (for manual form submission)
     if (filtersForm) {
-        filtersForm.addEventListener('submit', function() {
+        filtersForm.addEventListener('submit', function(e) {
+            // Clear any pending search timeout
+            if (searchTimeout) {
+                clearTimeout(searchTimeout);
+            }
+            
+            // The form will submit normally, and since there's no 'page' input,
+            // the backend will default to page 1, which is what we want
+            
             setTimeout(() => {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }, 100);

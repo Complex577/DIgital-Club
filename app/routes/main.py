@@ -101,6 +101,7 @@ def members():
         course_filter = request.args.get('course', '')
         year_filter = request.args.get('year', '')
         status_filter = request.args.get('status', '')
+        search_query = request.args.get('search', '').strip()
         
         # Query all approved members
         query = Member.query.join(Member.user).filter(Member.user.has(is_approved=True))
@@ -113,6 +114,19 @@ def members():
             query = query.filter(Member.course.ilike(f'%{course_filter}%'))
         if year_filter:
             query = query.filter(Member.year.ilike(f'%{year_filter}%'))
+        
+        # Apply search filter if specified
+        if search_query:
+            query = query.filter(
+                db.or_(
+                    Member.full_name.ilike(f'%{search_query}%'),
+                    Member.title.ilike(f'%{search_query}%'),
+                    Member.course.ilike(f'%{search_query}%'),
+                    Member.year.ilike(f'%{search_query}%'),
+                    Member.areas_of_interest.ilike(f'%{search_query}%'),
+                    Member.bio.ilike(f'%{search_query}%')
+                )
+            )
         
         members = query.paginate(page=page, per_page=12, error_out=False)
         
@@ -128,7 +142,8 @@ def members():
                              members=members,
                              courses=[c[0] for c in courses if c[0]],
                              years=[y[0] for y in years if y[0]],
-                             current_status=status_filter)
+                             current_status=status_filter,
+                             search_query=search_query)
     except Exception as e:
         # Return empty results if database is not ready
         from flask import make_response
@@ -136,7 +151,8 @@ def members():
                                            members=None,
                                            courses=[],
                                            years=[],
-                                           current_status=''), 200)
+                                           current_status='',
+                                           search_query=''), 200)
 
 @main_bp.route('/students')
 def students():
