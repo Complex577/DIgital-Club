@@ -2,137 +2,697 @@
 
 {% block title %}Members - Digital Club{% endblock %}
 
+{% block extra_head %}
+<style>
+    .members-header {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+    
+    .members-header h1 {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        color: var(--primary-color);
+        background: var(--gradient-primary);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    .members-stats {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        flex-wrap: wrap;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-item {
+        text-align: center;
+        padding: 1rem 2rem;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 15px;
+        border: 1px solid var(--border-color);
+    }
+    
+    .stat-item .stat-number {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--primary-color);
+        display: block;
+    }
+    
+    .stat-item .stat-label {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        margin-top: 0.5rem;
+    }
+    
+    .members-controls {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        backdrop-filter: blur(10px);
+    }
+    
+    .search-bar {
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
+    
+    .search-bar input {
+        width: 100%;
+        padding: 1rem 1rem 1rem 3.5rem;
+        background: rgba(255, 255, 255, 0.05);
+        border: 2px solid var(--border-color);
+        border-radius: 15px;
+        color: var(--text-primary);
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .search-bar input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+    }
+    
+    .search-bar i {
+        position: absolute;
+        left: 1.2rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+    }
+    
+    .filters-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .view-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .view-toggle {
+        display: flex;
+        gap: 0.5rem;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 0.5rem;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+    }
+    
+    .view-toggle button {
+        background: transparent;
+        border: none;
+        color: var(--text-secondary);
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .view-toggle button.active {
+        background: var(--gradient-primary);
+        color: var(--bg-primary);
+    }
+    
+    .sort-control {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .sort-control select {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        padding: 0.6rem 1rem;
+        color: var(--text-primary);
+        cursor: pointer;
+    }
+    
+    .members-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 2rem;
+        transition: all 0.3s ease;
+    }
+    
+    .members-grid.list-view {
+        grid-template-columns: 1fr;
+    }
+    
+    .member-card {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 20px;
+        padding: 2rem;
+        border: 1px solid var(--border-color);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
+    }
+    
+    .member-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--gradient-primary);
+        transform: scaleX(0);
+        transition: transform 0.4s ease;
+    }
+    
+    .member-card:hover {
+        transform: translateY(-10px);
+        border-color: var(--primary-color);
+        box-shadow: 0 20px 60px rgba(0, 255, 255, 0.3);
+    }
+    
+    .member-card:hover::before {
+        transform: scaleX(1);
+    }
+    
+    .member-card.list-view {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+        padding: 1.5rem;
+    }
+    
+    .member-card.list-view .member-avatar {
+        flex-shrink: 0;
+    }
+    
+    .member-card.list-view .member-info {
+        flex: 1;
+    }
+    
+    .member-card.list-view .member-actions {
+        flex-shrink: 0;
+    }
+    
+    .member-avatar {
+        text-align: center;
+        margin-bottom: 1.5rem;
+    }
+    
+    .member-card.list-view .member-avatar {
+        margin-bottom: 0;
+    }
+    
+    .member-avatar img {
+        width: 140px;
+        height: 140px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid var(--primary-color);
+        box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+        transition: all 0.3s ease;
+    }
+    
+    .member-card:hover .member-avatar img {
+        transform: scale(1.05);
+        box-shadow: 0 0 40px rgba(0, 255, 255, 0.5);
+    }
+    
+    .member-avatar-placeholder {
+        width: 140px;
+        height: 140px;
+        border-radius: 50%;
+        background: var(--gradient-primary);
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+    }
+    
+    .member-avatar-placeholder i {
+        font-size: 3rem;
+        color: var(--bg-primary);
+    }
+    
+    .member-info h3 {
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+        font-size: 1.5rem;
+    }
+    
+    .member-title {
+        color: var(--primary-color);
+        font-weight: 600;
+        margin-bottom: 1rem;
+        font-size: 1rem;
+    }
+    
+    .member-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .badge {
+        padding: 0.4rem 1rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        display: inline-block;
+    }
+    
+    .badge-course {
+        background: rgba(0, 255, 255, 0.15);
+        color: var(--primary-color);
+        border: 1px solid rgba(0, 255, 255, 0.3);
+    }
+    
+    .badge-year {
+        background: rgba(255, 0, 255, 0.15);
+        color: var(--secondary-color);
+        border: 1px solid rgba(255, 0, 255, 0.3);
+    }
+    
+    .member-interests {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        margin-bottom: 1rem;
+    }
+    
+    .interest-tag {
+        background: rgba(255, 255, 0, 0.1);
+        color: var(--accent-color);
+        padding: 0.3rem 0.7rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        border: 1px solid rgba(255, 255, 0, 0.2);
+    }
+    
+    .member-achievements {
+        background: linear-gradient(135deg, rgba(0, 255, 255, 0.1) 0%, rgba(255, 0, 255, 0.1) 100%);
+        border: 1px solid rgba(0, 255, 255, 0.3);
+        border-radius: 15px;
+        padding: 1.2rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .points-display {
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+    
+    .points-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #FFD700;
+        text-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+        margin-bottom: 0.3rem;
+    }
+    
+    .points-label {
+        font-size: 0.9rem;
+        color: white;
+        font-weight: 600;
+        letter-spacing: 2px;
+    }
+    
+    .trophies-section {
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding-top: 1rem;
+    }
+    
+    .trophies-title {
+        text-align: center;
+        color: white;
+        font-weight: 600;
+        font-size: 0.85rem;
+        margin-bottom: 0.8rem;
+        letter-spacing: 1px;
+    }
+    
+    .trophies-grid {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .trophy-item {
+        text-align: center;
+        min-width: 80px;
+    }
+    
+    .trophy-icon {
+        font-size: 2.5rem;
+        margin-bottom: 0.4rem;
+        filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.7));
+    }
+    
+    .trophy-name {
+        color: white;
+        font-size: 0.7rem;
+        font-weight: 600;
+        line-height: 1.2;
+    }
+    
+    .member-actions {
+        text-align: center;
+    }
+    
+    .view-profile-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.8rem 1.8rem;
+        background: var(--gradient-primary);
+        color: var(--bg-primary);
+        border-radius: 25px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: none;
+        cursor: pointer;
+    }
+    
+    .view-profile-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(0, 255, 255, 0.4);
+    }
+    
+    .pagination-wrapper {
+        display: flex;
+        justify-content: center;
+        margin-top: 3rem;
+        flex-wrap: wrap;
+    }
+    
+    .pagination {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    
+    .pagination a,
+    .pagination span {
+        padding: 0.7rem 1.2rem;
+        border-radius: 12px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        min-width: 44px;
+        text-align: center;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .pagination a {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+    }
+    
+    .pagination a:hover {
+        background: var(--primary-color);
+        color: var(--bg-primary);
+        transform: translateY(-2px);
+    }
+    
+    .pagination span.active {
+        background: var(--gradient-primary);
+        color: var(--bg-primary);
+        border: none;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+    }
+    
+    .empty-state i {
+        font-size: 5rem;
+        color: var(--text-muted);
+        margin-bottom: 1.5rem;
+        opacity: 0.5;
+    }
+    
+    .empty-state h3 {
+        color: var(--text-secondary);
+        margin-bottom: 1rem;
+        font-size: 1.8rem;
+    }
+    
+    .empty-state p {
+        color: var(--text-muted);
+        font-size: 1.1rem;
+    }
+    
+    @media (max-width: 768px) {
+        .members-header h1 {
+            font-size: 2rem;
+        }
+        
+        .members-stats {
+            gap: 1rem;
+        }
+        
+        .stat-item {
+            padding: 0.8rem 1.5rem;
+        }
+        
+        .stat-item .stat-number {
+            font-size: 1.5rem;
+        }
+        
+        .filters-row {
+            grid-template-columns: 1fr;
+        }
+        
+        .view-controls {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .view-toggle {
+            justify-content: center;
+        }
+        
+        .sort-control {
+            justify-content: center;
+        }
+        
+        .members-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .member-card.list-view {
+            flex-direction: column;
+            text-align: center;
+        }
+        
+        .member-avatar img,
+        .member-avatar-placeholder {
+            width: 100px;
+            height: 100px;
+        }
+        
+        .member-avatar-placeholder i {
+            font-size: 2rem;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .members-controls {
+            padding: 1rem;
+        }
+        
+        .member-card {
+            padding: 1.5rem;
+        }
+        
+        .points-number {
+            font-size: 2rem;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <section style="padding: 5rem 0;">
     <div class="container">
-        <h1 style="text-align: center; font-size: 3rem; margin-bottom: 3rem; color: var(--primary-color);" data-aos="fade-up">
-            Our Members
-        </h1>
-        
-        <!-- Filters -->
-        <div style="margin-bottom: 3rem;" data-aos="fade-up">
-            <form method="GET">
-                <div class="row" style="row-gap: 1rem; column-gap: 0; justify-content: center;">
-                    <div class="col-3 md-col-6 sm-col-12">
-                        <select name="status" class="form-control" style="width: 100%;">
-                            <option value="">All Members</option>
-                            <option value="student" {% if request.args.get('status') == 'student' %}selected{% endif %}>Students</option>
-                            <option value="alumni" {% if request.args.get('status') == 'alumni' %}selected{% endif %}>Alumni</option>
-                        </select>
-                    </div>
-                    <div class="col-3 md-col-6 sm-col-12">
-                        <select name="course" class="form-control" style="width: 100%;">
-                            <option value="">All Courses</option>
-                            {% for course in courses %}
-                            <option value="{{ course }}" {% if request.args.get('course') == course %}selected{% endif %}>{{ course }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-3 md-col-6 sm-col-12">
-                        <select name="year" class="form-control" style="width: 100%;">
-                            <option value="">All Years</option>
-                            {% for year in years %}
-                            <option value="{{ year }}" {% if request.args.get('year') == year %}selected{% endif %}>{{ year }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-3 md-col-6 sm-col-12" style="display: flex; gap: 0.75rem; align-items: center; justify-content: center;">
-                        <button type="submit" class="btn-primary" style="width: 100%; max-width: 200px; justify-content: center;">
-                            <i class="fas fa-filter"></i> Filter
-                        </button>
-                        {% if request.args.get('course') or request.args.get('year') or request.args.get('status') %}
-                        <a href="{{ url_for('main.members') }}" class="btn-secondary" style="width: 100%; max-width: 160px; justify-content: center; text-align: center;">
-                            <i class="fas fa-times"></i> Clear
-                        </a>
-                        {% endif %}
-                    </div>
+        <div class="members-header" data-aos="fade-up">
+            <h1>Our Members</h1>
+            {% if members and members.total %}
+            <div class="members-stats">
+                <div class="stat-item">
+                    <span class="stat-number">{{ members.total }}</span>
+                    <span class="stat-label">Total Members</span>
                 </div>
-            </form>
+                <div class="stat-item">
+                    <span class="stat-number">{{ members.page }}</span>
+                    <span class="stat-label">Current Page</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">{{ members.pages }}</span>
+                    <span class="stat-label">Total Pages</span>
+                </div>
+            </div>
+            {% endif %}
         </div>
         
+        <!-- Advanced Controls -->
+        <div class="members-controls" data-aos="fade-up" data-aos-delay="100">
+            <!-- Search Bar -->
+            <div class="search-bar">
+                <i class="fas fa-search"></i>
+                <input type="text" id="member-search" placeholder="Search members by name, course, or interests..." autocomplete="off">
+            </div>
+            
+            <!-- Filters -->
+            <form method="GET" id="filters-form">
+                <div class="filters-row">
+                    <select name="status" class="form-control">
+                        <option value="">All Members</option>
+                        <option value="student" {% if request.args.get('status') == 'student' %}selected{% endif %}>Students</option>
+                        <option value="alumni" {% if request.args.get('status') == 'alumni' %}selected{% endif %}>Alumni</option>
+                    </select>
+                    
+                    <select name="course" class="form-control">
+                        <option value="">All Courses</option>
+                        {% for course in courses %}
+                        <option value="{{ course }}" {% if request.args.get('course') == course %}selected{% endif %}>{{ course }}</option>
+                        {% endfor %}
+                    </select>
+                    
+                    <select name="year" class="form-control">
+                        <option value="">All Years</option>
+                        {% for year in years %}
+                        <option value="{{ year }}" {% if request.args.get('year') == year %}selected{% endif %}>{{ year }}</option>
+                        {% endfor %}
+                    </select>
+                    
+                    <button type="submit" class="btn-primary" style="width: 100%;">
+                        <i class="fas fa-filter"></i> Apply Filters
+                    </button>
+                </div>
+                
+                {% if request.args.get('course') or request.args.get('year') or request.args.get('status') %}
+                <div style="text-align: center; margin-top: 1rem;">
+                    <a href="{{ url_for('main.members') }}" class="btn-secondary" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-times"></i> Clear Filters
+                    </a>
+                </div>
+                {% endif %}
+            </form>
+            
+            <!-- View Controls -->
+            <div class="view-controls">
+                <div class="view-toggle">
+                    <button type="button" class="view-btn active" data-view="grid" aria-label="Grid view">
+                        <i class="fas fa-th"></i>
+                    </button>
+                    <button type="button" class="view-btn" data-view="list" aria-label="List view">
+                        <i class="fas fa-list"></i>
+                    </button>
+                </div>
+                <div class="sort-control">
+                    <label for="sort-select" style="color: var(--text-secondary); margin-right: 0.5rem;">Sort:</label>
+                    <select id="sort-select" class="form-control">
+                        <option value="name">Name (A-Z)</option>
+                        <option value="points">Points (High to Low)</option>
+                        <option value="trophies">Most Trophies</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Members Grid -->
         {% if members and members.items %}
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem;">
+        <div class="members-grid" id="members-grid">
             {% for member in members.items %}
-            <div class="card" data-aos="fade-up" data-aos-delay="{{ loop.index * 50 }}">
-                <div style="text-align: center;">
+            <div class="member-card" data-aos="fade-up" data-aos-delay="{{ loop.index * 50 }}" 
+                 data-name="{{ member.full_name|lower }}"
+                 data-course="{{ member.course|lower if member.course else '' }}"
+                 data-year="{{ member.year|lower if member.year else '' }}"
+                 data-points="{{ member.get_total_points() }}"
+                 data-trophies="{{ member.trophies|length if member.trophies else 0 }}"
+                 data-interests="{{ member.get_areas_list()|join(',')|lower if member.areas_of_interest else '' }}">
+                <div class="member-avatar">
                     {% if member.profile_image %}
                     <img src="{{ url_for('static', filename='uploads/profiles/' + member.profile_image) }}" 
                          alt="{{ member.full_name }}" 
-                         style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; margin-bottom: 1rem; border: 2px solid var(--primary-color);">
+                         loading="lazy">
                     {% else %}
-                    <div style="width: 120px; height: 120px; border-radius: 50%; background: linear-gradient(45deg, var(--primary-color), var(--secondary-color)); margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center;">
-                        <i class="fas fa-user" style="font-size: 2.5rem; color: var(--bg-primary);"></i>
+                    <div class="member-avatar-placeholder">
+                        <i class="fas fa-user"></i>
                     </div>
                     {% endif %}
-                    
-                    <h3 style="color: var(--text-primary); margin-bottom: 0.5rem;">{{ member.full_name }}</h3>
+                </div>
+                
+                <div class="member-info">
+                    <h3>{{ member.full_name }}</h3>
                     
                     {% if member.title %}
-                    <p style="color: var(--primary-color); font-weight: 600; margin-bottom: 0.5rem;">{{ member.title }}</p>
+                    <p class="member-title">{{ member.title }}</p>
                     {% endif %}
                     
-                    <div style="margin-bottom: 1rem;">
+                    <div class="member-badges">
                         {% if member.course %}
-                        <span style="background: rgba(0, 255, 255, 0.1); color: var(--primary-color); padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.8rem; margin-right: 0.5rem;">
-                            {{ member.course }}
-                        </span>
+                        <span class="badge badge-course">{{ member.course }}</span>
                         {% endif %}
                         {% if member.year %}
-                        <span style="background: rgba(255, 0, 255, 0.1); color: var(--secondary-color); padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.8rem;">
-                            {{ member.year }}
-                        </span>
+                        <span class="badge badge-year">{{ member.year }}</span>
                         {% endif %}
                     </div>
                     
                     {% if member.areas_of_interest %}
-                    <div style="margin-bottom: 1rem;">
-                        {% for area in member.get_areas_list()[:3] %}
-                        <span style="background: rgba(255, 255, 0, 0.1); color: var(--accent-color); padding: 0.2rem 0.6rem; border-radius: 10px; font-size: 0.7rem; margin-right: 0.3rem; margin-bottom: 0.3rem; display: inline-block;">
-                            {{ area }}
-                        </span>
+                    <div class="member-interests">
+                        {% for area in member.get_areas_list()[:4] %}
+                        <span class="interest-tag">{{ area }}</span>
                         {% endfor %}
-                        {% if member.get_areas_list()|length > 3 %}
-                        <span style="background: rgba(255, 255, 0, 0.1); color: var(--accent-color); padding: 0.2rem 0.6rem; border-radius: 10px; font-size: 0.7rem; margin-right: 0.3rem; margin-bottom: 0.3rem; display: inline-block;">
-                            +{{ member.get_areas_list()|length - 3 }} more
-                        </span>
+                        {% if member.get_areas_list()|length > 4 %}
+                        <span class="interest-tag">+{{ member.get_areas_list()|length - 4 }} more</span>
                         {% endif %}
                     </div>
                     {% endif %}
                     
-                    <!-- Always show achievements section if member has trophies or points -->
                     {% if member.trophies or member.get_total_points() > 0 %}
-                    <div style="background: linear-gradient(135deg, rgba(0, 255, 255, 0.1) 0%, rgba(255, 0, 255, 0.1) 100%); border: 1px solid rgba(0, 255, 255, 0.3); border-radius: 12px; padding: 1rem; margin-bottom: 1rem;">
-                        <!-- Points Display -->
+                    <div class="member-achievements">
                         {% if member.get_total_points() > 0 %}
-                        <div style="text-align: center; margin-bottom: 0.8rem;">
-                            <div style="font-size: 2rem; font-weight: 700; color: #FFD700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); margin-bottom: 0.2rem;">
-                                {{ member.get_total_points() }}
-                            </div>
-                            <div style="font-size: 0.9rem; color: white; font-weight: 600; letter-spacing: 1px;">
-                                POINTS
-                            </div>
+                        <div class="points-display">
+                            <div class="points-number">{{ member.get_total_points() }}</div>
+                            <div class="points-label">POINTS</div>
                         </div>
                         {% endif %}
                         
-                        <!-- Trophies Display - Always show if member has trophies -->
                         {% if member.trophies %}
-                        <div style="{% if member.get_total_points() > 0 %}border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 0.8rem;{% endif %}">
-                            <div style="text-align: center; color: white; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.6rem; letter-spacing: 1px;">
-                                🏆 TROPHIES EARNED
-                            </div>
-                            <div style="display: flex; gap: 0.8rem; justify-content: center; flex-wrap: wrap;">
+                        <div class="trophies-section">
+                            <div class="trophies-title">🏆 TROPHIES EARNED</div>
+                            <div class="trophies-grid">
                                 {% for trophy in member.trophies %}
-                                <div style="text-align: center; min-width: 70px;">
-                                    <div style="font-size: 2rem; margin-bottom: 0.3rem; filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.6));">
+                                <div class="trophy-item">
+                                    <div class="trophy-icon">
                                         {% if trophy.icon.startswith('fa') %}
                                         <i class="{{ trophy.icon }}"></i>
                                         {% else %}
                                         {{ trophy.icon }}
                                         {% endif %}
                                     </div>
-                                    <div style="color: white; font-size: 0.7rem; font-weight: 600; line-height: 1.2;">
-                                        {{ trophy.name }}
-                                    </div>
+                                    <div class="trophy-name">{{ trophy.name }}</div>
                                 </div>
                                 {% endfor %}
                             </div>
@@ -140,16 +700,14 @@
                         {% endif %}
                     </div>
                     {% endif %}
-                    
-                    <!-- View More Button -->
-                    <div style="margin-top: 1rem;">
-                        <a href="{{ url_for('main.member_public_profile', member_id=member.id) }}" 
-                           class="btn-primary" 
-                           style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.8rem 1.5rem; border-radius: 25px; text-decoration: none; transition: all 0.3s ease;">
-                            <i class="fas fa-eye"></i>
-                            View More
-                        </a>
-                    </div>
+                </div>
+                
+                <div class="member-actions">
+                    <a href="{{ url_for('main.member_public_profile', member_id=member.id) }}" 
+                       class="view-profile-btn">
+                        <i class="fas fa-eye"></i>
+                        View Profile
+                    </a>
                 </div>
             </div>
             {% endfor %}
@@ -157,31 +715,32 @@
         
         <!-- Pagination -->
         {% if members.pages > 1 %}
-        <div style="display: flex; justify-content: center; margin-top: 3rem;">
-            <div style="display: flex; gap: 0.5rem; align-items: center;">
+        <div class="pagination-wrapper">
+            <div class="pagination">
                 {% if members.has_prev %}
-                <a href="{{ url_for('main.members', page=members.prev_num, course=request.args.get('course'), year=request.args.get('year')) }}" 
-                   class="btn-secondary">
+                <a href="{{ url_for('main.members', page=members.prev_num, status=request.args.get('status'), course=request.args.get('course'), year=request.args.get('year')) }}" 
+                   class="btn-secondary" aria-label="Previous page">
                     <i class="fas fa-chevron-left"></i>
                 </a>
                 {% endif %}
                 
-                {% for page_num in members.iter_pages() %}
+                {% for page_num in members.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
                     {% if page_num %}
                         {% if page_num != members.page %}
-                        <a href="{{ url_for('main.members', page=page_num, course=request.args.get('course'), year=request.args.get('year')) }}" 
-                           class="btn-secondary">{{ page_num }}</a>
+                        <a href="{{ url_for('main.members', page=page_num, status=request.args.get('status'), course=request.args.get('course'), year=request.args.get('year')) }}">
+                            {{ page_num }}
+                        </a>
                         {% else %}
-                        <span class="btn-primary">{{ page_num }}</span>
+                        <span class="active">{{ page_num }}</span>
                         {% endif %}
                     {% else %}
-                    <span style="color: var(--text-muted);">...</span>
+                    <span style="color: var(--text-muted); padding: 0.7rem 0.5rem;">...</span>
                     {% endif %}
                 {% endfor %}
                 
                 {% if members.has_next %}
-                <a href="{{ url_for('main.members', page=members.next_num, course=request.args.get('course'), year=request.args.get('year')) }}" 
-                   class="btn-secondary">
+                <a href="{{ url_for('main.members', page=members.next_num, status=request.args.get('status'), course=request.args.get('course'), year=request.args.get('year')) }}" 
+                   class="btn-secondary" aria-label="Next page">
                     <i class="fas fa-chevron-right"></i>
                 </a>
                 {% endif %}
@@ -190,12 +749,127 @@
         {% endif %}
         
         {% else %}
-        <div style="text-align: center; padding: 3rem;">
-            <i class="fas fa-users" style="font-size: 4rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
-            <h3 style="color: var(--text-secondary); margin-bottom: 1rem;">No Members Found</h3>
-            <p style="color: var(--text-muted);">Try adjusting your filters or check back later.</p>
+        <div class="empty-state">
+            <i class="fas fa-users"></i>
+            <h3>No Members Found</h3>
+            <p>Try adjusting your filters or check back later.</p>
         </div>
         {% endif %}
     </div>
 </section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const membersGrid = document.getElementById('members-grid');
+    const searchInput = document.getElementById('member-search');
+    const viewButtons = document.querySelectorAll('.view-btn');
+    const sortSelect = document.getElementById('sort-select');
+    const memberCards = document.querySelectorAll('.member-card');
+    
+    // View Toggle
+    viewButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const view = this.dataset.view;
+            viewButtons.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            if (view === 'list') {
+                membersGrid.classList.add('list-view');
+                memberCards.forEach(card => card.classList.add('list-view'));
+            } else {
+                membersGrid.classList.remove('list-view');
+                memberCards.forEach(card => card.classList.remove('list-view'));
+            }
+            
+            // Re-initialize AOS for new layout
+            AOS.refresh();
+        });
+    });
+    
+    // Search Functionality
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase().trim();
+            
+            memberCards.forEach(card => {
+                const name = card.dataset.name || '';
+                const course = card.dataset.course || '';
+                const year = card.dataset.year || '';
+                const interests = card.dataset.interests || '';
+                
+                const matches = name.includes(searchTerm) || 
+                              course.includes(searchTerm) || 
+                              year.includes(searchTerm) ||
+                              interests.includes(searchTerm);
+                
+                if (matches || searchTerm === '') {
+                    card.style.display = '';
+                    card.style.opacity = '1';
+                } else {
+                    card.style.display = 'none';
+                    card.style.opacity = '0';
+                }
+            });
+        });
+    }
+    
+    // Sort Functionality
+    if (sortSelect) {
+        sortSelect.addEventListener('change', function() {
+            const sortBy = this.value;
+            const cardsArray = Array.from(memberCards);
+            
+            cardsArray.sort((a, b) => {
+                if (sortBy === 'name') {
+                    const nameA = a.dataset.name || '';
+                    const nameB = b.dataset.name || '';
+                    return nameA.localeCompare(nameB);
+                } else if (sortBy === 'points') {
+                    const pointsA = parseInt(a.dataset.points) || 0;
+                    const pointsB = parseInt(b.dataset.points) || 0;
+                    return pointsB - pointsA;
+                } else if (sortBy === 'trophies') {
+                    const trophiesA = parseInt(a.dataset.trophies) || 0;
+                    const trophiesB = parseInt(b.dataset.trophies) || 0;
+                    return trophiesB - trophiesA;
+                }
+                return 0;
+            });
+            
+            // Re-append sorted cards
+            cardsArray.forEach(card => {
+                membersGrid.appendChild(card);
+            });
+            
+            // Refresh AOS
+            AOS.refresh();
+        });
+    }
+    
+    // Card click to profile
+    memberCards.forEach(card => {
+        card.addEventListener('click', function(e) {
+            // Don't navigate if clicking on the view profile button
+            if (!e.target.closest('.view-profile-btn')) {
+                const profileLink = this.querySelector('.view-profile-btn');
+                if (profileLink) {
+                    window.location.href = profileLink.href;
+                }
+            }
+        });
+    });
+    
+    // Smooth scroll to top on filter change
+    const filtersForm = document.getElementById('filters-form');
+    if (filtersForm) {
+        filtersForm.addEventListener('submit', function() {
+            setTimeout(() => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }, 100);
+        });
+    }
+});
+</script>
 {% endblock %}
