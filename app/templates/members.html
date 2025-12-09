@@ -60,10 +60,12 @@
     .search-bar {
         position: relative;
         margin-bottom: 1.5rem;
+        display: flex;
+        gap: 0.75rem;
     }
     
     .search-bar input {
-        width: 100%;
+        flex: 1;
         padding: 1rem 1rem 1rem 3.5rem;
         background: rgba(255, 255, 255, 0.05);
         border: 2px solid var(--border-color);
@@ -85,6 +87,44 @@
         top: 50%;
         transform: translateY(-50%);
         color: var(--text-muted);
+        pointer-events: none;
+    }
+    
+    .search-btn {
+        padding: 1rem 2rem;
+        background: var(--gradient-primary);
+        border: none;
+        border-radius: 15px;
+        color: var(--bg-primary);
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        white-space: nowrap;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .search-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(0, 255, 255, 0.4);
+        filter: brightness(1.1);
+    }
+    
+    .search-btn:active {
+        transform: translateY(0);
+    }
+    
+    @media (max-width: 768px) {
+        .search-bar {
+            flex-direction: column;
+        }
+        
+        .search-btn {
+            width: 100%;
+            justify-content: center;
+        }
     }
     
     .filters-row {
@@ -560,9 +600,15 @@
             <form method="GET" id="filters-form">
                 <!-- Search Bar -->
                 <div class="search-bar">
-                    <i class="fas fa-search"></i>
-                    <input type="text" name="search" id="member-search" placeholder="Search members by name, course, or interests..." 
-                           value="{{ search_query if search_query else '' }}" autocomplete="off">
+                    <div style="position: relative; flex: 1;">
+                        <i class="fas fa-search"></i>
+                        <input type="text" name="search" id="member-search" placeholder="Search members by name, course, or interests..." 
+                               value="{{ search_query if search_query else '' }}" autocomplete="off">
+                    </div>
+                    <button type="submit" class="search-btn" id="search-submit-btn">
+                        <i class="fas fa-search"></i>
+                        <span>Search</span>
+                    </button>
                 </div>
                 
                 <div class="filters-row">
@@ -769,7 +815,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const sortSelect = document.getElementById('sort-select');
     const memberCards = document.querySelectorAll('.member-card');
     const filtersForm = document.getElementById('filters-form');
-    let searchTimeout = null;
     
     // View Toggle
     viewButtons.forEach(btn => {
@@ -791,62 +836,20 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Search Functionality with Debounce
+    // Search Functionality - Only submit on button click or Enter key
     if (searchInput && filtersForm) {
-        let isSubmitting = false;
-        
-        // Debounced search submission
-        function submitSearch() {
-            if (isSubmitting) return;
-            isSubmitting = true;
-            
-            // Reset to page 1 when searching by removing page from URL
-            const urlParams = new URLSearchParams(window.location.search);
-            urlParams.delete('page');
-            
-            // Get current form values
-            const formData = new FormData(filtersForm);
-            const searchValue = formData.get('search') || '';
-            const statusValue = formData.get('status') || '';
-            const courseValue = formData.get('course') || '';
-            const yearValue = formData.get('year') || '';
-            
-            // Build new URL with form values
-            const newParams = new URLSearchParams();
-            if (searchValue) newParams.set('search', searchValue);
-            if (statusValue) newParams.set('status', statusValue);
-            if (courseValue) newParams.set('course', courseValue);
-            if (yearValue) newParams.set('year', yearValue);
-            
-            // Navigate to new URL (this will trigger a page reload with search results)
-            const newUrl = window.location.pathname + (newParams.toString() ? '?' + newParams.toString() : '');
-            window.location.href = newUrl;
-        }
-        
-        // Handle input with debounce (500ms delay)
-        searchInput.addEventListener('input', function() {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(submitSearch, 500);
-        });
-        
-        // Handle Enter key (submit immediately)
+        // Handle Enter key to submit form
         searchInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                clearTimeout(searchTimeout);
-                submitSearch();
+                // Reset to page 1 when searching
+                const urlParams = new URLSearchParams(window.location.search);
+                urlParams.delete('page');
+                const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+                window.history.replaceState({}, '', newUrl);
+                filtersForm.submit();
             }
         });
-        
-        // Handle search icon click
-        const searchIcon = searchInput.parentElement.querySelector('i.fa-search');
-        if (searchIcon) {
-            searchIcon.style.cursor = 'pointer';
-            searchIcon.addEventListener('click', function() {
-                clearTimeout(searchTimeout);
-                submitSearch();
-            });
-        }
     }
     
     // Sort Functionality
@@ -898,10 +901,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Smooth scroll to top on filter change (for manual form submission)
     if (filtersForm) {
         filtersForm.addEventListener('submit', function(e) {
-            // Clear any pending search timeout
-            if (searchTimeout) {
-                clearTimeout(searchTimeout);
-            }
+            // Reset to page 1 when form is submitted (search or filters changed)
+            const urlParams = new URLSearchParams(window.location.search);
+            urlParams.delete('page');
+            const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+            window.history.replaceState({}, '', newUrl);
             
             // The form will submit normally, and since there's no 'page' input,
             // the backend will default to page 1, which is what we want
