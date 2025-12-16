@@ -832,12 +832,51 @@ def reject_rsvp(rsvp_id):
     flash(f'RSVP for {rsvp.full_name} has been rejected.', 'success')
     return redirect(url_for('admin.rsvps'))
 
+@admin_bp.route('/rsvps/disapprove/<int:rsvp_id>')
+@login_required
+@admin_required
+def disapprove_rsvp(rsvp_id):
+    rsvp = RSVP.query.get_or_404(rsvp_id)
+    
+    # Reset RSVP to pending status
+    rsvp.status = 'pending'
+    rsvp.approved_at = None
+    rsvp.approved_by = None
+    rsvp.acceptance_code = None
+    
+    db.session.commit()
+    
+    flash(f'RSVP for {rsvp.full_name} has been reset to pending status.', 'success')
+    return redirect(url_for('admin.rsvps'))
+
 @admin_bp.route('/rsvps/bulk-approve', methods=['POST'])
 @login_required
 @admin_required
 def bulk_approve_rsvps():
-    rsvp_ids = request.json.get('rsvp_ids', [])
+    data = request.get_json() or {}
+    rsvp_ids = data.get('rsvp_ids', [])
+    limit = data.get('limit', None)
     count = 0
+    
+    # If limit is provided and no rsvp_ids, get first N pending RSVPs
+    if limit and not rsvp_ids:
+        # Get current filter parameters from query string or JSON
+        event_id = request.args.get('event_id', type=int) or data.get('event_id')
+        status_filter = request.args.get('status', '') or data.get('status', '')
+        
+        query = RSVP.query.join(Event)
+        
+        if event_id:
+            query = query.filter(RSVP.event_id == event_id)
+        if status_filter:
+            query = query.filter(RSVP.status == status_filter)
+        else:
+            # Default to pending if no status filter
+            query = query.filter(RSVP.status == 'pending')
+        
+        # Get first N pending RSVPs
+        rsvps = query.filter(RSVP.status == 'pending').order_by(RSVP.submitted_at.asc()).limit(limit).all()
+        rsvp_ids = [rsvp.id for rsvp in rsvps]
     
     for rsvp_id in rsvp_ids:
         rsvp = RSVP.query.get(rsvp_id)
@@ -851,9 +890,10 @@ def bulk_approve_rsvps():
     db.session.commit()
     
     # Send notifications for all approved RSVPs
-    approved_rsvps = RSVP.query.filter(RSVP.id.in_(rsvp_ids), RSVP.status == 'approved').all()
-    for rsvp in approved_rsvps:
-        send_rsvp_notification(rsvp, 'approved')
+    if rsvp_ids:
+        approved_rsvps = RSVP.query.filter(RSVP.id.in_(rsvp_ids), RSVP.status == 'approved').all()
+        for rsvp in approved_rsvps:
+            send_rsvp_notification(rsvp, 'approved')
     
     return jsonify({'success': True, 'message': f'{count} RSVPs approved successfully'})
 
@@ -861,8 +901,30 @@ def bulk_approve_rsvps():
 @login_required
 @admin_required
 def bulk_reject_rsvps():
-    rsvp_ids = request.json.get('rsvp_ids', [])
+    data = request.get_json() or {}
+    rsvp_ids = data.get('rsvp_ids', [])
+    limit = data.get('limit', None)
     count = 0
+    
+    # If limit is provided and no rsvp_ids, get first N pending RSVPs
+    if limit and not rsvp_ids:
+        # Get current filter parameters from query string or JSON
+        event_id = request.args.get('event_id', type=int) or data.get('event_id')
+        status_filter = request.args.get('status', '') or data.get('status', '')
+        
+        query = RSVP.query.join(Event)
+        
+        if event_id:
+            query = query.filter(RSVP.event_id == event_id)
+        if status_filter:
+            query = query.filter(RSVP.status == status_filter)
+        else:
+            # Default to pending if no status filter
+            query = query.filter(RSVP.status == 'pending')
+        
+        # Get first N pending RSVPs
+        rsvps = query.filter(RSVP.status == 'pending').order_by(RSVP.submitted_at.asc()).limit(limit).all()
+        rsvp_ids = [rsvp.id for rsvp in rsvps]
     
     for rsvp_id in rsvp_ids:
         rsvp = RSVP.query.get(rsvp_id)
@@ -875,11 +937,54 @@ def bulk_reject_rsvps():
     db.session.commit()
     
     # Send notifications for all rejected RSVPs
-    rejected_rsvps = RSVP.query.filter(RSVP.id.in_(rsvp_ids), RSVP.status == 'rejected').all()
-    for rsvp in rejected_rsvps:
-        send_rsvp_notification(rsvp, 'rejected')
+    if rsvp_ids:
+        rejected_rsvps = RSVP.query.filter(RSVP.id.in_(rsvp_ids), RSVP.status == 'rejected').all()
+        for rsvp in rejected_rsvps:
+            send_rsvp_notification(rsvp, 'rejected')
     
     return jsonify({'success': True, 'message': f'{count} RSVPs rejected successfully'})
+
+@admin_bp.route('/rsvps/bulk-disapprove', methods=['POST'])
+@login_required
+@admin_required
+def bulk_disapprove_rsvps():
+    data = request.get_json() or {}
+    rsvp_ids = data.get('rsvp_ids', [])
+    limit = data.get('limit', None)
+    count = 0
+    
+    # If limit is provided and no rsvp_ids, get first N approved/rejected RSVPs
+    if limit and not rsvp_ids:
+        # Get current filter parameters from query string or JSON
+        event_id = request.args.get('event_id', type=int) or data.get('event_id')
+        status_filter = request.args.get('status', '') or data.get('status', '')
+        
+        query = RSVP.query.join(Event)
+        
+        if event_id:
+            query = query.filter(RSVP.event_id == event_id)
+        if status_filter:
+            query = query.filter(RSVP.status == status_filter)
+        else:
+            # Default to approved/rejected if no status filter
+            query = query.filter(RSVP.status.in_(['approved', 'rejected']))
+        
+        # Get first N approved/rejected RSVPs
+        rsvps = query.filter(RSVP.status.in_(['approved', 'rejected'])).order_by(RSVP.submitted_at.asc()).limit(limit).all()
+        rsvp_ids = [rsvp.id for rsvp in rsvps]
+    
+    for rsvp_id in rsvp_ids:
+        rsvp = RSVP.query.get(rsvp_id)
+        if rsvp and rsvp.status in ['approved', 'rejected']:
+            rsvp.status = 'pending'
+            rsvp.approved_at = None
+            rsvp.approved_by = None
+            rsvp.acceptance_code = None
+            count += 1
+    
+    db.session.commit()
+    
+    return jsonify({'success': True, 'message': f'{count} RSVPs reset to pending successfully'})
 
 # Technology Management Routes
 @admin_bp.route('/technologies')
@@ -1014,6 +1119,8 @@ def members():
     status_filter = request.args.get('status', 'all')  # all, valid, expired, none
     role_filter = request.args.get('role', 'all')  # all, admin, member
     search = request.args.get('search', '')
+    course_filter = request.args.get('course', '')
+    year_filter = request.args.get('year', '')
     
     query = Member.query.join(User).filter(User.is_approved == True)
     
@@ -1022,6 +1129,14 @@ def members():
         query = query.filter(User.role == 'admin')
     elif role_filter == 'member':
         query = query.filter(User.role == 'student')
+    
+    # Apply course filter
+    if course_filter:
+        query = query.filter(Member.course.ilike(f'%{course_filter}%'))
+    
+    # Apply year filter
+    if year_filter:
+        query = query.filter(Member.year.ilike(f'%{year_filter}%'))
     
     # Apply search filter
     if search:
@@ -1056,11 +1171,23 @@ def members():
     member_count = sum(1 for m in all_members if m.user.role == 'student')
     super_admin_count = sum(1 for m in all_members if m.user.is_super_admin)
     
+    # Get unique courses and years for filter dropdowns
+    courses = db.session.query(Member.course).filter(
+        Member.user_id.in_(db.session.query(User.id).filter(User.is_approved == True))
+    ).distinct().all()
+    years = db.session.query(Member.year).filter(
+        Member.user_id.in_(db.session.query(User.id).filter(User.is_approved == True))
+    ).distinct().all()
+    
     return render_template('admin/members.html',
                          members=members,
                          current_status=status_filter,
                          current_role=role_filter,
                          search_query=search,
+                         current_course=course_filter,
+                         current_year=year_filter,
+                         courses=[c[0] for c in courses if c[0]],
+                         years=[y[0] for y in years if y[0]],
                          total_members=total_members,
                          valid_count=valid_count,
                          expired_count=expired_count,
@@ -1068,6 +1195,117 @@ def members():
                          admin_count=admin_count,
                          member_count=member_count,
                          super_admin_count=super_admin_count)
+
+
+@admin_bp.route('/members/export')
+@login_required
+@admin_required
+def export_members():
+    """Export members/users as CSV report"""
+    report_type = request.args.get('report_type', 'filtered')  # all_users, all_members, filtered
+    status_filter = request.args.get('status', 'all')
+    role_filter = request.args.get('role', 'all')
+    search = request.args.get('search', '')
+    course_filter = request.args.get('course', '')
+    year_filter = request.args.get('year', '')
+    
+    # Build query based on report type
+    if report_type == 'all_users' or report_type == 'all_members':
+        # Get all approved members regardless of filters
+        query = Member.query.join(User).filter(User.is_approved == True)
+    else:
+        # Apply filters for filtered report
+        query = Member.query.join(User).filter(User.is_approved == True)
+        
+        # Apply role filter
+        if role_filter == 'admin':
+            query = query.filter(User.role == 'admin')
+        elif role_filter == 'member':
+            query = query.filter(User.role == 'student')
+        
+        # Apply course filter
+        if course_filter:
+            query = query.filter(Member.course.ilike(f'%{course_filter}%'))
+        
+        # Apply year filter
+        if year_filter:
+            query = query.filter(Member.year.ilike(f'%{year_filter}%'))
+        
+        # Apply search filter
+        if search:
+            query = query.filter(
+                db.or_(
+                    Member.full_name.ilike(f'%{search}%'),
+                    Member.member_id_number.ilike(f'%{search}%'),
+                    User.email.ilike(f'%{search}%')
+                )
+            )
+    
+    members = query.order_by(Member.full_name.asc()).all()
+    
+    # Filter by payment status if not all_users/all_members
+    if report_type == 'filtered' and status_filter != 'all':
+        filtered_members = []
+        for member in members:
+            member_status = member.get_membership_status()
+            if status_filter == member_status:
+                filtered_members.append(member)
+        members = filtered_members
+    
+    # Create CSV in memory
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Write header
+    writer.writerow([
+        'Member ID Number',
+        'Full Name',
+        'Email',
+        'Phone',
+        'Course',
+        'Year',
+        'Status',
+        'Role',
+        'Membership Status',
+        'Total Points',
+        'Member Since',
+        'Title',
+        'GitHub',
+        'LinkedIn'
+    ])
+    
+    # Write data rows
+    for member in members:
+        membership_status = member.get_membership_status()
+        role = 'Super Admin' if member.user.is_super_admin else ('Admin' if member.user.role == 'admin' else 'Member')
+        
+        writer.writerow([
+            member.member_id_number or '',
+            member.full_name or '',
+            member.user.email or '',
+            member.phone or '',
+            member.course or '',
+            member.year or '',
+            member.status or '',
+            role,
+            membership_status,
+            member.get_total_points(),
+            member.created_at.strftime('%Y-%m-%d') if member.created_at else '',
+            member.title or '',
+            member.github or '',
+            member.linkedin or ''
+        ])
+    
+    # Create response
+    output.seek(0)
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    filename = f'members_report_{report_type}_{timestamp}.csv'
+    
+    response = make_response(output.getvalue())
+    response.headers['Content-Type'] = 'text/csv'
+    response.headers['Content-Disposition'] = f'attachment; filename={filename}'
+    
+    return response
 
 
 @admin_bp.route('/member-ids')

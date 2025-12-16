@@ -71,11 +71,11 @@
 <div class="admin-card mb-4">
     <div class="admin-card-body">
         <form method="GET" class="row g-3">
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label class="form-label">Search</label>
                 <input type="text" name="search" class="form-control" placeholder="Name, ID, or Email" value="{{ search_query }}">
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label class="form-label">Payment Status</label>
                 <select name="status" class="form-control">
                     <option value="all" {% if current_status == 'all' %}selected{% endif %}>All Status</option>
@@ -84,7 +84,7 @@
                     <option value="none" {% if current_status == 'none' %}selected{% endif %}>No Payments</option>
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label class="form-label">Role</label>
                 <select name="role" class="form-control">
                     <option value="all" {% if current_role == 'all' %}selected{% endif %}>All Roles</option>
@@ -92,7 +92,25 @@
                     <option value="member" {% if current_role == 'member' %}selected{% endif %}>Regular Members</option>
                 </select>
             </div>
-            <div class="col-md-3 d-flex align-items-end">
+            <div class="col-md-2">
+                <label class="form-label">Course</label>
+                <select name="course" class="form-control">
+                    <option value="">All Courses</option>
+                    {% for course in courses %}
+                    <option value="{{ course }}" {% if current_course == course %}selected{% endif %}>{{ course }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Year</label>
+                <select name="year" class="form-control">
+                    <option value="">All Years</option>
+                    {% for year in years %}
+                    <option value="{{ year }}" {% if current_year == year %}selected{% endif %}>{{ year }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
                 <button type="submit" class="admin-btn admin-btn-primary me-2">
                     <i class="fas fa-filter"></i> Filter
                 </button>
@@ -101,6 +119,38 @@
                 </a>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- Download Section -->
+<div class="admin-card mb-4">
+    <div class="admin-card-body">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="mb-1">
+                    <i class="fas fa-download me-2"></i>
+                    Download Reports
+                </h5>
+                <p class="text-muted mb-0">Export member data as CSV files</p>
+            </div>
+            <div class="btn-group">
+                <a href="{{ url_for('admin.export_members', report_type='all_users') }}" 
+                   class="admin-btn admin-btn-success">
+                    <i class="fas fa-file-csv me-1"></i>
+                    Download All Users
+                </a>
+                <a href="{{ url_for('admin.export_members', report_type='all_members') }}" 
+                   class="admin-btn admin-btn-primary">
+                    <i class="fas fa-file-csv me-1"></i>
+                    Download All Members
+                </a>
+                <a href="{{ url_for('admin.export_members', report_type='filtered', status=current_status, role=current_role, search=search_query, course=current_course, year=current_year) }}" 
+                   class="admin-btn admin-btn-info">
+                    <i class="fas fa-file-csv me-1"></i>
+                    Download Filtered Results
+                </a>
+            </div>
+        </div>
     </div>
 </div>
 
