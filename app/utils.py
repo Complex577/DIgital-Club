@@ -2,6 +2,7 @@ import smtplib
 import socket
 import requests
 import time
+import threading
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.message import EmailMessage
@@ -43,9 +44,72 @@ class NotificationService:
             self.twilio_phone_number = None
             self._config_loaded = False
     
-    def send_email(self, to_email, subject, message, is_html=False):
-        """Send email notification"""
-        # return True
+    def send_email(self, to_email, subject, message, is_html=False, background=True):
+        """Send email notification
+        
+        Args:
+            to_email: Recipient email address
+            subject: Email subject
+            message: Email message body
+            is_html: Whether message is HTML format
+            background: If True, send email in background thread (default: True)
+        
+        Returns:
+            If background=True, returns True immediately (email sent asynchronously)
+            If background=False, returns True/False based on send result
+        """
+        if background:
+            # Capture app instance from current context before starting thread
+            app = None
+            try:
+                # Try to get the app from current app context
+                app = current_app._get_current_object()
+            except (RuntimeError, AttributeError):
+                # No app context available, will create new one in background thread
+                pass
+            
+            # Send email in background thread to avoid blocking requests
+            thread = threading.Thread(
+                target=self._send_email_background,
+                args=(to_email, subject, message, is_html, app),
+                daemon=True  # Daemon thread will not prevent app shutdown
+            )
+            thread.start()
+            return True  # Return immediately, email is being sent in background
+        
+        # Send email synchronously (original behavior)
+        return self._send_email_sync(to_email, subject, message, is_html)
+    
+    def _send_email_background(self, to_email, subject, message, is_html, app=None):
+        """Send email in background thread with app context"""
+        # Get the Flask app instance for background thread
+        if app is None:
+            # If no app instance provided, create a new one
+            try:
+                from app import create_app
+                app = create_app()
+            except Exception as e:
+                # If we can't create app, log and fail gracefully
+                try:
+                    logging.error(f"Failed to create app instance for background email: {e}")
+                except:
+                    pass
+                return False
+        
+        # Run email sending with app context
+        try:
+            with app.app_context():
+                self._send_email_sync(to_email, subject, message, is_html)
+        except Exception as e:
+            # Log error but don't raise (background thread)
+            try:
+                logging.error(f"Error sending email in background thread: {e}")
+            except:
+                pass
+            return False
+    
+    def _send_email_sync(self, to_email, subject, message, is_html):
+        """Send email synchronously (internal method)"""
         try:
             # Reload config if not loaded or in app context
             if not self._config_loaded:
@@ -111,44 +175,89 @@ class NotificationService:
             max_retries = 3
             retry_delays = [2, 4]  # 2s, 4s delays
             last_error = None
+            connection_timeout = 5  # Reduced timeout for faster failure
+            operation_timeout = 10  # Total timeout for SMTP operations
             
             for attempt in range(max_retries):
+                server = None
                 try:
-                    # Use a timeout so Docker/network issues don't hang forever
-                    server = smtplib.SMTP(smtp_host, self.smtp_port, timeout=10)
-                    server.ehlo()
-                    server.starttls()
-                    server.ehlo()
-                    server.login(self.smtp_username, self.smtp_password)
-                    text = msg.as_string()
-                    email_message = EmailMessage()
-                    email_message['From'] = self.from_email
-                    email_message['To'] = to_email
-                    email_message['Subject'] = subject
-                    email_message.set_content(text)
-                    server.send_message(email_message)
-                    server.quit()
+                    # Use a shorter timeout to prevent worker timeouts
+                    # Set socket timeout before creating SMTP connection
+                    import socket as socket_module
+                    old_timeout = socket_module.getdefaulttimeout()
+                    socket_module.setdefaulttimeout(connection_timeout)
                     
-                    # Success - break out of retry loop
-                    break
+                    try:
+                        # Use a timeout so Docker/network issues don't hang forever
+                        server = smtplib.SMTP(smtp_host, self.smtp_port, timeout=connection_timeout)
+                        server.set_debuglevel(0)  # Disable debug output
+                        
+                        # Set timeout for all operations
+                        server.timeout = operation_timeout
+                        
+                        server.ehlo()
+                        server.starttls()
+                        server.ehlo()
+                        server.login(self.smtp_username, self.smtp_password)
+                        
+                        text = msg.as_string()
+                        email_message = EmailMessage()
+                        email_message['From'] = self.from_email
+                        email_message['To'] = to_email
+                        email_message['Subject'] = subject
+                        email_message.set_content(text)
+                        server.send_message(email_message)
+                        
+                        # Success - break out of retry loop
+                        break
+                    finally:
+                        # Restore original socket timeout
+                        socket_module.setdefaulttimeout(old_timeout)
+                        # Close connection properly
+                        if server:
+                            try:
+                                server.quit()
+                            except:
+                                try:
+                                    server.close()
+                                except:
+                                    pass
                     
                 except socket.gaierror as e:
                     # DNS resolution error during connection
                     error_type = "DNS resolution"
                     last_error = e
                     error_msg = f"{error_type} error connecting to {smtp_host}:{self.smtp_port} - {e}"
+                    # Clean up if server was partially created
+                    if server:
+                        try:
+                            server.close()
+                        except:
+                            pass
                     
-                except socket.timeout as e:
+                except (socket.timeout, TimeoutError) as e:
                     # Connection timeout
                     error_type = "Connection timeout"
                     last_error = e
                     error_msg = f"{error_type} connecting to {smtp_host}:{self.smtp_port} - {e}"
+                    # Clean up if server was partially created
+                    if server:
+                        try:
+                            server.close()
+                        except:
+                            pass
                     
                 except ConnectionRefusedError as e:
                     # Connection refused (port might be blocked)
                     error_type = "Connection refused (port may be blocked)"
                     last_error = e
                     error_msg = f"{error_type} on {smtp_host}:{self.smtp_port} - {e}"
+                    # Clean up if server was partially created
+                    if server:
+                        try:
+                            server.close()
+                        except:
+                            pass
                     
                 except OSError as e:
                     # Network errors (including errno -3)
@@ -175,6 +284,12 @@ class NotificationService:
                     error_type = "SMTP authentication"
                     last_error = e
                     error_msg = f"{error_type} error: {e}"
+                    # Clean up if server was partially created
+                    if server:
+                        try:
+                            server.close()
+                        except:
+                            pass
                     try:
                         current_app.logger.error(f"Failed to send email to {to_email}: {error_msg}")
                     except RuntimeError:
@@ -186,6 +301,12 @@ class NotificationService:
                     error_type = "SMTP error"
                     last_error = e
                     error_msg = f"{error_type}: {e}"
+                    # Clean up if server was partially created
+                    if server:
+                        try:
+                            server.close()
+                        except:
+                            pass
                     
                 # If we get here, the attempt failed
                 if attempt < max_retries - 1:
@@ -227,7 +348,10 @@ class NotificationService:
                 self._load_config()
             
             if not all([self.twilio_account_sid, self.twilio_auth_token, self.twilio_phone_number]):
-                current_app.logger.warning("Twilio credentials not configured. SMS not sent.")
+                try:
+                    current_app.logger.warning("Twilio credentials not configured. SMS not sent.")
+                except RuntimeError:
+                    logging.warning("Twilio credentials not configured. SMS not sent.")
                 return False
             
             # Remove any non-digit characters from phone number
@@ -248,14 +372,23 @@ class NotificationService:
             response = requests.post(url, data=data, auth=(self.twilio_account_sid, self.twilio_auth_token))
             
             if response.status_code == 201:
-                current_app.logger.info(f"SMS sent successfully to {phone_number}")
+                try:
+                    current_app.logger.info(f"SMS sent successfully to {phone_number}")
+                except RuntimeError:
+                    logging.info(f"SMS sent successfully to {phone_number}")
                 return True
             else:
-                current_app.logger.error(f"Failed to send SMS to {phone_number}: {response.text}")
+                try:
+                    current_app.logger.error(f"Failed to send SMS to {phone_number}: {response.text}")
+                except RuntimeError:
+                    logging.error(f"Failed to send SMS to {phone_number}: {response.text}")
                 return False
                 
         except Exception as e:
-            current_app.logger.error(f"Failed to send SMS to {phone_number}: {str(e)}")
+            try:
+                current_app.logger.error(f"Failed to send SMS to {phone_number}: {str(e)}")
+            except RuntimeError:
+                logging.error(f"Failed to send SMS to {phone_number}: {str(e)}")
             return False
     
     def send_rsvp_notification(self, rsvp, status):
@@ -315,7 +448,10 @@ Digital Club Team
             }
             
         except Exception as e:
-            current_app.logger.error(f"Failed to send RSVP notification: {str(e)}")
+            try:
+                current_app.logger.error(f"Failed to send RSVP notification: {str(e)}")
+            except RuntimeError:
+                logging.error(f"Failed to send RSVP notification: {str(e)}")
             return {
                 'email_sent': False,
                 'sms_sent': False,
@@ -326,8 +462,17 @@ Digital Club Team
         """Notify a user that their account has been approved"""
         try:
             if not user.email:
-                current_app.logger.warning("Approved user is missing email address")
+                try:
+                    current_app.logger.warning("Approved user is missing email address")
+                except RuntimeError:
+                    logging.warning("Approved user is missing email address")
                 return False
+            
+            # Get base URL safely
+            try:
+                base_url = current_app.config.get('BASE_URL', 'https://digitalclub.kiut.ac.tz')
+            except RuntimeError:
+                base_url = 'https://digitalclub.kiut.ac.tz'
             
             subject = "Your Digital Club account is approved"
             message = f"""
@@ -336,7 +481,7 @@ Hello {user.member.full_name if user.member else user.email},
 Great news! Your Digital Club account has been approved. You can now log in and explore events, projects, and community resources.
 
 Login email: {user.email}
-Dashboard: {current_app.config.get('BASE_URL', 'https://digitalclub.kiut.ac.tz')}/login
+Dashboard: {base_url}/login
 
 If you did not request this approval, please contact the club leadership.
 
@@ -347,15 +492,27 @@ Digital Club Team
             return self.send_email(user.email, subject, message)
         
         except Exception as exc:
-            current_app.logger.error(f"Failed to send approval email: {exc}")
+            try:
+                current_app.logger.error(f"Failed to send approval email: {exc}")
+            except RuntimeError:
+                logging.error(f"Failed to send approval email: {exc}")
             return False
 
     def send_admin_promotion_email(self, user, promoted_by):
         """Notify a member they have been promoted to admin"""
         try:
             if not user.email:
-                current_app.logger.warning("Promoted user is missing email address")
+                try:
+                    current_app.logger.warning("Promoted user is missing email address")
+                except RuntimeError:
+                    logging.warning("Promoted user is missing email address")
                 return False
+            
+            # Get base URL safely
+            try:
+                base_url = current_app.config.get('BASE_URL', 'https://digitalclub.kiut.ac.tz')
+            except RuntimeError:
+                base_url = 'https://digitalclub.kiut.ac.tz'
             
             subject = "You have been promoted to Digital Club admin"
             promoter = promoted_by.member.full_name if promoted_by and promoted_by.member else promoted_by.email if promoted_by else "System"
@@ -366,7 +523,7 @@ Congratulations! You have been granted admin access to the Digital Club platform
 
 You can now manage members, events, content, and system settings. Please log in and review the admin dashboard to get started.
 
-Dashboard: {current_app.config.get('BASE_URL', 'https://digitalclub.kiut.ac.tz')}/admin
+Dashboard: {base_url}/admin
 
 If you believe this was a mistake, contact a super admin immediately.
 
@@ -377,7 +534,10 @@ Digital Club Team
             return self.send_email(user.email, subject, message)
         
         except Exception as exc:
-            current_app.logger.error(f"Failed to send admin promotion email: {exc}")
+            try:
+                current_app.logger.error(f"Failed to send admin promotion email: {exc}")
+            except RuntimeError:
+                logging.error(f"Failed to send admin promotion email: {exc}")
             return False
 
 # Global notification service instance (will be created when needed)
