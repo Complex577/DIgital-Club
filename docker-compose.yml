@@ -9,8 +9,8 @@ services:
     environment:
       - FLASK_APP=main.py
       - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
-      - BEEM_API_KEY=${BEEM_API_KEY:-}
-      - BEEM_SECRET_KEY=${BEEM_SECRET_KEY:-}
+      - BEEM_API_KEY=${BEEM_API_KEY}
+      - BEEM_SECRET_KEY=${BEEM_SECRET_KEY}
       # Use PostgreSQL by default (falls back to SQLite if DATABASE_URL is not set)
       - DATABASE_URL=${DATABASE_URL:-postgresql+psycopg2://digital_club_user:digital_club_password@db:5432/digital_club_db}
       - PORT=5051
