@@ -350,6 +350,7 @@ class NotificationService:
         try:
             send_sms(phone_number, message)
         except Exception as e:
+            print(f"Failed to send SMS to {phone_number}: {str(e)}")
             try:
                 current_app.logger.error(f"Failed to send SMS to {phone_number}: {str(e)}")
             except RuntimeError:
