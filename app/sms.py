@@ -21,7 +21,7 @@ def send_sms(phone_number, message):
     """
     Sends an SMS using the Beem SMS gateway API v1 with certificate verification enabled.
     """
-    print(phone_number, message)
+    print("phone numbers " + phone_number + "And Message " + message)
     payload = {
         "source_addr": "KIUTCLUBS",
         "encoding": 0,
