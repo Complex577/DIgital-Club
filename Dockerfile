@@ -15,6 +15,7 @@ RUN apt-get update && apt-get install -y \
     fonts-dejavu-core \
     fonts-dejavu-extra \
     fontconfig \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy dependency files

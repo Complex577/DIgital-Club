@@ -52,4 +52,4 @@ def send_sms(phone_number, message):
         return f"Error sending SMS: {e}"
 
 if __name__ == "__main__":
-    print(send_sms("+255749300606", "Hello Mr. Yunus, We are pleased to confirm that your RSVP for the Cyber Hackathon Digital Club event has been successfully received. You are warmly welcome to attend the event. Ticket ID: 10454  #KIUTClubs #DigitalClub"))
+    print(send_sms("+255749300606", "Message We received a request to reset your password. Use the link below to set a new one: http://digitalclub.kiut.ac.tz/auth/reset-password/eyJ1c2VyX2lkIjo4LCJlbWFpbCI6InNuYXZpZHV4Lm9mZmljaWFsQGdtYWlsLmNvbSJ9.aW6Fkg.9q4VOSCKSitj2AvKaiUduVWwpEE"))

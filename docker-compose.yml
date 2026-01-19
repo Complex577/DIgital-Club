@@ -33,8 +33,9 @@ services:
       - 8.8.8.8
       - 8.8.4.4
       - 1.1.1.1
-    dns_search:
-      - .
+    # dns_search:
+    #   - .
+    network_mode: bridge 
     extra_hosts:
       - "smtp.gmail.com:64.233.184.108"
       - "smtp.gmail.com:64.233.184.109"
