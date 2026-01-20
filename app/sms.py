@@ -50,6 +50,10 @@ def send_sms(phone_number, message):
         return f"SSL Error: {ssl_err}. Please ensure your system has up-to-date CA certificates."
     except requests.exceptions.RequestException as e:
         return f"Error sending SMS: {e}"
+    except Exception as e:
+        return f"Error sending SMS: {e}"
+    finally:
+        print("SMS sent successfully")
 
 if __name__ == "__main__":
     print(send_sms("+255749300606", "Message We received a request to reset your password. Use the link below to set a new one: http://digitalclub.kiut.ac.tz/auth/reset-password/eyJ1c2VyX2lkIjo4LCJlbWFpbCI6InNuYXZpZHV4Lm9mZmljaWFsQGdtYWlsLmNvbSJ9.aW6Fkg.9q4VOSCKSitj2AvKaiUduVWwpEE"))
