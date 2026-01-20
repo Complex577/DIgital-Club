@@ -70,3 +70,7 @@ services:
 
 volumes:
   postgres_data:
+
+networks:
+  digital_club_network:
+    driver: bridge
