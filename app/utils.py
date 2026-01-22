@@ -201,14 +201,13 @@ class NotificationService:
                         server.ehlo()
                         server.login(self.smtp_username, self.smtp_password)
                         
-                        text = msg.as_string()
-                        email_message = EmailMessage()
-                        email_message['From'] = self.from_email
-                        email_message['To'] = to_email
-                        email_message['Subject'] = subject
-                        email_message.set_content(text)
-                        server.send_message(email_message)
-                        
+                        server.sendmail(
+                            self.from_email,
+                            [to_email],
+                            msg.as_string()
+                        )
+
+                                                
                         # Success - break out of retry loop
                         break
                     finally:
