@@ -9,7 +9,8 @@ dotenv.load_dotenv()
 
 api_key = os.getenv('BEEM_API_KEY')
 secret_key = os.getenv('BEEM_SECRET_KEY')
-print(api_key, secret_key)
+# If you are in need of this credentials contact the project managers for assistance
+# print(api_key, secret_key)
 # Official Beem SMS API endpoint
 URL = 'https://apisms.beem.africa/v1/send'
 

@@ -4,6 +4,7 @@ from datetime import datetime
 import json
 from app import db
 
+# do not touch it if you don't know what your doing the moment you conflict the  database scheme you will endup with errors 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
