@@ -495,8 +495,8 @@ This project is an **open learning playground**. Here’s how you can contribute
 
 ## Acknowledgements
 
-- **Special thanks to Yunus (`snavid` on GitHub)** – for envisioning and building Digital Club so that university students have a real, modern codebase to learn from.  
-  Your work turns a dream of a connected, empowered developer community into reality.
+<!-- - **Special thanks to Yunus (`snavid` on GitHub)** – for envisioning and building Digital Club so that university students have a real, modern codebase to learn from.  
+  Your work turns a dream of a connected, empowered developer community into reality. -->
 
 - Thanks to the open-source ecosystem around **Flask**, **SQLAlchemy**, and many other libraries that make this project possible.
 
