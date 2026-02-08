@@ -31,10 +31,8 @@ def dashboard():
 @member_bp.route('/profile')
 @login_required
 def profile():
-    if not current_user.member:
-        flash('Please complete your profile first.', 'warning')
-        return redirect(url_for('member.edit_profile'))
-    
+    member = current_user.member
+
     # Fetch current financial period summary for members to view
     current_period = FinancialPeriod.query.filter_by(status='open').order_by(FinancialPeriod.start_date.desc()).first()
     period_totals = None
@@ -52,7 +50,7 @@ def profile():
     
     return render_template(
         'member/profile.html',
-        member=current_user.member,
+        member=member,
         current_period=current_period,
         period_totals=period_totals,
     )
@@ -60,6 +58,9 @@ def profile():
 @member_bp.route('/edit-profile', methods=['GET', 'POST'])
 @login_required
 def edit_profile():
+    if request.method == 'GET':
+        return redirect(url_for('member.profile'))
+
     member = current_user.member
     
     if request.method == 'POST':
@@ -87,7 +88,7 @@ def edit_profile():
                 member.set_projects(projects_list)
             except:
                 flash('Invalid projects format. Please use valid JSON.', 'error')
-                return render_template('member/edit_profile.html', member=member)
+                return redirect(url_for('member.profile'))
         
         # Handle profile image upload
         if 'profile_image' in request.files:
@@ -112,7 +113,7 @@ def edit_profile():
                     member.profile_image = filename
                 else:
                     flash('Invalid file type. Please upload PNG, JPG, JPEG, or GIF.', 'error')
-                    return render_template('member/edit_profile.html', member=member)
+                    return redirect(url_for('member.profile'))
         
         db.session.commit()
         
@@ -127,13 +128,14 @@ def edit_profile():
             print(f"Error regenerating digital ID: {e}")
         
         flash('Profile updated successfully!', 'success')
-        return redirect(url_for('member.dashboard'))
-    
-    return render_template('member/edit_profile.html', member=member)
+        return redirect(url_for('member.profile'))
 
 @member_bp.route('/change-password', methods=['GET', 'POST'])
 @login_required
 def change_password():
+    if request.method == 'GET':
+        return redirect(url_for('member.profile'))
+
     if request.method == 'POST':
         current_password = request.form.get('current_password')
         new_password = request.form.get('new_password')
@@ -142,25 +144,23 @@ def change_password():
         # Validate current password
         if not current_user.check_password(current_password):
             flash('Current password is incorrect.', 'error')
-            return render_template('member/change_password.html')
+            return redirect(url_for('member.profile'))
         
         # Validate new password
         if not new_password or len(new_password) < 6:
             flash('New password must be at least 6 characters long.', 'error')
-            return render_template('member/change_password.html')
+            return redirect(url_for('member.profile'))
         
         if new_password != confirm_password:
             flash('New passwords do not match.', 'error')
-            return render_template('member/change_password.html')
+            return redirect(url_for('member.profile'))
         
         # Update password
         current_user.set_password(new_password)
         db.session.commit()
         
         flash('Password updated successfully!', 'success')
-        return redirect(url_for('member.dashboard'))
-    
-    return render_template('member/change_password.html')
+        return redirect(url_for('member.profile'))
 
 @member_bp.route('/projects')
 @login_required
@@ -254,7 +254,7 @@ def digital_id():
     """Display member's digital ID card"""
     if not current_user.member:
         flash('Please complete your profile first.', 'warning')
-        return redirect(url_for('member.edit_profile'))
+        return redirect(url_for('member.profile'))
     
     member = current_user.member
     

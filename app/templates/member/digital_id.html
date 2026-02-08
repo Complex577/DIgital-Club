@@ -1,465 +1,75 @@
 {% extends "member/member_base.html" %}
 
-{% block title %}My Digital ID - Digital Club{% endblock %}
+{% block title %}Digital ID - Digital Club{% endblock %}
 {% block page_title %}Digital ID{% endblock %}
 {% block breadcrumb %}<span class="breadcrumb-separator">/</span> <span>Digital ID</span>{% endblock %}
 
 {% block extra_head %}
 {{ super() }}
 <style>
-    .digital-id-page {
-        background: linear-gradient(135deg, #0f1929 0%, #1a2332 100%);
-        min-height: 100vh;
-        padding: 2rem 0;
-    }
-    
-    .page-header {
-        text-align: center;
-        margin-bottom: 2rem;
-    }
-    
-    .page-header h1 {
-        font-size: 2.5rem;
-        margin-bottom: 1rem;
-        color: #42b166;
-    }
-    
-    .page-header .subtitle {
-        color: #94a3b8;
-        font-size: 1.1rem;
-    }
-    
-    .flip-hint {
-        text-align: center;
-        color: #42b166;
-        font-size: 1rem;
-        margin-bottom: 1.5rem;
-        animation: pulse 2s ease-in-out infinite;
-    }
-    
-    @keyframes pulse {
-        0%, 100% { opacity: 0.6; }
-        50% { opacity: 1; }
-    }
-    
-    .id-card-wrapper {
-        max-width: 1100px;
-        margin: 0 auto 2rem;
-    }
-    
-    /* 3D Flip Container */
-    .flip-container {
-        perspective: 2000px;
-        margin: 0 auto;
-        max-width: 1016px;
-        cursor: pointer;
-    }
-    
-    .flip-container:hover {
-        transform: scale(1.02);
-        transition: transform 0.3s ease;
-    }
-    
-    .flipper {
-        position: relative;
+    .member-id-preview {
         width: 100%;
-        padding-top: 62.99%; /* Aspect ratio 1016:640 */
-        transform-style: preserve-3d;
-        transition: transform 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
+        border-radius: 0.5rem;
+        border: 1px solid var(--admin-border);
+        box-shadow: var(--admin-shadow);
     }
-    
-    .flip-container.flipped .flipper {
-        transform: rotateY(180deg);
-    }
-    
-    .card-face {
-        position: absolute;
-        top: 0;
-        left: 0;
+
+    .member-id-actions .admin-btn {
         width: 100%;
-        height: 100%;
-        backface-visibility: hidden;
-        border-radius: 15px;
-        overflow: hidden;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5),
-                    0 0 40px rgba(66, 177, 102, 0.2);
-    }
-    
-    .card-face img {
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-        display: block;
-    }
-    
-    .card-front {
-        z-index: 2;
-    }
-    
-    .card-back {
-        transform: rotateY(180deg);
-    }
-    
-    /* Action Buttons */
-    .id-actions {
-        display: flex;
-        gap: 1rem;
         justify-content: center;
-        flex-wrap: wrap;
-        margin: 2rem 0;
-    }
-    
-    .action-btn {
-        padding: 0.9rem 1.8rem;
-        border-radius: 12px;
-        font-weight: 600;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.6rem;
-        transition: all 0.3s ease;
-        font-size: 1rem;
-        border: none;
-        cursor: pointer;
-    }
-    
-    .action-btn i {
-        font-size: 1.1rem;
-    }
-    
-    .btn-download-front {
-        background: linear-gradient(135deg, #2179b8 0%, #34b559 100%);
-        color: white;
-        box-shadow: 0 4px 15px rgba(33, 121, 184, 0.3);
-    }
-    
-    .btn-download-front:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 6px 25px rgba(33, 121, 184, 0.5);
-        color: white;
-    }
-    
-    .btn-download-back {
-        background: linear-gradient(135deg, #34b559 0%, #2179b8 100%);
-        color: white;
-        box-shadow: 0 4px 15px rgba(66, 177, 102, 0.3);
-    }
-    
-    .btn-download-back:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 6px 25px rgba(66, 177, 102, 0.5);
-        color: white;
-    }
-    
-    .btn-secondary {
-        background: rgba(255, 255, 255, 0.1);
-        color: #c8d2e4;
-        border: 2px solid rgba(66, 177, 102, 0.3);
-    }
-    
-    .btn-secondary:hover {
-        background: rgba(255, 255, 255, 0.15);
-        border-color: #42b166;
-        transform: translateY(-3px);
-        color: white;
-    }
-    
-    /* Info Sections */
-    .info-section {
-        background: rgba(15, 25, 41, 0.6);
-        border: 1px solid rgba(66, 177, 102, 0.2);
-        border-radius: 15px;
-        padding: 2rem;
-        margin-top: 2rem;
-        backdrop-filter: blur(10px);
-    }
-    
-    .info-section h4 {
-        color: #42b166;
-        margin-bottom: 1.5rem;
-        font-size: 1.3rem;
-    }
-    
-    .info-section ul {
-        list-style: none;
-        padding: 0;
-    }
-    
-    .info-section li {
-        padding: 0.7rem 0;
-        color: #94a3b8;
-        font-size: 0.95rem;
-        line-height: 1.6;
-    }
-    
-    .info-section li i {
-        color: #42b166;
-        margin-right: 0.8rem;
-        width: 20px;
-        text-align: center;
-    }
-    
-    .info-section .text-primary {
-        color: #ffd700;
-        font-weight: 600;
-    }
-    
-    .input-group {
-        display: flex;
-        margin-top: 1rem;
-    }
-    
-    .input-group input {
-        flex: 1;
-        padding: 0.8rem;
-        border: 1px solid rgba(66, 177, 102, 0.3);
-        background: rgba(15, 25, 41, 0.5);
-        color: white;
-        border-radius: 8px 0 0 8px;
-        font-size: 0.9rem;
-    }
-    
-    .input-group button {
-        padding: 0.8rem 1.5rem;
-        background: #42b166;
-        color: white;
-        border: none;
-        border-radius: 0 8px 8px 0;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-    
-    .input-group button:hover {
-        background: #34b559;
-    }
-    
-    /* Responsive */
-    @media (max-width: 768px) {
-        .page-header h1 {
-            font-size: 2rem;
-        }
-        
-        .flip-container {
-            max-width: 95%;
-        }
-        
-        .action-btn {
-            padding: 0.7rem 1.4rem;
-            font-size: 0.9rem;
-        }
-        
-        .info-section {
-            padding: 1.5rem;
-        }
     }
 </style>
 {% endblock %}
 
 {% block member_content %}
-<div class="digital-id-page">
-    <div class="container">
-        <!-- Page Header -->
-        <div class="page-header" data-aos="fade-down">
-            <h1><i class="fas fa-id-card"></i> My Digital ID Card</h1>
-            <p class="subtitle">Your official KIUT Digital Club membership ID</p>
-        </div>
-        
-        {% if member.digital_id_path %}
-            <!-- Flip Hint -->
-            <div class="flip-hint" data-aos="fade-in">
-                <i class="fas fa-hand-pointer"></i> Click the card to flip and see both sides
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h5>Digital ID Preview</h5>
             </div>
-            
-            <!-- 3D Flip Card Container -->
-            <div class="id-card-wrapper" data-aos="fade-up">
-                <div class="flip-container" id="idCard" onclick="flipCard()">
-                    <div class="flipper">
-                        <!-- Front Side -->
-                        <div class="card-face card-front">
-                            <img src="{{ url_for('static', filename='uploads/digital_ids/' + member.digital_id_path) }}" 
-                                 alt="Digital ID Card - Front"
-                                 loading="lazy">
-                        </div>
-                        
-                        <!-- Back Side -->
-                        <div class="card-face card-back">
-                            {% set back_filename = member.digital_id_path.replace('_front.png', '_back.png') %}
-                            <img src="{{ url_for('static', filename='uploads/digital_ids/' + back_filename) }}" 
-                                 alt="Digital ID Card - Back"
-                                 loading="lazy">
+            <div class="admin-card-body">
+                {% if member.digital_id_path %}
+                    <img src="{{ url_for('static', filename='uploads/digital_ids/' + member.digital_id_path) }}" alt="Digital ID - Front" class="member-id-preview mb-3" loading="lazy" decoding="async">
+                {% else %}
+                    <div class="admin-alert admin-alert-info">
+                        <div class="admin-alert-icon info"><i class="fas fa-info"></i></div>
+                        <div>
+                            <strong>Digital ID not generated yet.</strong>
+                            <div>Complete your profile information to generate your card.</div>
                         </div>
                     </div>
-                </div>
-                
-                <!-- Action Buttons -->
-                <div class="id-actions" data-aos="fade-up" data-aos-delay="100">
-                    <a href="{{ url_for('member.download_id', side='front') }}" class="action-btn btn-download-front">
-                        <i class="fas fa-download"></i>
-                        Download Front
-                    </a>
-                    
-                    <a href="{{ url_for('member.download_id', side='back') }}" class="action-btn btn-download-back">
-                        <i class="fas fa-download"></i>
-                        Download Back
-                    </a>
-                    
-                    <a href="{{ url_for('member.regenerate_id') }}" class="action-btn btn-secondary"
-                       onclick="return confirm('Are you sure you want to regenerate your ID card? This will replace your current ID.');">
-                        <i class="fas fa-sync-alt"></i>
-                        Regenerate ID
-                    </a>
-                    
-                    <a href="{{ url_for('member.dashboard') }}" class="action-btn btn-secondary">
-                        <i class="fas fa-arrow-left"></i>
-                        Back to Dashboard
-                    </a>
-                </div>
+                {% endif %}
+
+                {% if member.member_id_number %}
+                    <div class="mt-3">
+                        <span class="admin-code">ID: {{ member.member_id_number }}</span>
+                    </div>
+                {% endif %}
             </div>
-        {% else %}
-            <!-- Loading State -->
-            <div class="id-card-wrapper" data-aos="fade-up">
-                <div class="alert alert-warning" style="background: rgba(255, 193, 7, 0.1); border: 1px solid #ffc107; color: #ffc107; padding: 2rem; border-radius: 12px; text-align: center;">
-                    <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 1rem;"></i>
-                    <p style="margin: 0; font-size: 1.1rem;">Your digital ID is being generated. Please refresh the page in a moment.</p>
-                </div>
-            </div>
-        {% endif %}
-        
-        <!-- Information Sections -->
-        <div class="info-section" data-aos="fade-up" data-aos-delay="200">
-            <h4><i class="fas fa-info-circle"></i> About Your Digital ID</h4>
-            <ul>
-                <li>
-                    <i class="fas fa-id-badge"></i>
-                    Your unique member ID: <strong class="text-primary">{{ member.member_id_number }}</strong>
-                </li>
-                <li>
-                    <i class="fas fa-credit-card"></i>
-                    Professional ID card with modern design matching real-world ID standards
-                </li>
-                <li>
-                    <i class="fas fa-qrcode"></i>
-                    QR code on the front allows instant verification of your membership
-                </li>
-                <li>
-                    <i class="fas fa-download"></i>
-                    Download both front and back for printing or digital wallet
-                </li>
-                <li>
-                    <i class="fas fa-mobile-alt"></i>
-                    Keep on your phone and present at club events and activities
-                </li>
-                <li>
-                    <i class="fas fa-sync-alt"></i>
-                    Automatically regenerates when you update your profile information
-                </li>
-                <li>
-                    <i class="fas fa-shield-alt"></i>
-                    Back side includes club information and terms & conditions
-                </li>
-            </ul>
         </div>
-        
-        <!-- Verification Link Section -->
-        <div class="info-section" data-aos="fade-up" data-aos-delay="300">
-            <h4><i class="fas fa-shield-alt"></i> Verification</h4>
-            <p style="color: #94a3b8; margin-bottom: 1rem;">Anyone can verify your membership by scanning the QR code on your ID or visiting this link:</p>
-            <div class="input-group">
-                <input type="text" 
-                       value="{{ request.url_root }}verify-id/{{ member.member_id_number }}"
-                       id="verificationUrl"
-                       readonly>
-                <button onclick="copyVerificationUrl()" id="copyBtn">
-                    <i class="fas fa-copy"></i> Copy
-                </button>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h5>Actions</h5>
+            </div>
+            <div class="admin-card-body member-id-actions">
+                <a href="{{ url_for('member.download_id') }}" class="admin-btn admin-btn-primary">
+                    <i class="fas fa-download"></i> Download Front
+                </a>
+                <a href="{{ url_for('member.download_id', side='back') }}" class="admin-btn admin-btn-outline">
+                    <i class="fas fa-download"></i> Download Back
+                </a>
+                <a href="{{ url_for('member.regenerate_id') }}" class="admin-btn admin-btn-outline">
+                    <i class="fas fa-rotate"></i> Regenerate ID
+                </a>
+                <a href="{{ url_for('member.profile') }}" class="admin-btn admin-btn-outline">
+                    <i class="fas fa-user"></i> Back to Profile
+                </a>
             </div>
         </div>
     </div>
 </div>
 {% endblock %}
-
-{% block extra_scripts %}
-<script>
-    // Initialize AOS animations
-    AOS.init({
-        duration: 1000,
-        once: true
-    });
-    
-    // Card flip functionality
-    function flipCard() {
-        const card = document.getElementById('idCard');
-        card.classList.toggle('flipped');
-    }
-    
-    // Auto-flip demonstration (optional - flips once after 2 seconds)
-    setTimeout(function() {
-        const card = document.getElementById('idCard');
-        if (card && !localStorage.getItem('id_card_flipped')) {
-            card.classList.add('flipped');
-            setTimeout(function() {
-                card.classList.remove('flipped');
-                localStorage.setItem('id_card_flipped', 'true');
-            }, 1500);
-        }
-    }, 2000);
-    
-    // Copy verification URL
-    function copyVerificationUrl() {
-        const urlInput = document.getElementById('verificationUrl');
-        urlInput.select();
-        urlInput.setSelectionRange(0, 99999); // For mobile devices
-        
-        navigator.clipboard.writeText(urlInput.value).then(function() {
-            const copyBtn = document.getElementById('copyBtn');
-            const originalHTML = copyBtn.innerHTML;
-            copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
-            copyBtn.style.background = '#34b559';
-            
-            setTimeout(function() {
-                copyBtn.innerHTML = originalHTML;
-                copyBtn.style.background = '#42b166';
-            }, 2000);
-        }).catch(function(err) {
-            // Fallback for older browsers
-            try {
-                urlInput.select();
-                document.execCommand('copy');
-                const copyBtn = document.getElementById('copyBtn');
-                const originalHTML = copyBtn.innerHTML;
-                copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
-                copyBtn.style.background = '#34b559';
-                
-                setTimeout(function() {
-                    copyBtn.innerHTML = originalHTML;
-                    copyBtn.style.background = '#42b166';
-                }, 2000);
-            } catch(e) {
-                alert('Failed to copy URL. Please copy manually.');
-            }
-        });
-    }
-    
-    // Keyboard navigation for accessibility
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'f' || e.key === 'F' || e.key === ' ') {
-            const card = document.getElementById('idCard');
-            if (card && document.activeElement === card) {
-                e.preventDefault();
-                flipCard();
-            }
-        }
-    });
-    
-    // Make flip container focusable for keyboard navigation
-    const flipContainer = document.getElementById('idCard');
-    if (flipContainer) {
-        flipContainer.setAttribute('tabindex', '0');
-        flipContainer.setAttribute('role', 'button');
-        flipContainer.setAttribute('aria-label', 'Click or press F to flip ID card');
-    }
-</script>
-{% endblock %}
-
-
-

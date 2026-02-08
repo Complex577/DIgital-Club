@@ -6,12 +6,214 @@
 
 {% block extra_head %}
 {{ super() }}
+<style>
+    .member-profile-avatar {
+        width: 96px;
+        height: 96px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid var(--admin-border);
+    }
+
+    .member-profile-avatar.fallback {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--surface-2);
+        color: var(--admin-text-secondary);
+        font-size: 2.2rem;
+    }
+
+    .member-profile-preview {
+        max-width: 100%;
+        border-radius: 0.5rem;
+        border: 1px solid var(--admin-border);
+    }
+
+    .member-section-title {
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--admin-text-muted);
+        margin-bottom: 0.75rem;
+    }
+</style>
 {% endblock %}
 
 {% block member_content %}
-<div class="admin-card">
-    <div class="admin-card-body">
-        <p>This feature is under maintenance. Profile content will be added here.</p>
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h5>Profile Details</h5>
+            </div>
+            <div class="admin-card-body">
+                <form method="POST" action="{{ url_for('member.edit_profile') }}" enctype="multipart/form-data" class="admin-form">
+                    <div class="member-section-title">Profile Photo</div>
+                    <div class="d-flex align-items-center gap-3 flex-wrap mb-4">
+                        {% if member and member.profile_image %}
+                            <img src="{{ url_for('static', filename='uploads/profiles/' + member.profile_image) }}" alt="{{ member.full_name }}" class="member-profile-avatar" loading="lazy" decoding="async">
+                        {% else %}
+                            <div class="member-profile-avatar fallback">
+                                <i class="fas fa-user"></i>
+                            </div>
+                        {% endif %}
+                        <div class="flex-grow-1">
+                            <label class="admin-form-label" for="profile_image">Upload New Photo</label>
+                            <input type="file" class="admin-form-control" id="profile_image" name="profile_image" accept="image/*">
+                            <small class="text-muted">PNG, JPG, JPEG, or GIF.</small>
+                        </div>
+                    </div>
+
+                    <div class="member-section-title">Basic Information</div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="admin-form-label" for="full_name">Full Name *</label>
+                            <input type="text" class="admin-form-control" id="full_name" name="full_name" autocomplete="name" value="{{ member.full_name if member else '' }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="admin-form-label" for="title">Professional Title</label>
+                            <input type="text" class="admin-form-control" id="title" name="title" autocomplete="organization-title" value="{{ member.title if member else '' }}" placeholder="e.g., Software Developer">
+                        </div>
+                        <div class="col-12">
+                            <label class="admin-form-label" for="bio">Bio</label>
+                            <textarea class="admin-form-control" id="bio" name="bio" rows="3" placeholder="Tell us about yourself...">{{ member.bio if member else '' }}</textarea>
+                        </div>
+                    </div>
+
+                    <div class="member-section-title mt-4">Academic Information</div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="admin-form-label" for="course">Course</label>
+                            <select name="course" id="course" class="admin-form-control">
+                                <option value="">Select your course</option>
+                                <option value="Bachelor of Computer Science" {% if member and member.course == 'Bachelor of Computer Science' %}selected{% endif %}>Bachelor of Computer Science</option>
+                                <option value="Bachelor of Information Technology" {% if member and member.course == 'Bachelor of Information Technology' %}selected{% endif %}>Bachelor of Information Technology</option>
+                                <option value="Diploma in Computer Science" {% if member and member.course == 'Diploma in Computer Science' %}selected{% endif %}>Diploma in Computer Science</option>
+                                <option value="Diploma in Information Technology" {% if member and member.course == 'Diploma in Information Technology' %}selected{% endif %}>Diploma in Information Technology</option>
+                                <option value="Certificate in Computer Science" {% if member and member.course == 'Certificate in Computer Science' %}selected{% endif %}>Certificate in Computer Science</option>
+                                <option value="Certificate in Information Technology" {% if member and member.course == 'Certificate in Information Technology' %}selected{% endif %}>Certificate in Information Technology</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="admin-form-label" for="year">Year</label>
+                            <select name="year" id="year" class="admin-form-control">
+                                <option value="">Select your year</option>
+                                <option value="Year 1" {% if member and member.year == 'Year 1' %}selected{% endif %}>Year 1</option>
+                                <option value="Year 2" {% if member and member.year == 'Year 2' %}selected{% endif %}>Year 2</option>
+                                <option value="Year 3" {% if member and member.year == 'Year 3' %}selected{% endif %}>Year 3</option>
+                                <option value="Alumni" {% if member and member.year == 'Alumni' %}selected{% endif %}>Alumni</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="admin-form-label" for="status">Status</label>
+                            <select class="admin-form-control" id="status" name="status">
+                                <option value="student" {% if member and member.status == 'student' %}selected{% endif %}>Student</option>
+                                <option value="alumni" {% if member and member.status == 'alumni' %}selected{% endif %}>Alumni</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="member-section-title mt-4">Contact Information</div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="admin-form-label" for="phone">Phone Number</label>
+                            <input type="tel" class="admin-form-control" id="phone" name="phone" autocomplete="tel" inputmode="tel" value="{{ member.phone if member else '' }}" placeholder="+255 XXX XXX XXX">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="admin-form-label" for="areas_of_interest">Areas of Interest</label>
+                            <input type="text" class="admin-form-control" id="areas_of_interest" name="areas_of_interest" value="{{ member.areas_of_interest if member else '' }}" placeholder="Web Development, AI, Data Science">
+                        </div>
+                    </div>
+
+                    <div class="member-section-title mt-4">Social Links</div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="admin-form-label" for="github">GitHub Profile</label>
+                            <input type="text" class="admin-form-control" id="github" name="github" autocomplete="url" value="{{ member.github if member else '' }}" placeholder="https://github.com/username">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="admin-form-label" for="linkedin">LinkedIn Profile</label>
+                            <input type="text" class="admin-form-control" id="linkedin" name="linkedin" autocomplete="url" value="{{ member.linkedin if member else '' }}" placeholder="https://linkedin.com/in/username">
+                        </div>
+                    </div>
+
+                    <div class="mt-4 d-flex flex-wrap gap-2">
+                        <button type="submit" class="admin-btn admin-btn-primary">
+                            <i class="fas fa-save"></i> Save Profile
+                        </button>
+                        <a href="{{ url_for('member.dashboard') }}" class="admin-btn admin-btn-outline">
+                            <i class="fas fa-arrow-left"></i> Back to Dashboard
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="admin-card mt-4">
+            <div class="admin-card-header">
+                <h5>Password & Security</h5>
+            </div>
+            <div class="admin-card-body">
+                <form method="POST" action="{{ url_for('member.change_password') }}" class="admin-form">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="admin-form-label" for="current_password">Current Password</label>
+                            <input type="password" class="admin-form-control" id="current_password" name="current_password" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="admin-form-label" for="new_password">New Password</label>
+                            <input type="password" class="admin-form-control" id="new_password" name="new_password" minlength="6" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="admin-form-label" for="confirm_password">Confirm Password</label>
+                            <input type="password" class="admin-form-control" id="confirm_password" name="confirm_password" minlength="6" required>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <button type="submit" class="admin-btn admin-btn-outline">
+                            <i class="fas fa-key"></i> Update Password
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h5>Digital ID</h5>
+            </div>
+            <div class="admin-card-body">
+                {% if member and member.digital_id_path %}
+                    <img src="{{ url_for('static', filename='uploads/digital_ids/' + member.digital_id_path) }}" alt="Digital ID" class="member-profile-preview mb-3" loading="lazy" decoding="async">
+                {% else %}
+                    <p class="text-muted">Your digital ID card will be generated once your profile is complete.</p>
+                {% endif %}
+
+                {% if member and member.member_id_number %}
+                    <div class="mb-3">
+                        <span class="admin-code">ID: {{ member.member_id_number }}</span>
+                    </div>
+                {% endif %}
+
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('member.digital_id') }}" class="admin-btn admin-btn-primary">
+                        <i class="fas fa-id-card"></i> View Digital ID
+                    </a>
+                    <a href="{{ url_for('member.download_id') }}" class="admin-btn admin-btn-outline">
+                        <i class="fas fa-download"></i> Download Front
+                    </a>
+                    <a href="{{ url_for('member.download_id', side='back') }}" class="admin-btn admin-btn-outline">
+                        <i class="fas fa-download"></i> Download Back
+                    </a>
+                    <a href="{{ url_for('member.regenerate_id') }}" class="admin-btn admin-btn-outline">
+                        <i class="fas fa-rotate"></i> Regenerate ID
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
