@@ -221,6 +221,352 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        // Immediate overflow fix for mobile
+        (function () {
+          function preventOverflow() {
+            document.documentElement.style.overflowX = "hidden";
+            document.body.style.overflowX = "hidden";
+            document.body.style.maxWidth = "100vw";
+            document.body.style.width = "100%";
+          }
+  
+          // Apply immediately
+          preventOverflow();
+  
+          // Apply on DOM ready
+          if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", preventOverflow);
+          }
+  
+          // Apply on window load
+          window.addEventListener("load", preventOverflow);
+  
+          // Apply on resize
+          window.addEventListener("resize", preventOverflow);
+        })();
+  
+        function getUserIdFromScript() {
+          return "Uwv2sj5hpR";
+        }
+        let userId = getUserIdFromScript();
+  
+        // Function to create and show the chatbot button within a Shadow DOM
+        function showChatbotButton(theme_color) {
+          // Check if button already exists
+          if (document.getElementById("chatbot-toggle-button-container")) {
+            console.error("Chatbot button container already exists.");
+            return;
+          }
+  
+          // Create a container for the chatbot button with Shadow DOM
+          const buttonContainer = document.createElement("div");
+          buttonContainer.id = "chatbot-toggle-button-container";
+          buttonContainer.style.position = "fixed";
+          buttonContainer.style.bottom = "2em";
+          buttonContainer.style.right = "2em";
+          buttonContainer.style.zIndex = "20001";
+  
+          // Attach Shadow DOM to the button container
+          const buttonShadow = buttonContainer.attachShadow({ mode: "closed" });
+  
+          // Create the button element
+          const button = document.createElement("button");
+          button.id = "chatbot-toggle-button";
+          button.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="86" height="86" fill=${theme_color} viewBox="0 0 24 24">
+        <path opacity="1" d="M12 23C18.0751 23 23 18.0751 23 12C23 5.92487 18.0751 1 12 1C5.92487 1 1 5.92487 1 12C1 13.7596 1.41318 15.4228 2.14781 16.8977C2.34303 17.2897 2.40801 17.7377 2.29483 18.1607L1.63966 20.6093C1.35525 21.6723 2.32772 22.6447 3.39068 22.3603L5.83932 21.7052C6.26233 21.592 6.71033 21.657 7.10228 21.8522C8.5772 22.5868 10.2404 23 12 23Z" fill=${theme_color}></path>
+        <path d="M10.9 12.0004C10.9 12.6079 11.3925 13.1004 12 13.1004C12.6075 13.1004 13.1 12.6079 13.1 12.0004C13.1 11.3929 12.6075 10.9004 12 10.9004C11.3925 10.9004 10.9 11.3929 10.9 12.0004Z" fill="white"></path>
+        <path d="M6.5 12.0004C6.5 12.6079 6.99249 13.1004 7.6 13.1004C8.20751 13.1004 8.7 12.6079 8.7 12.0004C8.7 11.3929 8.20751 10.9004 7.6 10.9004C6.99249 10.9004 6.5 11.3929 6.5 12.0004Z" fill="white"></path>
+        <path d="M15.3 12.0004C15.3 12.6079 15.7925 13.1004 16.4 13.1004C17.0075 13.1004 17.5 12.6079 17.5 12.0004C17.5 11.3929 17.0075 10.9004 16.4 10.9004C15.7925 10.9004 15.3 11.3929 15.3 12.0004Z" fill="white"></path>
+      </svg>
+    `;
+  
+          // Style the button within Shadow DOM
+          const buttonStyle = document.createElement("style");
+          buttonStyle.textContent = `
+      #chatbot-toggle-button {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background-color: transparent;
+        border: none;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+      }
+  
+      #chatbot-toggle-button:hover {
+        transform: scale(1.1);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.7);
+      }
+    `;
+  
+          // Append styles and button to Shadow DOM
+          buttonShadow.appendChild(buttonStyle);
+          buttonShadow.appendChild(button);
+  
+          // Append the button container to the body
+          document.body.appendChild(buttonContainer);
+  
+          // Add click event to toggle chat window
+          button.addEventListener("click", function () {
+            toggleChatWindow();
+            playSound(); // Play sound when button is clicked
+            hideToastNotification(); // Hide toast when button is clicked
+          });
+  
+          fetch(`https://fightforme.hudumabot.com/v1/chatbot/welcome/${userId}`)
+            .then((response) => response.json())
+            .then((data) => {
+              showToastNotification(data.message, data.color);
+            })
+            .catch((error) =>
+              showToastNotification(
+                "Sorry, chat service is currently unavailable",
+                "#ff9900"
+              )
+            );
+          // Show toast notification
+        }
+  
+        // Function to show toast notification within Shadow DOM
+        function showToastNotification(welcome_message, theme_color) {
+          // Check if toast already exists
+          if (document.getElementById("toast-notification-container")) {
+            console.error("Toast notification container already exists.");
+            return;
+          }
+  
+          // Create a container for the toast with Shadow DOM
+          const toastContainer = document.createElement("div");
+          toastContainer.id = "toast-notification-container";
+          toastContainer.style.position = "fixed";
+          toastContainer.style.bottom = "99px";
+          toastContainer.style.right = "27px";
+          toastContainer.style.width = "280px";
+          toastContainer.style.zIndex = "20001";
+  
+          // Attach Shadow DOM to the container
+          const toastShadow = toastContainer.attachShadow({ mode: "closed" });
+  
+          // Create the toast element
+          const toast = document.createElement("div");
+          toast.className = "toast-notification";
+          toast.innerHTML = `
+      <span>${welcome_message}</span>
+      <button>&times;</button>
+    `;
+  
+          // Style the toast within Shadow DOM
+          const toastStyle = document.createElement("style");
+          toastStyle.textContent = `
+      .toast-notification {
+        background-color: ${theme_color};
+        color: #fff;
+        padding: 10px 20px;
+        border-radius: 5px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-width: 250px;
+        font-family: Arial, sans-serif;
+      }
+  
+      .toast-notification button {
+        background: none;
+        border: none;
+        color: #fff;
+        font-size: 16px;
+        cursor: pointer;
+        margin-left: 10px;
+      }
+    `;
+  
+          // Append styles and toast to Shadow DOM
+          toastShadow.appendChild(toastStyle);
+          toastShadow.appendChild(toast);
+  
+          // Add event listener to close button
+          toast.querySelector("button").addEventListener("click", () => {
+            toastContainer.style.display = "none";
+          });
+  
+          // Append the container to the body
+          document.body.appendChild(toastContainer);
+  
+          // Automatically hide the toast after 30 seconds
+          /* setTimeout(() => {
+      if (toastContainer) {
+        toastContainer.style.display = 'none';
+      }
+    }, 30000); */
+        }
+  
+        // Function to hide the toast notification
+        function hideToastNotification() {
+          const container = document.getElementById(
+            "toast-notification-container"
+          );
+          if (container) {
+            container.style.display = "none";
+          }
+        }
+  
+        // Function to play the sound
+        function playSound() {
+          const audio = new Audio(
+            "https://backend.hudumabot.com/static/chatbot/system.mp3"
+          );
+          audio
+            .play()
+            .catch((error) => console.error("Error playing audio:", error));
+        }
+  
+        // Function to toggle the chat window
+        function toggleChatWindow() {
+          const iframe = document.getElementById("chatbot-iframe");
+          const buttonContainer = document.getElementById(
+            "chatbot-toggle-button-container"
+          );
+  
+          if (iframe) {
+            if (iframe.style.display === "none") {
+              // Show the iframe
+              iframe.classList.remove("closing");
+              iframe.classList.add("open");
+              iframe.style.display = "block";
+              buttonContainer.style.display = "none"; // Hide the button
+              hideToastNotification();
+              playSound(); // Play sound when opened
+            } else {
+              // Hide the iframe with animation
+              iframe.classList.remove("open");
+              iframe.classList.add("closing");
+              setTimeout(() => {
+                iframe.style.display = "none";
+                buttonContainer.style.display = "flex"; // Show the button again
+                showToastNotification(); // Optionally show the toast again when chat is closed
+              }, 300); // Match CSS transition duration
+            }
+          } else {
+            console.error("Chatbot iframe not found.");
+          }
+        }
+  
+        // Initialize the chatbot iframe on DOMContentLoaded
+        document.addEventListener("DOMContentLoaded", function () {
+          fetch(`https://fightforme.hudumabot.com/v1/chatbot/theme/${userId}`)
+            .then((response) => response.json())
+            .then((data) => {
+              showChatbotButton(data.color);
+            })
+            .catch((error) =>
+              showToastNotification(
+                "If you have any problems or inquiries, chat with us!"
+              )
+            );
+  
+          showChatbotIframe(); // Create and append the iframe once
+        });
+  
+        // Function to create and show the chatbot iframe
+        function showChatbotIframe() {
+          // Create the iframe element if it doesn't exist
+          let iframe = document.getElementById("chatbot-iframe");
+          if (!iframe) {
+            iframe = document.createElement("iframe");
+            iframe.id = "chatbot-iframe";
+            iframe.src = `https://fightforme.hudumabot.com/v1/chatbot/widget/socket/${userId}`; // Use the new widget endpoint
+            iframe.style.position = "fixed";
+            iframe.style.border = "none";
+            iframe.style.borderRadius = "8px";
+            iframe.style.boxShadow =
+              "0 10px 16px rgba(48, 27, 27, 0.2), 0 6px 20px rgba(0, 0, 0, 0.19)";
+            iframe.style.zIndex = "10000"; // Ensure it's on top
+            iframe.style.bottom = "1em"; // Final position
+            iframe.style.right = "1em"; // Final position
+            iframe.style.transition =
+              "transform 0.3s ease // Hide initially, opacity 0.3s ease, width 0.3s ease, height 0.3s ease, bottom 0.3s ease, right 0.3s ease";
+            iframe.style.display = "none";
+  
+            // Inject CSS for the chatbot iframe directly into the JS
+            const style = document.createElement("style");
+            /*
+      #chatbot-iframe {
+       width: 30vw;
+          height: 70vh;
+          min-width: 350px;
+          max-width: 400px;
+          max-height: 600px;
+      }
+      */
+            style.textContent = `
+  
+        #chatbot-iframe {
+          width: 70vw;
+          height: 80vh;
+          min-width: 350px;
+          max-width: 475px;
+          max-height: 700px;
+        }
+         
+        #chatbot-iframe.open {
+          display: block;
+          transform: scale(1);
+          opacity: 1;
+        }
+  
+        /* Media query for small devices */
+        @media (max-width: 600px) {
+          #chatbot-iframe.open {
+            width: 95%; /* Take full width on small screens */
+            height: 50vh; /* Use 75% of the viewport height */
+          } 
+  
+        #chatbot-iframe.closing {
+          transform: scale(0);
+          opacity: 0;
+          transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+  
+        
+         
+        }
+      `;
+            document.head.appendChild(style);
+  
+            // Append the iframe to the body
+            document.body.appendChild(iframe);
+  
+            // Add an event listener to ensure the iframe is loaded
+            iframe.onload = function () {
+              console.log("Iframe loaded");
+              const userId = getUserIdFromScript();
+              console.log("Retrieved userId:", userId);
+              if (userId) {
+                iframe.contentWindow.postMessage(
+                  { type: "setUserId", userId: userId },
+                  "*"
+                );
+                console.log("Sent userId to iframe");
+              }
+            };
+          }
+        }
+  
+        // Listen for messages from the iframe
+        window.addEventListener("message", function (event) {
+          if (event.data === "closeChat") {
+            toggleChatWindow();
+          }
+        });
+      </script>
     
     {% block extra_scripts %}{% endblock %}
 </body>
