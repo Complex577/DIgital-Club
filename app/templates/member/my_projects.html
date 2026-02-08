@@ -1,8 +1,11 @@
-{% extends "base.html" %}
+{% extends "member/member_base.html" %}
 
 {% block title %}My Projects - Digital Club{% endblock %}
+{% block page_title %}My Projects{% endblock %}
+{% block breadcrumb %}<span class="breadcrumb-separator">/</span> <span>My Projects</span>{% endblock %}
 
 {% block extra_head %}
+{{ super() }}
 <style>
     .my-projects-page {
         background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
@@ -223,7 +226,7 @@
 </style>
 {% endblock %}
 
-{% block content %}
+{% block member_content %}
 <div class="my-projects-page">
     <div class="container">
         <!-- Projects Header -->
@@ -325,3 +328,5 @@
     });
 </script>
 {% endblock %}
+
+

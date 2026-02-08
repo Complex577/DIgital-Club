@@ -1,8 +1,11 @@
-{% extends "base.html" %}
+{% extends "member/member_base.html" %}
 
 {% block title %}Edit Project - Digital Club{% endblock %}
+{% block page_title %}Edit Project{% endblock %}
+{% block breadcrumb %}<span class="breadcrumb-separator">/</span> <span>Edit Project</span>{% endblock %}
 
 {% block extra_head %}
+{{ super() }}
 <style>
     .edit-project-page {
         background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
@@ -158,7 +161,7 @@
 </style>
 {% endblock %}
 
-{% block content %}
+{% block member_content %}
 <div class="edit-project-page">
     <div class="container">
         <div class="project-form" data-aos="fade-up">
@@ -290,3 +293,5 @@
     });
 </script>
 {% endblock %}
+
+

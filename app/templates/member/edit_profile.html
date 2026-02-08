@@ -1,8 +1,11 @@
-{% extends "base.html" %}
+{% extends "member/member_base.html" %}
 
 {% block title %}Edit Profile - Digital Club{% endblock %}
+{% block page_title %}Edit Profile{% endblock %}
+{% block breadcrumb %}<span class="breadcrumb-separator">/</span> <span>Edit Profile</span>{% endblock %}
 
 {% block extra_head %}
+{{ super() }}
 <!-- Cropper.js CSS -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
 <style>
@@ -328,7 +331,7 @@
 </style>
 {% endblock %}
 
-{% block content %}
+{% block member_content %}
 <div class="edit-profile-page">
     <div class="container">
         <div class="row justify-content-center">
@@ -774,3 +777,5 @@
     });
 </script>
 {% endblock %}
+
+
