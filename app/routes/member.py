@@ -410,3 +410,33 @@ def membership():
                          latest_payment=latest_payment,
                          days_expired=days_expired,
                          payments=payments)
+
+
+@member_bp.route('/competitions/weekly')
+@login_required
+def competitions_weekly():
+    return render_template('member/competitions_weekly.html')
+
+
+@member_bp.route('/competitions/monthly')
+@login_required
+def competitions_monthly():
+    return render_template('member/competitions_monthly.html')
+
+
+@member_bp.route('/competitions/rankings')
+@login_required
+def competitions_rankings():
+    return render_template('member/competitions_rankings.html')
+
+
+@member_bp.route('/sessions/timetable')
+@login_required
+def sessions_timetable():
+    return render_template('member/sessions_timetable.html')
+
+
+@member_bp.route('/sessions/instructors')
+@login_required
+def sessions_instructors():
+    return render_template('member/sessions_instructors.html')

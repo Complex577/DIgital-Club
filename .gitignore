@@ -12,3 +12,4 @@ instance/
 .env
 .node-persist/
 session/
+config.py

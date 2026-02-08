@@ -1,8 +1,11 @@
-{% extends "base.html" %}
+{% extends "member/member_base.html" %}
 
 {% block title %}My Digital ID - Digital Club{% endblock %}
+{% block page_title %}Digital ID{% endblock %}
+{% block breadcrumb %}<span class="breadcrumb-separator">/</span> <span>Digital ID</span>{% endblock %}
 
 {% block extra_head %}
+{{ super() }}
 <style>
     .digital-id-page {
         background: linear-gradient(135deg, #0f1929 0%, #1a2332 100%);
@@ -252,7 +255,7 @@
 </style>
 {% endblock %}
 
-{% block content %}
+{% block member_content %}
 <div class="digital-id-page">
     <div class="container">
         <!-- Page Header -->
@@ -457,4 +460,6 @@
     }
 </script>
 {% endblock %}
+
+
 

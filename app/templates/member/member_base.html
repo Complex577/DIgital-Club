@@ -1,0 +1,282 @@
+{% extends "baseAdmin.html" %}
+
+{% block title %}{% block member_title %}Member Dashboard{% endblock %} - Digital Club{% endblock %}
+
+{% block extra_head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/member.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="admin-layout member-layout">
+    <!-- Member Sidebar -->
+    <div class="admin-sidebar" id="memberSidebar">
+        <div class="admin-sidebar-header">
+            <a href="{{ url_for('main.index') }}" class="admin-logo" aria-label="Digital Club Home">
+                <img src="{{ url_for('static', filename='DigitalClub_LOGO copy.svg') }}" alt="Digital Club Logo">
+                <div class="admin-logo-text">
+                    <span>Digital Club</span>
+                    <small>Member</small>
+                </div>
+            </a>
+            <button class="admin-sidebar-toggle" id="memberSidebarToggle" type="button" aria-label="Toggle sidebar">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+
+        <div class="admin-sidebar-actions">
+            <a href="{{ url_for('main.index') }}" class="admin-home-link" title="Back to site">
+                <i class="fas fa-arrow-left"></i>
+                <span>Back to Home</span>
+            </a>
+            <button class="theme-toggle admin-theme-toggle" id="theme-toggle" type="button" aria-pressed="false" aria-label="Toggle color theme">
+                <i class="fas fa-sun" aria-hidden="true"></i>
+                <span class="theme-label">Light</span>
+            </button>
+        </div>
+
+        <nav class="admin-sidebar-nav">
+            <a href="{{ url_for('member.dashboard') }}" class="admin-nav-item {% if request.endpoint == 'member.dashboard' %}active{% endif %}">
+                <i class="fas fa-home"></i>
+                <span>Dashboard</span>
+            </a>
+
+            <div class="admin-nav-dropdown">
+                <a href="#" class="admin-nav-item admin-nav-dropdown-toggle" data-dropdown="sessions">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                    <span>Sessions</span>
+                    <i class="fas fa-chevron-down admin-dropdown-icon"></i>
+                </a>
+                <div class="admin-nav-dropdown-menu" id="dropdown-sessions">
+                    <a href="{{ url_for('member.sessions_timetable') }}" class="admin-nav-item admin-nav-subitem {% if request.endpoint == 'member.sessions_timetable' %}active{% endif %}">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>Timetable</span>
+                    </a>
+                    <a href="{{ url_for('member.sessions_instructors') }}" class="admin-nav-item admin-nav-subitem {% if request.endpoint == 'member.sessions_instructors' %}active{% endif %}">
+                        <i class="fas fa-user-tie"></i>
+                        <span>Instructors</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="admin-nav-dropdown">
+                <a href="#" class="admin-nav-item admin-nav-dropdown-toggle" data-dropdown="competitions">
+                    <i class="fas fa-trophy"></i>
+                    <span>Competitions</span>
+                    <i class="fas fa-chevron-down admin-dropdown-icon"></i>
+                </a>
+                <div class="admin-nav-dropdown-menu" id="dropdown-competitions">
+                    <a href="{{ url_for('member.competitions_weekly') }}" class="admin-nav-item admin-nav-subitem {% if request.endpoint == 'member.competitions_weekly' %}active{% endif %}">
+                        <i class="fas fa-calendar-week"></i>
+                        <span>Weekly</span>
+                    </a>
+                    <a href="{{ url_for('member.competitions_monthly') }}" class="admin-nav-item admin-nav-subitem {% if request.endpoint == 'member.competitions_monthly' %}active{% endif %}">
+                        <i class="fas fa-calendar"></i>
+                        <span>Monthly</span>
+                    </a>
+                </div>
+            </div>
+
+            <a href="{{ url_for('member.competitions_rankings') }}" class="admin-nav-item {% if request.endpoint == 'member.competitions_rankings' %}active{% endif %}">
+                <i class="fas fa-ranking-star"></i>
+                <span>Rankings</span>
+            </a>
+
+            {% set profile_endpoints = [
+                'member.profile',
+                'member.edit_profile',
+                'member.change_password',
+                'member.my_projects',
+                'member.add_project',
+                'member.edit_project',
+                'member.delete_project',
+                'member.digital_id',
+                'member.download_id',
+                'member.regenerate_id',
+                'member.rewards',
+                'member.membership'
+            ] %}
+            <a href="{{ url_for('member.profile') }}" class="admin-nav-item {% if request.endpoint in profile_endpoints %}active{% endif %}">
+                <i class="fas fa-user"></i>
+                <span>Profile</span>
+            </a>
+        </nav>
+    </div>
+
+    <!-- Member Main Content -->
+    <div class="admin-main" id="memberMain">
+        <!-- Member Header -->
+        <div class="admin-header">
+            <div class="admin-header-content">
+                <div class="admin-header-left">
+                    <button class="member-mobile-toggle" id="memberSidebarToggleHeader" type="button" aria-label="Open navigation">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div>
+                        <h1 class="admin-page-title">{% block page_title %}Dashboard{% endblock %}</h1>
+                        <nav class="admin-breadcrumb">
+                            <a href="{{ url_for('member.dashboard') }}">Member</a>
+                            {% block breadcrumb %}{% endblock %}
+                        </nav>
+                    </div>
+                </div>
+
+                <div class="admin-header-right">
+                    <div class="dropdown">
+                        {% set display_name = current_user.email %}
+                        {% if current_user.member and current_user.member.full_name %}
+                            {% set first_name = current_user.member.full_name.split(' ')[0] %}
+                            {% if first_name %}
+                                {% set display_name = first_name|lower|capitalize %}
+                            {% endif %}
+                        {% endif %}
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user"></i> {{ display_name }}
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('member.profile') }}">
+                                <i class="fas fa-user"></i> My Profile
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('member.dashboard') }}">
+                                <i class="fas fa-home"></i> Dashboard
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.index') }}">
+                                <i class="fas fa-globe"></i> View Site
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Member Content -->
+        <div class="admin-content">
+            {% block member_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const sidebar = document.getElementById('memberSidebar');
+    const main = document.getElementById('memberMain');
+    const toggle = document.getElementById('memberSidebarToggle');
+    const headerToggle = document.getElementById('memberSidebarToggleHeader');
+    const dropdownToggles = document.querySelectorAll('.admin-nav-dropdown-toggle');
+
+    function isMobile() {
+        return window.innerWidth <= 768;
+    }
+
+    function applyDesktopState(collapsed) {
+        sidebar.classList.toggle('collapsed', collapsed);
+        main.classList.toggle('sidebar-collapsed', collapsed);
+    }
+
+    const savedCollapsed = localStorage.getItem('memberSidebarCollapsed') === 'true';
+    if (!isMobile()) {
+        applyDesktopState(savedCollapsed);
+    } else {
+        sidebar.classList.remove('collapsed');
+        main.classList.remove('sidebar-collapsed');
+    }
+
+    toggle.addEventListener('click', function() {
+        if (isMobile()) {
+            sidebar.classList.toggle('show');
+        } else {
+            const collapsed = !sidebar.classList.contains('collapsed');
+            applyDesktopState(collapsed);
+            localStorage.setItem('memberSidebarCollapsed', collapsed);
+        }
+    });
+
+    headerToggle.addEventListener('click', function() {
+        if (isMobile()) {
+            sidebar.classList.toggle('show');
+        } else {
+            const collapsed = !sidebar.classList.contains('collapsed');
+            applyDesktopState(collapsed);
+            localStorage.setItem('memberSidebarCollapsed', collapsed);
+        }
+    });
+
+    window.addEventListener('resize', function() {
+        if (isMobile()) {
+            sidebar.classList.remove('collapsed');
+            main.classList.remove('sidebar-collapsed');
+        } else {
+            sidebar.classList.remove('show');
+            applyDesktopState(localStorage.getItem('memberSidebarCollapsed') === 'true');
+        }
+    });
+
+    function setDropdownHeight(menu, open) {
+        if (!menu) return;
+        if (open) {
+            const height = menu.scrollHeight;
+            menu.style.maxHeight = `${height}px`;
+        } else {
+            menu.style.maxHeight = '0px';
+        }
+    }
+
+    dropdownToggles.forEach(toggleItem => {
+        toggleItem.addEventListener('click', function(e) {
+            e.preventDefault();
+            const dropdown = this.closest('.admin-nav-dropdown');
+            const dropdownId = this.getAttribute('data-dropdown');
+            const isCurrentlyOpen = dropdown.classList.contains('open');
+
+            document.querySelectorAll('.admin-nav-dropdown').forEach(d => {
+                d.classList.remove('open');
+                const t = d.querySelector('.admin-nav-dropdown-toggle');
+                if (t) {
+                    const id = t.getAttribute('data-dropdown');
+                    localStorage.setItem('memberDropdown-' + id, 'false');
+                }
+                setDropdownHeight(d.querySelector('.admin-nav-dropdown-menu'), false);
+            });
+
+            if (!isCurrentlyOpen) {
+                dropdown.classList.add('open');
+                localStorage.setItem('memberDropdown-' + dropdownId, 'true');
+                setDropdownHeight(dropdown.querySelector('.admin-nav-dropdown-menu'), true);
+            }
+        });
+    });
+
+    function restoreDropdownStates() {
+        dropdownToggles.forEach(toggleItem => {
+            const dropdown = toggleItem.closest('.admin-nav-dropdown');
+            const dropdownId = toggleItem.getAttribute('data-dropdown');
+            const savedState = localStorage.getItem('memberDropdown-' + dropdownId);
+            if (savedState === 'true') {
+                dropdown.classList.add('open');
+                setDropdownHeight(dropdown.querySelector('.admin-nav-dropdown-menu'), true);
+            }
+        });
+    }
+
+    function autoExpandActiveDropdowns() {
+        const activeSubitems = document.querySelectorAll('.admin-nav-subitem.active');
+        activeSubitems.forEach(subitem => {
+            const dropdown = subitem.closest('.admin-nav-dropdown');
+            if (dropdown) {
+                dropdown.classList.add('open');
+                setDropdownHeight(dropdown.querySelector('.admin-nav-dropdown-menu'), true);
+                const toggleItem = dropdown.querySelector('.admin-nav-dropdown-toggle');
+                if (toggleItem) {
+                    const dropdownId = toggleItem.getAttribute('data-dropdown');
+                    localStorage.setItem('memberDropdown-' + dropdownId, 'true');
+                }
+            }
+        });
+    }
+
+    restoreDropdownStates();
+    autoExpandActiveDropdowns();
+});
+</script>
+{% endblock %}
