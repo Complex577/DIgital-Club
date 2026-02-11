@@ -66,10 +66,9 @@ def create_app():
     login_manager.init_app(app)
     migrate.init_app(app, db)
     
-    # Create tables
+    # Do not auto-create tables here; schema changes must go through Alembic migrations.
     with app.app_context():
-        db.create_all()
-        # Migrate password_hash column if needed (for existing databases)
+        # Keep this compatibility migration for existing databases.
         _migrate_password_hash_column()
     
     # Configure login manager
