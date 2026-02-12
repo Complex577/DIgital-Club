@@ -295,23 +295,25 @@
 
 <div class="row g-4">
     <div class="col-lg-6">
-        <div class="admin-card">
+        <div class="admin-card live-search-scope">
             <div class="admin-card-header">
                 <h5>Judges Panel</h5>
                 <p class="mb-0" style="font-size: 0.8rem; color: var(--admin-text-muted);">Assign judges to evaluate submissions</p>
             </div>
-            <div class="admin-card-body">
+            <div class="admin-card-body live-search-scope">
                 <div class="admin-form-inline">
                     <form method="POST" action="{{ url_for('admin.competitions_judges', competition_id=competition.id) }}">
                         <div class="row g-2">
                             <div class="col-md-8">
                                 <label class="admin-form-label">Select Judge</label>
-                                <select name="user_id" class="admin-form-control" required>
-                                    <option value="">Choose a user...</option>
-                                    {% for u in users %}
-                                    <option value="{{ u.id }}">{{ u.email }} ({{ u.full_name }})</option>
-                                    {% endfor %}
-                                </select>
+                                <input type="hidden" name="user_id" id="judge_user_id" required>
+                                <div class="position-relative live-search-host">
+                                    <input type="text" id="judge_user_search" class="admin-form-control" placeholder="Search user by name, email or ID..." autocomplete="off">
+                                    <div id="judge_user_loading" class="small text-muted mt-1 d-none">
+                                        <i class="fas fa-spinner fa-spin me-1"></i>Searching...
+                                    </div>
+                                    <div id="judge_user_results" class="list-group shadow-sm live-search-results"></div>
+                                </div>
                             </div>
                             <div class="col-md-4">
                                 <label class="admin-form-label">Chair Role</label>
@@ -724,5 +726,62 @@
         tick();
         setInterval(tick, 1000);
     });
+</script>
+<script>
+    (function () {
+        const input = document.getElementById('judge_user_search');
+        const hidden = document.getElementById('judge_user_id');
+        const results = document.getElementById('judge_user_results');
+        const loading = document.getElementById('judge_user_loading');
+        if (!input || !hidden || !results || !loading) return;
+
+        let timer = null;
+        function clearResults() { results.innerHTML = ''; }
+
+        function render(items) {
+            clearResults();
+            if (!items.length) {
+                results.innerHTML = '<div class="list-group-item text-muted">No users found</div>';
+                return;
+            }
+            items.forEach((item) => {
+                const row = document.createElement('button');
+                row.type = 'button';
+                row.className = 'list-group-item list-group-item-action';
+                row.innerHTML = `<strong>${item.full_name}</strong><br><small>${item.member_id_number} • ${item.email}</small>`;
+                row.addEventListener('click', () => {
+                    hidden.value = item.user_id;
+                    input.value = `${item.full_name} (${item.email})`;
+                    clearResults();
+                });
+                results.appendChild(row);
+            });
+        }
+
+        input.addEventListener('input', function () {
+            hidden.value = '';
+            const q = this.value.trim();
+            clearResults();
+            if (!q) return;
+
+            if (timer) clearTimeout(timer);
+            timer = setTimeout(async () => {
+                loading.classList.remove('d-none');
+                try {
+                    const res = await fetch(`{{ url_for('admin.members_search') }}?q=${encodeURIComponent(q)}&limit=12`);
+                    const data = await res.json();
+                    render(data.results || []);
+                } catch (e) {
+                    results.innerHTML = '<div class="list-group-item text-danger">Search failed</div>';
+                } finally {
+                    loading.classList.add('d-none');
+                }
+            }, 260);
+        });
+
+        document.addEventListener('click', function (e) {
+            if (!results.contains(e.target) && e.target !== input) clearResults();
+        });
+    })();
 </script>
 {% endblock %}

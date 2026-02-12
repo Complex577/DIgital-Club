@@ -608,6 +608,12 @@
                             <input type="text" name="full_name" id="full_name" class="form-control" 
                                    placeholder="Enter your full name" required>
                         </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Phone Number *</label>
+                            <input type="tel" name="phone" id="phone" class="form-control"
+                                   placeholder="+255 XXX XXX XXX" required>
+                        </div>
                     </div>
                 </div>
                 
@@ -621,33 +627,22 @@
                     
                     <div class="form-grid two-cols">
                         <div class="form-group">
-                            <label class="form-label">Course</label>
-                            <select name="course" id="course" class="form-control">
+                            <label class="form-label">Course *</label>
+                            <select name="course" id="course" class="form-control" required>
                                 <option value="">Select your program</option>
-                                <option value="Bachelor of Computer Science">Bachelor of Computer Science</option>
-                                <option value="Bachelor of Information Technology">Bachelor of Information Technology</option>
-                                <option value="Bachelor of Software Engineering">Bachelor of Software Engineering</option>
-                                <option value="Bachelor of Data Science">Bachelor of Data Science</option>
-                                <option value="Bachelor of Cybersecurity">Bachelor of Cybersecurity</option>
-                                <option value="Diploma in Computer Science">Diploma in Computer Science</option>
-                                <option value="Diploma in Information Technology">Diploma in Information Technology</option>
-                                <option value="Diploma in Software Engineering">Diploma in Software Engineering</option>
-                                <option value="Diploma in Cybersecurity">Diploma in Cybersecurity</option>
-                                <option value="Certificate of Information Technology">Certificate of Information Technology</option>
-                                <option value="Non-Computing Program">Non-Computing Program</option>
+                                {% for course in allowed_courses %}
+                                <option value="{{ course }}">{{ course }}</option>
+                                {% endfor %}
                             </select>
                         </div>
                         
                         <div class="form-group">
-                            <label class="form-label">Year of Study</label>
-                            <select name="year" id="year" class="form-control">
+                            <label class="form-label">Year of Study *</label>
+                            <select name="year" id="year" class="form-control" required>
                                 <option value="">Select year</option>
-                                <option value="Year 1">Year 1</option>
-                                <option value="Year 2">Year 2</option>
-                                <option value="Year 3">Year 3</option>
-                                <option value="Year 4">Year 4</option>
-                                <option value="Graduate">Graduate</option>
-                                <option value="Alumni">Alumni</option>
+                                {% for year in allowed_years %}
+                                <option value="{{ year }}">{{ year }}</option>
+                                {% endfor %}
                             </select>
                         </div>
                     </div>
@@ -697,6 +692,10 @@
                         <div class="review-item">
                             <span class="review-label">Full Name:</span>
                             <span class="review-value" id="review-name">-</span>
+                        </div>
+                        <div class="review-item">
+                            <span class="review-label">Phone:</span>
+                            <span class="review-value" id="review-phone">-</span>
                         </div>
                     </div>
                     
@@ -905,6 +904,7 @@
     function updateReview() {
         document.getElementById('review-email').textContent = document.getElementById('email').value || '-';
         document.getElementById('review-name').textContent = document.getElementById('full_name').value || '-';
+        document.getElementById('review-phone').textContent = document.getElementById('phone').value || '-';
         document.getElementById('review-course').textContent = document.getElementById('course').value || 'Not specified';
         document.getElementById('review-year').textContent = document.getElementById('year').value || 'Not specified';
     }

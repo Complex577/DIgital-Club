@@ -544,6 +544,27 @@
     background: var(--admin-bg-secondary);
 }
 
+/* Live search dropdown support */
+.live-search-scope,
+.live-search-scope .admin-card,
+.live-search-scope .admin-card-body {
+    overflow: visible !important;
+}
+
+.live-search-host {
+    position: relative;
+}
+
+.live-search-results {
+    position: absolute;
+    top: calc(100% + 0.25rem);
+    left: 0;
+    right: 0;
+    z-index: 5000;
+    max-height: 240px;
+    overflow-y: auto;
+}
+
 /* Admin Stats Cards */
 .admin-stats-grid {
     display: grid;

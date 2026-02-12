@@ -4,6 +4,56 @@
 {% block page_title %}Member Management{% endblock %}
 {% block breadcrumb %}<span class="breadcrumb-separator">/</span> <span>Members</span>{% endblock %}
 
+{% block extra_head %}
+{{ super() }}
+<style>
+    .members-compact .admin-table th,
+    .members-compact .admin-table td {
+        font-size: 0.82rem;
+        padding: 0.5rem 0.6rem;
+        vertical-align: middle;
+    }
+    .members-compact .admin-table h6 {
+        font-size: 0.88rem;
+        margin: 0;
+    }
+    .members-compact .admin-table small {
+        font-size: 0.72rem;
+    }
+    .members-compact .admin-btn.admin-btn-sm {
+        padding: 0.28rem 0.5rem;
+        font-size: 0.72rem;
+        line-height: 1.2;
+    }
+    .members-compact .btn-group {
+        gap: 0.25rem;
+        flex-wrap: wrap;
+    }
+    .members-compact .member-avatar {
+        width: 30px;
+        height: 30px;
+        object-fit: cover;
+    }
+    .members-compact .admin-activity-icon {
+        width: 30px;
+        height: 30px;
+        font-size: 0.75rem;
+    }
+    .members-pagination {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        margin-top: 0.9rem;
+    }
+    .members-pagination .admin-btn {
+        min-width: 88px;
+        text-align: center;
+    }
+</style>
+{% endblock %}
+
 {% block admin_content %}
 <div class="admin-page-header mb-4">
     <div>
@@ -34,7 +84,7 @@
     <div class="col-md-2">
         <div class="admin-stat-card warning">
             <h5>{{ expired_count }}</h5>
-            <p>Expired Memberships</p>
+            <p>Expired</p>
         </div>
     </div>
     <div class="col-md-2">
@@ -156,7 +206,7 @@
 
 <!-- Members Table -->
 {% if members %}
-<div class="admin-table-container">
+<div class="admin-table-container members-compact">
     <div class="admin-table-responsive">
         <table class="admin-table">
             <thead>
@@ -179,8 +229,7 @@
                             {% if member.profile_image %}
                             <img src="{{ url_for('static', filename='uploads/profiles/' + member.profile_image) }}" 
                                  alt="{{ member.full_name }}" 
-                                 class="rounded-circle me-3"
-                                 style="width: 40px; height: 40px; object-fit: cover;">
+                                 class="rounded-circle me-2 member-avatar">
                             {% else %}
                             <div class="admin-activity-icon primary me-3">
                                 <i class="fas fa-user"></i>
@@ -268,6 +317,26 @@
                 {% endfor %}
             </tbody>
         </table>
+    </div>
+    <div class="members-pagination">
+        <div class="text-muted small">
+            {% if total_filtered > 0 %}
+                Showing {{ ((page - 1) * per_page) + 1 }}-{{ [page * per_page, total_filtered] | min }} of {{ total_filtered }}
+            {% else %}
+                No members found
+            {% endif %}
+        </div>
+        <div class="d-flex gap-2">
+            <a class="admin-btn admin-btn-sm admin-btn-outline {% if page <= 1 %}disabled{% endif %}"
+               href="{{ url_for('admin.members', page=page-1, per_page=per_page, search=search_query, status=current_status, role=current_role, course=current_course, year=current_year) }}">
+                <i class="fas fa-chevron-left"></i> Prev
+            </a>
+            <span class="admin-badge admin-badge-secondary">Page {{ page }} / {{ total_pages }}</span>
+            <a class="admin-btn admin-btn-sm admin-btn-outline {% if page >= total_pages %}disabled{% endif %}"
+               href="{{ url_for('admin.members', page=page+1, per_page=per_page, search=search_query, status=current_status, role=current_role, course=current_course, year=current_year) }}">
+                Next <i class="fas fa-chevron-right"></i>
+            </a>
+        </div>
     </div>
 </div>
 {% else %}

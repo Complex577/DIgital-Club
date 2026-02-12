@@ -1124,6 +1124,9 @@ def members():
     search = request.args.get('search', '')
     course_filter = request.args.get('course', '')
     year_filter = request.args.get('year', '')
+    page = request.args.get('page', 1, type=int) or 1
+    per_page = request.args.get('per_page', 20, type=int) or 20
+    per_page = max(10, min(per_page, 100))
     
     query = Member.query.join(User).filter(User.is_approved == True)
     
@@ -1162,6 +1165,15 @@ def members():
                 filtered_members.append(member)
         members = filtered_members
     
+    # Paginate filtered members list
+    total_filtered = len(members)
+    total_pages = max((total_filtered + per_page - 1) // per_page, 1)
+    if page > total_pages:
+        page = total_pages
+    start_idx = (page - 1) * per_page
+    end_idx = start_idx + per_page
+    members_page = members[start_idx:end_idx]
+
     # Get statistics
     all_members = Member.query.join(User).filter(User.is_approved == True).all()
     total_members = len(all_members)
@@ -1183,7 +1195,7 @@ def members():
     ).distinct().all()
     
     return render_template('admin/members.html',
-                         members=members,
+                         members=members_page,
                          current_status=status_filter,
                          current_role=role_filter,
                          search_query=search,
@@ -1197,7 +1209,11 @@ def members():
                          none_count=none_count,
                          admin_count=admin_count,
                          member_count=member_count,
-                         super_admin_count=super_admin_count)
+                         super_admin_count=super_admin_count,
+                         page=page,
+                         per_page=per_page,
+                         total_filtered=total_filtered,
+                         total_pages=total_pages)
 
 
 @admin_bp.route('/members/export')
@@ -1604,6 +1620,46 @@ def member_lookup():
                 } for a in recent_attendance
             ]
         }
+    })
+
+
+@admin_bp.route('/members/search')
+@login_required
+@admin_required
+def members_search():
+    """Live search endpoint for approved members/users."""
+    q = (request.args.get('q') or '').strip()
+    limit = request.args.get('limit', default=12, type=int) or 12
+    limit = max(1, min(limit, 50))
+
+    query = Member.query.join(User).filter(User.is_approved == True)
+    if q:
+        like = f"%{q}%"
+        query = query.filter(
+            db.or_(
+                Member.full_name.ilike(like),
+                Member.member_id_number.ilike(like),
+                User.email.ilike(like),
+                Member.course.ilike(like),
+            )
+        )
+
+    members = query.order_by(Member.full_name.asc()).limit(limit).all()
+    return jsonify({
+        'results': [
+            {
+                'id': m.id,
+                'user_id': m.user_id,
+                'full_name': m.full_name,
+                'email': m.user.email if m.user else '',
+                'member_id_number': m.member_id_number or '',
+                'course': m.course or '',
+                'year': m.year or '',
+                'member_detail_url': url_for('admin.member_detail', member_id=m.id),
+                'add_points_url': url_for('admin.add_points', member_id=m.id),
+            }
+            for m in members
+        ]
     })
 
 
@@ -2876,8 +2932,8 @@ def competitions_edit(competition_id):
         assessment_only = competition.status in ['published', 'judging']
         if assessment_only:
             new_status = request.form.get('status', competition.status)
-            if new_status not in ['published', 'judging']:
-                flash('Only status changes to Published/Judging are allowed here.', 'error')
+            if new_status not in ['published', 'judging', 'cancelled']:
+                flash('Only status changes to Published, Judging, or Cancelled are allowed here.', 'error')
                 return redirect(url_for('admin.competitions_edit', competition_id=competition.id))
             competition.status = new_status
             competition.assessment_mode = request.form.get('assessment_mode', competition.assessment_mode)
@@ -2885,7 +2941,7 @@ def competitions_edit(competition_id):
             competition.assessment_link = request.form.get('assessment_link')
             competition.assessment_location = request.form.get('assessment_location')
             competition.assessment_date = datetime.strptime(request.form.get('assessment_date'), '%Y-%m-%dT%H:%M') if request.form.get('assessment_date') else competition.assessment_date
-            flash('Competition is published/judging. Only status and assessment details were updated.', 'warning')
+            flash('Competition is active. Only status and assessment details were updated.', 'warning')
         else:
             starts_at = datetime.strptime(request.form.get('starts_at'), '%Y-%m-%dT%H:%M') if request.form.get('starts_at') else competition.starts_at
             ends_at = datetime.strptime(request.form.get('ends_at'), '%Y-%m-%dT%H:%M') if request.form.get('ends_at') else competition.ends_at

@@ -7,7 +7,7 @@
 {% block admin_content %}
 <div class="row justify-content-center">
     <div class="col-lg-8">
-        <div class="admin-form">
+        <div class="admin-form live-search-scope">
             <div class="d-flex align-items-center mb-4">
                 <div class="admin-activity-icon primary me-3">
                     <i class="fas fa-crown"></i>
@@ -21,17 +21,18 @@
             <form method="POST">
                 <div class="admin-form-group">
                     <label for="user_id" class="admin-form-label">Select Member</label>
-                    <select class="admin-form-control" id="user_id" name="user_id" required>
-                        <option value="">Choose a member...</option>
-                        {% for member in members %}
-                        <option value="{{ member.user_id }}">
-                            {{ member.full_name }} - {{ member.user.email }}
-                            {% if member.title %} ({{ member.title }}){% endif %}
-                        </option>
-                        {% endfor %}
-                    </select>
+                    <input type="hidden" id="user_id" name="user_id" required>
+                    <div class="position-relative live-search-host">
+                        <input type="text" class="admin-form-control" id="leader_member_search" placeholder="Search member by name, email or ID..." autocomplete="off" {% if not members %}disabled{% endif %}>
+                        <div id="leader_member_loading" class="small text-muted mt-1 d-none">
+                            <i class="fas fa-spinner fa-spin me-1"></i>Searching...
+                        </div>
+                        <div id="leader_member_results" class="list-group shadow-sm live-search-results"></div>
+                    </div>
                     {% if not members %}
                     <small >No available members found. All approved members may already have leadership positions.</small>
+                    {% else %}
+                    <small >Select one member from live results.</small>
                     {% endif %}
                 </div>
                 
@@ -60,4 +61,67 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function () {
+    const input = document.getElementById('leader_member_search');
+    const hidden = document.getElementById('user_id');
+    const results = document.getElementById('leader_member_results');
+    const loading = document.getElementById('leader_member_loading');
+    if (!input || !hidden || !results || !loading) return;
+
+    let timer = null;
+
+    function clearResults() {
+        results.innerHTML = '';
+    }
+
+    function render(items) {
+        clearResults();
+        if (!items.length) {
+            results.innerHTML = '<div class="list-group-item text-muted">No members found</div>';
+            return;
+        }
+        items.forEach((item) => {
+            const row = document.createElement('button');
+            row.type = 'button';
+            row.className = 'list-group-item list-group-item-action';
+            row.innerHTML = `<strong>${item.full_name}</strong><br><small>${item.member_id_number} • ${item.email}</small>`;
+            row.addEventListener('click', () => {
+                hidden.value = item.user_id;
+                input.value = `${item.full_name} (${item.email})`;
+                clearResults();
+            });
+            results.appendChild(row);
+        });
+    }
+
+    input.addEventListener('input', function () {
+        hidden.value = '';
+        const q = this.value.trim();
+        clearResults();
+        if (!q) return;
+
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(async () => {
+            loading.classList.remove('d-none');
+            try {
+                const res = await fetch(`{{ url_for('admin.members_search') }}?q=${encodeURIComponent(q)}&limit=12`);
+                const data = await res.json();
+                render(data.results || []);
+            } catch (e) {
+                results.innerHTML = '<div class="list-group-item text-danger">Search failed</div>';
+            } finally {
+                loading.classList.add('d-none');
+            }
+        }, 260);
+    });
+
+    document.addEventListener('click', function (e) {
+        if (!results.contains(e.target) && e.target !== input) clearResults();
+    });
+})();
+</script>
 {% endblock %}

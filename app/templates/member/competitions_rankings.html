@@ -554,21 +554,13 @@
             <div class="leaderboard-header">
                 <div>
                     <h5 class="section-title">Leaderboard</h5>
-                    <div class="section-subtitle">Member rankings based on competition performance</div>
+                    <div class="section-subtitle">Top 50 members based on competition performance</div>
                 </div>
                 <div class="ranking-filters">
-                    <a href="#" class="filter-pill active">
+                    <span class="filter-pill active">
                         <i class="fas fa-list-ol"></i>
-                        All Members
-                    </a>
-                    <a href="#" class="filter-pill">
-                        <i class="fas fa-trophy"></i>
-                        Top 10
-                    </a>
-                    <a href="#" class="filter-pill">
-                        <i class="fas fa-fire"></i>
-                        This Month
-                    </a>
+                        Top 50 only
+                    </span>
                 </div>
             </div>
             
@@ -587,7 +579,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for row in leaderboard %}
+                                {% for row in leaderboard[:50] %}
                                 <tr class="rank-{{ row.rank if row.rank <= 3 else '' }}">
                                     <td class="rank-cell">
                                         {{ row.rank }}

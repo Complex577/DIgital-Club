@@ -4,6 +4,16 @@
 {% block page_title %}Payment Records{% endblock %}
 {% block breadcrumb %}<span class="breadcrumb-separator">/</span> <span>Payments</span>{% endblock %}
 
+{% block extra_head %}
+{{ super() }}
+<style>
+    .payments-filter-card {
+        position: relative;
+        z-index: 220;
+    }
+</style>
+{% endblock %}
+
 {% block admin_content %}
 <div class="admin-page-header mb-4">
     <div>
@@ -23,8 +33,8 @@
 
 <!-- Current Financial Period Info -->
 {% if current_period %}
-<div class="admin-card mb-4">
-    <div class="admin-card-body">
+<div class="admin-card mb-4 live-search-scope payments-filter-card">
+    <div class="admin-card-body live-search-scope">
         <div class="d-flex align-items-center">
             <div class="admin-alert-icon info">
                 <i class="fas fa-calendar"></i>
@@ -102,14 +112,22 @@
         <form method="GET" class="row g-3">
             <div class="col-md-4">
                 <label class="form-label">Member</label>
-                <select name="member_id" class="form-control">
-                    <option value="">All Members</option>
-                    {% for member in members %}
-                    <option value="{{ member.id }}" {% if member.id == current_member_id %}selected{% endif %}>
-                        {{ member.full_name }} ({{ member.member_id_number }})
-                    </option>
-                    {% endfor %}
-                </select>
+                {% set selected_member = (members | selectattr('id', 'equalto', current_member_id) | list | first) if current_member_id else None %}
+                <input type="hidden" name="member_id" id="member_id" value="{{ current_member_id or '' }}">
+                <div class="position-relative live-search-host">
+                    <input
+                        type="text"
+                        id="member_search"
+                        class="form-control"
+                        placeholder="Search member by name, email or ID..."
+                        autocomplete="off"
+                        value="{% if selected_member %}{{ selected_member.full_name }} ({{ selected_member.member_id_number }}){% endif %}"
+                    >
+                    <div id="member_search_loading" class="small text-muted mt-1 d-none">
+                        <i class="fas fa-spinner fa-spin me-1"></i>Searching...
+                    </div>
+                    <div id="member_search_results" class="list-group shadow-sm live-search-results" style="z-index: 12000;"></div>
+                </div>
             </div>
             <div class="col-md-4">
                 <label class="form-label">Status</label>
@@ -213,4 +231,88 @@
     <p>No membership payments match your filter criteria.</p>
 </div>
 {% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function () {
+    const searchInput = document.getElementById('member_search');
+    const memberIdInput = document.getElementById('member_id');
+    const results = document.getElementById('member_search_results');
+    const loading = document.getElementById('member_search_loading');
+    if (!searchInput || !memberIdInput || !results || !loading) return;
+
+    let timer = null;
+
+    function clearResults() {
+        results.innerHTML = '';
+    }
+
+    function positionResults() {
+        const rect = searchInput.getBoundingClientRect();
+        const minSpace = 240;
+        const spaceBelow = window.innerHeight - rect.bottom;
+        if (spaceBelow < minSpace) {
+            results.style.top = 'auto';
+            results.style.bottom = 'calc(100% + 0.25rem)';
+        } else {
+            results.style.bottom = 'auto';
+            results.style.top = 'calc(100% + 0.25rem)';
+        }
+    }
+
+    function setLoading(state) {
+        loading.classList.toggle('d-none', !state);
+    }
+
+    function renderItems(items) {
+        clearResults();
+        if (!items.length) {
+            results.innerHTML = '<div class="list-group-item text-muted">No members found</div>';
+            return;
+        }
+        items.forEach((item) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'list-group-item list-group-item-action';
+            button.innerHTML = `<strong>${item.full_name}</strong><br><small>${item.member_id_number} • ${item.email}</small>`;
+            button.addEventListener('click', () => {
+                memberIdInput.value = item.id;
+                searchInput.value = `${item.full_name} (${item.member_id_number})`;
+                clearResults();
+            });
+            results.appendChild(button);
+        });
+    }
+
+    searchInput.addEventListener('input', function () {
+        const q = this.value.trim();
+        memberIdInput.value = '';
+        clearResults();
+        if (!q) return;
+
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(async () => {
+            setLoading(true);
+            positionResults();
+            try {
+                const res = await fetch(`{{ url_for('admin.members_search') }}?q=${encodeURIComponent(q)}&limit=12`);
+                const data = await res.json();
+                renderItems(data.results || []);
+            } catch (e) {
+                results.innerHTML = '<div class="list-group-item text-danger">Search failed</div>';
+            } finally {
+                setLoading(false);
+            }
+        }, 260);
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!results.contains(e.target) && e.target !== searchInput) clearResults();
+    });
+
+    searchInput.addEventListener('focus', positionResults);
+    window.addEventListener('resize', positionResults);
+})();
+</script>
 {% endblock %}
