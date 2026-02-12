@@ -2,11 +2,13 @@ from flask import render_template, request, flash, redirect, url_for, current_ap
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
+from urllib.parse import urlparse
 from app.routes import auth_bp
 from app.models import User, Member
 from app import db
 from app.id_generator import generate_digital_id
 from app.utils import get_notification_service
+from app.member_requirements import ALLOWED_COURSES, ALLOWED_YEARS, is_allowed_course, is_allowed_year
 from datetime import datetime
 
 
@@ -45,31 +47,48 @@ def verify_password_reset_token(token, max_age=3600 * 24):
 
     return user
 
+
+def _is_safe_next_url(target):
+    """Allow only local redirects for `next`."""
+    if not target:
+        return False
+    parsed = urlparse(target)
+    return parsed.scheme == '' and parsed.netloc == '' and target.startswith('/')
+
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
     if current_user.is_authenticated:
         return redirect(url_for('main.index'))
     
     if request.method == 'POST':
-        email = request.form.get('email')
+        email = (request.form.get('email') or '').strip().lower()
         password = request.form.get('password')
         confirm_password = request.form.get('confirm_password')
-        full_name = request.form.get('full_name')
-        course = request.form.get('course')
-        year = request.form.get('year')
+        full_name = (request.form.get('full_name') or '').strip()
+        phone = (request.form.get('phone') or '').strip()
+        course = (request.form.get('course') or '').strip()
+        year = (request.form.get('year') or '').strip()
         
         # Validation
-        if not all([email, password, confirm_password, full_name]):
+        if not all([email, password, confirm_password, full_name, phone, course, year]):
             flash('Please fill in all required fields.', 'error')
-            return render_template('auth/register.html')
+            return render_template('auth/register.html', allowed_courses=ALLOWED_COURSES, allowed_years=ALLOWED_YEARS)
         
         if password != confirm_password:
             flash('Passwords do not match.', 'error')
-            return render_template('auth/register.html')
+            return render_template('auth/register.html', allowed_courses=ALLOWED_COURSES, allowed_years=ALLOWED_YEARS)
+
+        if not is_allowed_course(course):
+            flash('Please select a valid course from the list.', 'error')
+            return render_template('auth/register.html', allowed_courses=ALLOWED_COURSES, allowed_years=ALLOWED_YEARS)
+
+        if not is_allowed_year(year):
+            flash('Please select a valid year from the list.', 'error')
+            return render_template('auth/register.html', allowed_courses=ALLOWED_COURSES, allowed_years=ALLOWED_YEARS)
         
         if User.query.filter_by(email=email).first():
             flash('Email already registered.', 'error')
-            return render_template('auth/register.html')
+            return render_template('auth/register.html', allowed_courses=ALLOWED_COURSES, allowed_years=ALLOWED_YEARS)
         
         # Create user
         user = User(email=email, role='student', is_approved=False)
@@ -85,6 +104,7 @@ def register():
         member = Member(
             user_id=user.id,
             full_name=_normalize_name(full_name),
+            phone=phone,
             course=course,
             year=year
         )
@@ -94,7 +114,7 @@ def register():
         flash('Registration successful! Your account is pending admin approval.', 'success')
         return redirect(url_for('auth.login'))
     
-    return render_template('auth/register.html')
+    return render_template('auth/register.html', allowed_courses=ALLOWED_COURSES, allowed_years=ALLOWED_YEARS)
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
@@ -124,7 +144,15 @@ def login():
                     print(f"Error generating digital ID on login: {e}")
             
             next_page = request.args.get('next')
-            return redirect(next_page) if next_page else redirect(url_for('main.index'))
+            if _is_safe_next_url(next_page):
+                return redirect(next_page)
+            if user.role == 'admin':
+                return redirect(url_for('admin.dashboard'))
+            member = user.member
+            if not member or not (member.phone or '').strip() or not is_allowed_course(member.course):
+                flash('Please complete your profile details (valid course and phone number) to continue.', 'warning')
+                return redirect(url_for('member.profile'))
+            return redirect(url_for('member.dashboard'))
         else:
             flash('Invalid email or password.', 'error')
     

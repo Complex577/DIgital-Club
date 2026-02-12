@@ -596,7 +596,7 @@
                     <label class="form-label" for="course">Course</label>
                     <div class="form-control-icon">
                         <i class="fas fa-book"></i>
-                        <select name="course" id="course" class="admin-form-control">
+                        <select name="course" id="course" class="admin-form-control" required>
                             <option value="">Select your program</option>
                             <option value="Bachelor of Computer Science" {% if member and member.course == 'Bachelor of Computer Science' %}selected{% endif %}>Bachelor of Computer Science</option>
                             <option value="Bachelor of Information Technology" {% if member and member.course == 'Bachelor of Information Technology' %}selected{% endif %}>Bachelor of Information Technology</option>
@@ -622,6 +622,8 @@
                             <option value="Year 1" {% if member and member.year == 'Year 1' %}selected{% endif %}>Year 1</option>
                             <option value="Year 2" {% if member and member.year == 'Year 2' %}selected{% endif %}>Year 2</option>
                             <option value="Year 3" {% if member and member.year == 'Year 3' %}selected{% endif %}>Year 3</option>
+                            <option value="Year 4" {% if member and member.year == 'Year 4' %}selected{% endif %}>Year 4</option>
+                            <option value="Graduate" {% if member and member.year == 'Graduate' %}selected{% endif %}>Graduate</option>
                             <option value="Alumni" {% if member and member.year == 'Alumni' %}selected{% endif %}>Alumni</option>
                         </select>
                     </div>
@@ -662,7 +664,8 @@
                                autocomplete="tel" 
                                inputmode="tel"
                                value="{{ member.phone if member else '' }}" 
-                               placeholder="+255 XXX XXX XXX">
+                               placeholder="+255 XXX XXX XXX"
+                               required>
                     </div>
                     <div class="input-hint">Include country code for international contact</div>
                 </div>

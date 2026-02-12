@@ -1,6 +1,6 @@
 from flask import render_template, request, flash, redirect, url_for, jsonify
 from app.routes import main_bp
-from app.models import News, Event, Project, Gallery, Topic, Member, Leader, Newsletter, Blog, RSVP, User, Technology, RewardTransaction
+from app.models import News, Event, Project, Gallery, Topic, Member, Leader, Newsletter, Blog, RSVP, User, Technology
 from app import db
 from datetime import datetime
 
@@ -97,62 +97,38 @@ def alumni():
 @main_bp.route('/members')
 def members():
     try:
-        page = request.args.get('page', 1, type=int)
-        course_filter = request.args.get('course', '')
-        year_filter = request.args.get('year', '')
-        status_filter = request.args.get('status', '')
-        search_query = request.args.get('search', '').strip()
-        
-        # Query all approved members
-        query = Member.query.join(Member.user).filter(Member.user.has(is_approved=True))
-        
-        # Apply status filter if specified
-        if status_filter:
-            query = query.filter(Member.status == status_filter)
-        
-        if course_filter:
-            query = query.filter(Member.course.ilike(f'%{course_filter}%'))
-        if year_filter:
-            query = query.filter(Member.year.ilike(f'%{year_filter}%'))
-        
-        # Apply search filter if specified
-        if search_query:
-            query = query.filter(
-                db.or_(
-                    Member.full_name.ilike(f'%{search_query}%'),
-                    Member.title.ilike(f'%{search_query}%'),
-                    Member.course.ilike(f'%{search_query}%'),
-                    Member.year.ilike(f'%{search_query}%'),
-                    Member.areas_of_interest.ilike(f'%{search_query}%'),
-                    Member.bio.ilike(f'%{search_query}%')
-                )
-            )
-        
-        members = query.paginate(page=page, per_page=12, error_out=False)
-        
-        # Get unique courses and years for filter dropdowns
-        courses = db.session.query(Member.course).distinct().all()
-        years = db.session.query(Member.year).distinct().all()
-        
-        # Add trophy data to each member
-        for member in members.items:
-            member.trophies = member.get_current_trophies()
-        
-        return render_template('members.html', 
-                             members=members,
-                             courses=[c[0] for c in courses if c[0]],
-                             years=[y[0] for y in years if y[0]],
-                             current_status=status_filter,
-                             search_query=search_query)
+        approved = Member.query.join(User).filter(User.is_approved == True)
+        total_members = approved.count()
+        students_count = approved.filter(Member.status == 'student').count()
+        alumni_count = approved.filter(Member.status == 'alumni').count()
+
+        course_counts = db.session.query(
+            Member.course.label('course'),
+            db.func.count(Member.id).label('members_count')
+        ).join(User).filter(
+            User.is_approved == True,
+            Member.course.isnot(None),
+            Member.course != ''
+        ).group_by(Member.course).order_by(
+            db.desc('members_count'),
+            Member.course.asc()
+        ).all()
+
+        return render_template(
+            'members.html',
+            total_members=total_members,
+            students_count=students_count,
+            alumni_count=alumni_count,
+            course_counts=course_counts,
+        )
     except Exception as e:
         # Return empty results if database is not ready
         from flask import make_response
-        return make_response(render_template('members.html', 
-                                           members=None,
-                                           courses=[],
-                                           years=[],
-                                           current_status='',
-                                           search_query=''), 200)
+        return make_response(render_template('members.html',
+                                           total_members=0,
+                                           students_count=0,
+                                           alumni_count=0,
+                                           course_counts=[]), 200)
 
 @main_bp.route('/students')
 def students():
@@ -500,75 +476,3 @@ def event_rsvp_status(event_id):
     
     return render_template('rsvp_status.html', rsvp=rsvp, event=event)
 
-@main_bp.route('/members/<int:member_id>/profile')
-def member_public_profile(member_id):
-    """Public profile page for members"""
-    try:
-        print(f"Looking for member with ID: {member_id}")  # Debug logging
-        
-        # Simple query first - just get the member
-        member = Member.query.filter_by(id=member_id).first()
-        if not member:
-            print(f"Member with ID {member_id} does not exist")  # Debug logging
-            flash('Member profile not found.', 'error')
-            return redirect(url_for('main.members'))
-        
-        print(f"Member exists: {member.full_name}")  # Debug logging
-        
-        # Check if user is approved
-        if not member.user or not member.user.is_approved:
-            print(f"Member {member.full_name} is not approved")  # Debug logging
-            flash('Member profile not approved.', 'error')
-            return redirect(url_for('main.members'))
-        
-        print(f"Member {member.full_name} is approved")  # Debug logging
-        
-        # Get public projects - handle potential errors
-        try:
-            public_projects = member.projects.filter_by(is_public=True).order_by(Project.created_at.desc()).all()
-            print(f"Found {len(public_projects)} public projects")
-        except Exception as e:
-            print(f"Error loading projects: {e}")
-            public_projects = []
-        
-        # Get trophies - handle potential errors
-        try:
-            trophies = member.get_current_trophies()
-            print(f"Found {len(trophies)} trophies")
-        except Exception as e:
-            print(f"Error loading trophies: {e}")
-            trophies = []
-        
-        # Get reward transactions - handle potential errors
-        try:
-            reward_transactions = member.reward_transactions.order_by(RewardTransaction.created_at.desc()).all()
-            print(f"Found {len(reward_transactions)} reward transactions")
-        except Exception as e:
-            print(f"Error loading reward transactions: {e}")
-            reward_transactions = []
-        
-        print(f"Successfully loaded member profile for {member.full_name}")  # Debug logging
-        
-        return render_template('member_public_profile.html', 
-                             member=member,
-                             public_projects=public_projects,
-                             trophies=trophies,
-                             reward_transactions=reward_transactions)
-    except Exception as e:
-        print(f"Error loading member profile: {e}")  # Debug logging
-        import traceback
-        traceback.print_exc()  # Print full traceback
-        flash('Error loading member profile. Please try again.', 'error')
-        return redirect(url_for('main.members'))
-
-@main_bp.route('/test-member/<int:member_id>')
-def test_member(member_id):
-    """Simple test route to check if member exists"""
-    try:
-        member = Member.query.filter_by(id=member_id).first()
-        if member:
-            return f"Member found: {member.full_name} (Approved: {member.user.is_approved if member.user else 'No user'})"
-        else:
-            return f"Member with ID {member_id} not found"
-    except Exception as e:
-        return f"Error: {e}"

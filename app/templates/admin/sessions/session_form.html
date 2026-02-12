@@ -5,8 +5,8 @@
 {% block breadcrumb %}<span class="breadcrumb-separator">/</span> <a href="{{ url_for('admin.sessions_index') }}">Sessions</a><span class="breadcrumb-separator">/</span> <a href="{{ url_for('admin.sessions_week_view', week_id=week.id) }}">Week</a><span class="breadcrumb-separator">/</span> <span>{{ 'Edit' if session else 'Add' }}</span>{% endblock %}
 
 {% block admin_content %}
-<div class="admin-card">
-    <div class="admin-card-body">
+<div class="admin-card live-search-scope">
+    <div class="admin-card-body live-search-scope">
         <form method="POST">
             <div class="row g-3">
                 <div class="col-md-6">
@@ -39,14 +39,15 @@
                 </div>
                 <div class="col-md-6">
                     <label class="admin-form-label">Instructor</label>
-                    <select name="instructor_user_id" class="admin-form-select" required>
-                        <option value="">Select instructor</option>
-                        {% for u in users %}
-                        <option value="{{ u.id }}" {% if session and session.instructor_user_id == u.id %}selected{% endif %}>
-                            {{ u.member.full_name if u.member else u.email }}
-                        </option>
-                        {% endfor %}
-                    </select>
+                    {% set selected_instructor = (users | selectattr('id', 'equalto', session.instructor_user_id) | list | first) if session else None %}
+                    <input type="hidden" name="instructor_user_id" id="instructor_user_id" value="{{ session.instructor_user_id if session else '' }}" required>
+                    <div class="position-relative live-search-host">
+                        <input type="text" id="instructor_search" class="admin-form-control" placeholder="Search instructor by name or email..." autocomplete="off" value="{% if selected_instructor %}{{ selected_instructor.member.full_name if selected_instructor.member else selected_instructor.email }}{% endif %}">
+                        <div id="instructor_search_loading" class="small text-muted mt-1 d-none">
+                            <i class="fas fa-spinner fa-spin me-1"></i>Searching...
+                        </div>
+                        <div id="instructor_search_results" class="list-group shadow-sm live-search-results"></div>
+                    </div>
                 </div>
                 <div class="col-md-6">
                     <label class="admin-form-label">Meeting Link (online)</label>
@@ -82,4 +83,65 @@
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function () {
+    const input = document.getElementById('instructor_search');
+    const hidden = document.getElementById('instructor_user_id');
+    const results = document.getElementById('instructor_search_results');
+    const loading = document.getElementById('instructor_search_loading');
+    if (!input || !hidden || !results || !loading) return;
+
+    let timer = null;
+
+    function clearResults() { results.innerHTML = ''; }
+
+    function render(items) {
+        clearResults();
+        if (!items.length) {
+            results.innerHTML = '<div class="list-group-item text-muted">No users found</div>';
+            return;
+        }
+        items.forEach((item) => {
+            const row = document.createElement('button');
+            row.type = 'button';
+            row.className = 'list-group-item list-group-item-action';
+            row.innerHTML = `<strong>${item.full_name}</strong><br><small>${item.email}</small>`;
+            row.addEventListener('click', () => {
+                hidden.value = item.user_id;
+                input.value = `${item.full_name} (${item.email})`;
+                clearResults();
+            });
+            results.appendChild(row);
+        });
+    }
+
+    input.addEventListener('input', function () {
+        hidden.value = '';
+        const q = this.value.trim();
+        clearResults();
+        if (!q) return;
+
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(async () => {
+            loading.classList.remove('d-none');
+            try {
+                const res = await fetch(`{{ url_for('admin.members_search') }}?q=${encodeURIComponent(q)}&limit=12`);
+                const data = await res.json();
+                render(data.results || []);
+            } catch (e) {
+                results.innerHTML = '<div class="list-group-item text-danger">Search failed</div>';
+            } finally {
+                loading.classList.add('d-none');
+            }
+        }, 260);
+    });
+
+    document.addEventListener('click', function (e) {
+        if (!results.contains(e.target) && e.target !== input) clearResults();
+    });
+})();
+</script>
 {% endblock %}

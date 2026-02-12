@@ -1,4 +1,4 @@
-from flask import render_template, request, flash, redirect, url_for, current_app, send_file
+from flask import render_template, request, flash, redirect, url_for, current_app, send_file, jsonify, abort
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -28,6 +28,7 @@ from app.models import (
 )
 from app import db
 from app.id_generator import generate_digital_id, delete_digital_id
+from app.member_requirements import is_allowed_course
 import os
 import json
 from datetime import datetime
@@ -37,6 +38,66 @@ from sqlalchemy.exc import SQLAlchemyError
 def _normalize_name(value):
     parts = [p for p in (value or '').strip().split() if p]
     return ' '.join([p[:1].upper() + p[1:].lower() for p in parts])
+
+
+@member_bp.before_request
+def enforce_profile_completion():
+    """Require core profile fields before accessing most member panel pages."""
+    if not current_user.is_authenticated:
+        return None
+    if current_user.role == 'admin':
+        return None
+
+    endpoint = request.endpoint or ''
+    allowed_endpoints = {
+        'member.profile',
+        'member.edit_profile',
+        'member.change_password',
+    }
+    if endpoint in allowed_endpoints:
+        return None
+
+    member = current_user.member
+    if not member or not (member.phone or '').strip() or not is_allowed_course(member.course):
+        flash('Please complete your profile (valid course and phone number) before accessing the dashboard.', 'warning')
+        return redirect(url_for('member.profile'))
+    return None
+
+
+@member_bp.route('/members/search')
+@login_required
+def members_search():
+    """Live search endpoint for approved members."""
+    q = (request.args.get('q') or '').strip()
+    limit = request.args.get('limit', default=10, type=int) or 10
+    limit = max(1, min(limit, 30))
+
+    query = Member.query.join(User).filter(User.is_approved == True)
+    if q:
+        like = f"%{q}%"
+        query = query.filter(
+            db.or_(
+                Member.full_name.ilike(like),
+                Member.member_id_number.ilike(like),
+                User.email.ilike(like),
+                Member.course.ilike(like),
+            )
+        )
+
+    members = query.order_by(Member.full_name.asc()).limit(limit).all()
+    return jsonify({
+        'results': [
+            {
+                'id': m.id,
+                'full_name': m.full_name,
+                'email': m.user.email if m.user else '',
+                'member_id_number': m.member_id_number or '',
+                'course': m.course or '',
+                'year': m.year or '',
+            }
+            for m in members
+        ]
+    })
 
 
 def _sessions_tables_available():
@@ -145,14 +206,22 @@ def edit_profile():
         member.full_name = _normalize_name(request.form.get('full_name'))
         member.title = request.form.get('title')
         member.bio = request.form.get('bio')
-        member.course = request.form.get('course')
+        member.course = (request.form.get('course') or '').strip()
         member.year = request.form.get('year')
         member.status = request.form.get('status')
-        member.phone = request.form.get('phone')
+        member.phone = (request.form.get('phone') or '').strip()
         member.github = request.form.get('github')
         member.linkedin = request.form.get('linkedin')
         member.areas_of_interest = request.form.get('areas_of_interest')
         
+        if not member.phone:
+            flash('Phone number is required.', 'error')
+            return redirect(url_for('member.profile'))
+
+        if not is_allowed_course(member.course):
+            flash('Please select a valid course from the available list.', 'error')
+            return redirect(url_for('member.profile'))
+
         # Handle projects (JSON format)
         projects_text = request.form.get('projects')
         if projects_text:
@@ -622,6 +691,10 @@ def _member_is_judge(competition_id, user_id):
     return CompetitionJudge.query.filter_by(competition_id=competition_id, user_id=user_id, is_active=True).first()
 
 
+def _member_visible_competitions():
+    return Competition.query.filter(~Competition.status.in_(['draft', 'cancelled']))
+
+
 def _member_can_submit(competition, member, user_id):
     if not member:
         return False, 'Profile required before submitting.'
@@ -678,7 +751,7 @@ def _calculate_submission_scores(submission):
 @login_required
 def competitions_weekly():
     now = datetime.now()
-    base = Competition.query.filter(Competition.frequency == 'weekly', Competition.status != 'draft')
+    base = _member_visible_competitions().filter(Competition.frequency == 'weekly')
     ongoing = base.filter(Competition.status == 'published', Competition.starts_at <= now, Competition.ends_at >= now).order_by(Competition.ends_at.asc()).all()
     past_query = base.filter(Competition.status == 'finalized').order_by(Competition.ends_at.desc())
     page = request.args.get('page', 1, type=int)
@@ -690,7 +763,7 @@ def competitions_weekly():
 @login_required
 def competitions_monthly():
     now = datetime.now()
-    base = Competition.query.filter(Competition.frequency == 'monthly', Competition.status != 'draft')
+    base = _member_visible_competitions().filter(Competition.frequency == 'monthly')
     ongoing = base.filter(Competition.status == 'published', Competition.starts_at <= now, Competition.ends_at >= now).order_by(Competition.ends_at.asc()).all()
     past_query = base.filter(Competition.status == 'finalized').order_by(Competition.ends_at.desc())
     page = request.args.get('page', 1, type=int)
@@ -702,6 +775,8 @@ def competitions_monthly():
 @login_required
 def competition_detail(competition_id):
     competition = Competition.query.get_or_404(competition_id)
+    if competition.status in ['draft', 'cancelled']:
+        abort(404)
     member = current_user.member
     sponsor_links = competition.sponsors.order_by(CompetitionSponsorLink.display_order.asc()).all()
     eligible, reason = _member_can_submit(competition, member, current_user.id)
@@ -745,6 +820,8 @@ def competition_detail(competition_id):
 @login_required
 def competition_submit(competition_id):
     competition = Competition.query.get_or_404(competition_id)
+    if competition.status in ['draft', 'cancelled']:
+        abort(404)
     member = current_user.member
     eligible, reason = _member_can_submit(competition, member, current_user.id)
     if not eligible:
@@ -801,6 +878,8 @@ def competition_submit(competition_id):
 @login_required
 def competition_leaderboard(competition_id):
     competition = Competition.query.get_or_404(competition_id)
+    if competition.status in ['draft', 'cancelled']:
+        abort(404)
     submissions_query = competition.submissions.filter(CompetitionSubmission.status != 'disqualified').order_by(CompetitionSubmission.final_score.desc())
     page = request.args.get('page', 1, type=int)
     submissions_page = submissions_query.paginate(page=page, per_page=20, error_out=False)
@@ -825,6 +904,8 @@ def competition_leaderboard(competition_id):
 @login_required
 def competition_score_member(competition_id, submission_id):
     competition = Competition.query.get_or_404(competition_id)
+    if competition.status in ['draft', 'cancelled']:
+        abort(404)
     submission = CompetitionSubmission.query.get_or_404(submission_id)
     if submission.competition_id != competition.id:
         flash('Invalid submission for this competition.', 'error')
@@ -870,6 +951,8 @@ def competition_score_member(competition_id, submission_id):
 @login_required
 def competition_enroll(competition_id):
     competition = Competition.query.get_or_404(competition_id)
+    if competition.status in ['draft', 'cancelled']:
+        abort(404)
     member = current_user.member
     if not member:
         flash('Please complete your profile first.', 'warning')

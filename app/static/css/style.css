@@ -358,6 +358,13 @@ p {
     margin-left: auto;
 }
 
+.nav-user-mobile-actions {
+    display: none;
+    width: 100%;
+    flex-direction: column;
+    gap: 0.55rem;
+}
+
 /* Dropdown Navigation */
 .nav-dropdown {
     position: relative;
@@ -1641,7 +1648,8 @@ select:-webkit-autofill {
 /* Modern Mobile Navigation - Slide-in Sidebar */
 @media (max-width: 768px) {
     .nav-container {
-        padding: 0 1rem;
+        padding: 0 1.25rem;
+        height: 74px;
     }
     
     /* Modern slide-in sidebar from right */
@@ -1651,7 +1659,8 @@ select:-webkit-autofill {
         top: 0;
         width: 85%;
         max-width: 400px;
-        height: 100vh;
+        height: 100dvh;
+        max-height: 100dvh;
         display: flex;
         flex-direction: column;
         background: var(--menu-bg);
@@ -1661,10 +1670,12 @@ select:-webkit-autofill {
         transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         padding: 0;
         gap: 0;
-        overflow-y: auto;
+        overflow-y: auto !important;
         overflow-x: hidden;
+        overscroll-behavior-y: contain;
         z-index: 10001;
         -webkit-overflow-scrolling: touch;
+        scrollbar-gutter: stable;
     }
 
     .nav-menu.active {
@@ -1696,6 +1707,14 @@ select:-webkit-autofill {
         border-top: 1px solid var(--border-color);
         margin-top: 0;
         flex-shrink: 1;
+    }
+
+    .nav-user-mobile-actions {
+        display: flex;
+    }
+
+    .user-dropdown {
+        display: none !important;
     }
 
     .nav-list {
@@ -1966,6 +1985,7 @@ select:-webkit-autofill {
         border: none;
         cursor: pointer;
         padding: 0;
+        margin-right: 0.2rem;
         z-index: 10002;
         transition: transform 0.3s ease;
     }
@@ -2040,6 +2060,12 @@ select:-webkit-autofill {
         backdrop-filter: blur(8px);
         z-index: 10000;
         animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    body.menu-open .nav-menu {
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-y;
     }
 
     @keyframes fadeIn {
