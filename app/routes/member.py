@@ -786,6 +786,25 @@ def _member_visible_competitions():
     return Competition.query.filter(~Competition.status.in_(['draft', 'cancelled']))
 
 
+def _member_ongoing_competitions_for_frequency(frequency, user_id):
+    now = datetime.now()
+    base = _member_visible_competitions().filter(Competition.frequency == frequency)
+    active_for_members = base.filter(
+        Competition.status == 'published',
+        Competition.starts_at <= now,
+        Competition.ends_at >= now
+    )
+    judge_extra = base.join(
+        CompetitionJudge,
+        db.and_(
+            CompetitionJudge.competition_id == Competition.id,
+            CompetitionJudge.user_id == user_id,
+            CompetitionJudge.is_active == True
+        )
+    ).filter(Competition.status.in_(['published', 'judging']))
+    return active_for_members.union(judge_extra).order_by(Competition.ends_at.asc()).all()
+
+
 def _member_can_submit(competition, member, user_id):
     if not member:
         return False, 'Profile required before submitting.'
@@ -838,27 +857,56 @@ def _calculate_submission_scores(submission):
     submission.final_score = round(submission.total_score + (submission.bonus_points or 0), 2)
 
 
+def _submission_judge_progress(competition, submission):
+    criteria = competition.criteria.order_by(CompetitionCriteria.id.asc()).all()
+    criteria_count = len(criteria)
+    judges = competition.judges.filter_by(is_active=True).all()
+    rows = CompetitionScore.query.filter_by(submission_id=submission.id).all()
+    score_map = {(r.judge_id, r.criteria_id): r.score for r in rows}
+
+    progress = []
+    for j in judges:
+        total = 0.0
+        scored_count = 0
+        for c in criteria:
+            key = (j.user_id, c.id)
+            if key in score_map:
+                scored_count += 1
+                max_points = c.max_points or 1
+                total += (score_map[key] / max_points) * (c.weight_percent or 0)
+        judge_user = j.judge
+        progress.append({
+            'judge_id': j.user_id,
+            'name': judge_user.member.full_name if getattr(judge_user, 'member', None) else judge_user.email,
+            'email': judge_user.email,
+            'is_chair': j.is_chair,
+            'scored_count': scored_count,
+            'criteria_count': criteria_count,
+            'graded': scored_count > 0,
+            'total_score': round(total, 2),
+        })
+    return progress
+
+
 @member_bp.route('/competitions/weekly')
 @login_required
 def competitions_weekly():
-    now = datetime.now()
     base = _member_visible_competitions().filter(Competition.frequency == 'weekly')
-    ongoing = base.filter(Competition.status == 'published', Competition.starts_at <= now, Competition.ends_at >= now).order_by(Competition.ends_at.asc()).all()
+    ongoing = _member_ongoing_competitions_for_frequency('weekly', current_user.id)
     past_query = base.filter(Competition.status == 'finalized').order_by(Competition.ends_at.desc())
     page = request.args.get('page', 1, type=int)
-    past = past_query.paginate(page=page, per_page=6, error_out=False)
+    past = past_query.paginate(page=page, per_page=10, error_out=False)
     return render_template('member/competitions_list.html', view_label='Weekly', ongoing=ongoing, past=past)
 
 
 @member_bp.route('/competitions/monthly')
 @login_required
 def competitions_monthly():
-    now = datetime.now()
     base = _member_visible_competitions().filter(Competition.frequency == 'monthly')
-    ongoing = base.filter(Competition.status == 'published', Competition.starts_at <= now, Competition.ends_at >= now).order_by(Competition.ends_at.asc()).all()
+    ongoing = _member_ongoing_competitions_for_frequency('monthly', current_user.id)
     past_query = base.filter(Competition.status == 'finalized').order_by(Competition.ends_at.desc())
     page = request.args.get('page', 1, type=int)
-    past = past_query.paginate(page=page, per_page=6, error_out=False)
+    past = past_query.paginate(page=page, per_page=10, error_out=False)
     return render_template('member/competitions_list.html', view_label='Monthly', ongoing=ongoing, past=past)
 
 
@@ -1047,7 +1095,15 @@ def competition_score_member(competition_id, submission_id):
         return redirect(url_for('member.competition_detail', competition_id=competition.id))
 
     existing_scores = {s.criteria_id: s for s in submission.scores.filter_by(judge_id=current_user.id).all()}
-    return render_template('member/competition_score.html', competition=competition, submission=submission, criteria=criteria, existing_scores=existing_scores)
+    judge_progress = _submission_judge_progress(competition, submission)
+    return render_template(
+        'member/competition_score.html',
+        competition=competition,
+        submission=submission,
+        criteria=criteria,
+        existing_scores=existing_scores,
+        judge_progress=judge_progress
+    )
 
 @member_bp.route('/competitions/<int:competition_id>/enroll', methods=['POST'])
 @login_required
