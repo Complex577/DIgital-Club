@@ -149,6 +149,26 @@ def _migrate_competition_enrollment_notice_fields():
     except Exception:
         pass
 
+
+def _migrate_competition_criteria_visibility():
+    """Compatibility migration: add competition criteria visibility flag if missing."""
+    try:
+        from sqlalchemy import inspect, text
+
+        inspector = inspect(db.engine)
+        if 'competition_criteria' not in inspector.get_table_names():
+            return
+        cols = {c['name'] for c in inspector.get_columns('competition_criteria')}
+        if 'is_visible_to_members' in cols:
+            return
+        with db.engine.connect() as conn:
+            conn.execute(
+                text("ALTER TABLE competition_criteria ADD COLUMN is_visible_to_members BOOLEAN NOT NULL DEFAULT 1")
+            )
+            conn.commit()
+    except Exception:
+        pass
+
 def create_app():
     app = Flask(__name__)
     
@@ -190,6 +210,7 @@ def create_app():
         _migrate_event_target_audience_column()
         _migrate_rsvp_attendee_fields()
         _migrate_competition_enrollment_notice_fields()
+        _migrate_competition_criteria_visibility()
     
     # Configure login manager
     login_manager.login_view = 'auth.login'

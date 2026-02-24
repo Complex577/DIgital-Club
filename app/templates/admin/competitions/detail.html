@@ -394,6 +394,14 @@
                                 <input type="text" name="description" class="admin-form-control" placeholder="Brief description (optional)">
                             </div>
                             <div class="col-12">
+                                <div class="form-check mt-1">
+                                    <input type="checkbox" class="form-check-input" id="is_visible_to_members" name="is_visible_to_members" checked>
+                                    <label class="form-check-label" for="is_visible_to_members" style="font-size: 0.85rem;">
+                                        Visible to members in competition details
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-12">
                                 <button type="submit" class="admin-btn admin-btn-outline">
                                     <i class="fas fa-plus-circle"></i> Add Criterion
                                 </button>
@@ -420,9 +428,17 @@
                                     <span class="admin-badge admin-badge-info" style="font-size: 0.7rem; padding: 0.2rem 0.5rem; margin-left: 0.25rem;">
                                         Max: {{ c.max_points }} pts
                                     </span>
+                                    <span class="admin-badge {% if c.is_visible_to_members %}admin-badge-success{% else %}admin-badge-secondary{% endif %}" style="font-size: 0.7rem; padding: 0.2rem 0.5rem; margin-left: 0.25rem;">
+                                        {% if c.is_visible_to_members %}Visible to Members{% else %}Hidden from Members{% endif %}
+                                    </span>
                                 </div>
                             </div>
                             <div class="list-item-actions">
+                                <form method="POST" action="{{ url_for('admin.competitions_criteria_visibility', competition_id=competition.id, criteria_id=c.id) }}">
+                                    <button type="submit" class="admin-btn admin-btn-outline admin-btn-sm" title="Toggle member visibility">
+                                        <i class="fas {% if c.is_visible_to_members %}fa-eye-slash{% else %}fa-eye{% endif %}"></i>
+                                    </button>
+                                </form>
                                 <form method="POST" action="{{ url_for('admin.competitions_criteria_delete', competition_id=competition.id, criteria_id=c.id) }}">
                                     <button type="submit" class="admin-btn admin-btn-outline admin-btn-sm">
                                         <i class="fas fa-trash"></i>
@@ -658,6 +674,19 @@
                                     <a href="{{ link.sponsor.website }}" target="_blank" style="color: var(--admin-primary);">{{ link.sponsor.website }}</a>
                                 </div>
                                 {% endif %}
+                            </div>
+                            <div class="d-flex gap-2">
+                                <form method="POST" action="{{ url_for('admin.competitions_sponsor_remove', competition_id=competition.id, link_id=link.id) }}" onsubmit="return confirm('Remove this sponsor from this competition?');">
+                                    <button type="submit" class="admin-btn admin-btn-outline admin-btn-sm">
+                                        <i class="fas fa-unlink"></i> Remove
+                                    </button>
+                                </form>
+                                <form method="POST" action="{{ url_for('admin.competitions_sponsor_delete', sponsor_id=link.sponsor.id) }}" onsubmit="return confirm('Delete this sponsor from the whole system? This removes it from all competitions.');">
+                                    <input type="hidden" name="competition_id" value="{{ competition.id }}">
+                                    <button type="submit" class="admin-btn admin-btn-danger admin-btn-sm">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                </form>
                             </div>
                         </div>
                         {% endfor %}

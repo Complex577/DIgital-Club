@@ -769,6 +769,7 @@ class CompetitionCriteria(db.Model):
     description = db.Column(db.Text)
     max_points = db.Column(db.Integer, default=10)
     weight_percent = db.Column(db.Integer, default=0)  # total 100 across criteria
+    is_visible_to_members = db.Column(db.Boolean, default=True, nullable=False)
 
     __table_args__ = (db.UniqueConstraint('competition_id', 'name', name='_competition_criteria_uc'),)
 

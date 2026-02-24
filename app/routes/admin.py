@@ -3166,6 +3166,7 @@ def competitions_criteria_add(competition_id):
         description=request.form.get('description'),
         max_points=int(request.form.get('max_points') or 10),
         weight_percent=int(request.form.get('weight_percent') or 0),
+        is_visible_to_members=bool(request.form.get('is_visible_to_members')),
     )
     db.session.add(criteria)
     db.session.commit()
@@ -3181,6 +3182,20 @@ def competitions_criteria_delete(competition_id, criteria_id):
     db.session.delete(criteria)
     db.session.commit()
     flash('Criteria removed.', 'success')
+    return redirect(url_for('admin.competitions_view', competition_id=competition_id))
+
+
+@admin_bp.route('/competitions/<int:competition_id>/criteria/<int:criteria_id>/visibility', methods=['POST'])
+@login_required
+@admin_required
+def competitions_criteria_visibility(competition_id, criteria_id):
+    criteria = CompetitionCriteria.query.get_or_404(criteria_id)
+    if criteria.competition_id != competition_id:
+        flash('Invalid criterion.', 'error')
+        return redirect(url_for('admin.competitions_view', competition_id=competition_id))
+    criteria.is_visible_to_members = not bool(criteria.is_visible_to_members)
+    db.session.commit()
+    flash('Criterion visibility updated.', 'success')
     return redirect(url_for('admin.competitions_view', competition_id=competition_id))
 
 
@@ -3308,6 +3323,40 @@ def competitions_sponsors_add():
     db.session.commit()
     flash('Sponsor created.', 'success')
     return redirect(request.referrer or url_for('admin.competitions'))
+
+
+@admin_bp.route('/competitions/<int:competition_id>/sponsors/<int:link_id>/remove', methods=['POST'])
+@login_required
+@admin_required
+def competitions_sponsor_remove(competition_id, link_id):
+    competition = Competition.query.get_or_404(competition_id)
+    link = CompetitionSponsorLink.query.get_or_404(link_id)
+    if link.competition_id != competition.id:
+        flash('Invalid sponsor link.', 'error')
+        return redirect(url_for('admin.competitions_view', competition_id=competition.id))
+
+    db.session.delete(link)
+    db.session.commit()
+    flash('Sponsor removed from this competition.', 'success')
+    return redirect(url_for('admin.competitions_view', competition_id=competition.id))
+
+
+@admin_bp.route('/competitions/sponsors/<int:sponsor_id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def competitions_sponsor_delete(sponsor_id):
+    competition_id = request.form.get('competition_id', type=int)
+    sponsor = CompetitionSponsor.query.get_or_404(sponsor_id)
+
+    # Remove all competition assignments before deleting the sponsor record.
+    CompetitionSponsorLink.query.filter_by(sponsor_id=sponsor.id).delete(synchronize_session=False)
+    db.session.delete(sponsor)
+    db.session.commit()
+
+    flash('Sponsor deleted from the system.', 'success')
+    if competition_id:
+        return redirect(url_for('admin.competitions_view', competition_id=competition_id))
+    return redirect(url_for('admin.competitions'))
 
 
 @admin_bp.route('/competitions/<int:competition_id>/submissions')

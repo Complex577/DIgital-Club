@@ -797,17 +797,56 @@
             </div>
         </div>
         
-        <!-- Scoring & Awards -->
+        <!-- Scoring -->
+        <div class="admin-card section-card">
+            <div class="section-card-header">
+                <div class="section-icon">
+                    <i class="fas fa-bullseye"></i>
+                </div>
+                <h5 class="section-title">Scoring</h5>
+            </div>
+            <div class="admin-card-body">
+                <p class="mb-3">Scores are weighted by criteria and averaged across judges. Final score = average + bonus (if any). Ranks are assigned by final score.</p>
+
+                {% if visible_criteria %}
+                <div class="reward-list">
+                    {% for c in visible_criteria %}
+                    <div class="reward-item">
+                        <div class="reward-icon">
+                            <i class="fas fa-bullseye"></i>
+                        </div>
+                        <div class="reward-details">
+                            <div class="reward-title">{{ c.name }}</div>
+                            {% if c.description %}
+                            <div class="reward-description">{{ c.description }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="reward-points">{{ c.weight_percent }}% • {{ c.max_points }} pts</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="alert-card alert-info">
+                    <div class="d-flex align-items-center">
+                        <div class="alert-icon">
+                            <i class="fas fa-info-circle"></i>
+                        </div>
+                        <div>Scoring criteria are not published yet.</div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Awards -->
         <div class="admin-card section-card">
             <div class="section-card-header">
                 <div class="section-icon">
                     <i class="fas fa-trophy"></i>
                 </div>
-                <h5 class="section-title">Scoring & Awards</h5>
+                <h5 class="section-title">Awards</h5>
             </div>
             <div class="admin-card-body">
-                <p class="mb-3">Scores are weighted by criteria and averaged across judges. Final score = average + bonus (if any). Ranks are assigned by final score.</p>
-                
                 {% if rewards %}
                 <div class="reward-list">
                     {% for r in rewards %}
