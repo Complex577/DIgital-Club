@@ -926,6 +926,7 @@ def competition_detail(competition_id):
         enrollment = CompetitionEnrollment.query.filter_by(competition_id=competition.id, member_id=member.id).first()
     is_judge = _member_is_judge(competition.id, current_user.id) is not None
     rewards = competition.rewards.order_by(CompetitionReward.id.asc()).all()
+    visible_criteria = competition.criteria.filter_by(is_visible_to_members=True).order_by(CompetitionCriteria.id.asc()).all()
     my_rank = None
     my_award = None
     total_ranked = 0
@@ -949,6 +950,7 @@ def competition_detail(competition_id):
         is_judge=is_judge,
         sponsors=sponsor_links,
         rewards=rewards,
+        visible_criteria=visible_criteria,
         my_rank=my_rank,
         my_award=my_award,
         total_ranked=total_ranked,
