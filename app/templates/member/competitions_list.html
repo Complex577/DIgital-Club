@@ -1,8 +1,8 @@
 ﻿{% extends "member/member_base.html" %}
 
-{% block title %}{{ view_label }} Competitions - Digital Club{% endblock %}
-{% block page_title %}{{ view_label }} Competitions{% endblock %}
-{% block breadcrumb %}<span class="breadcrumb-separator">/</span> <span>Competitions</span><span class="breadcrumb-separator">/</span> <span>{{ view_label }}</span>{% endblock %}
+{% block title %}Competitions - Digital Club{% endblock %}
+{% block page_title %}Competitions{% endblock %}
+{% block breadcrumb %}<span class="breadcrumb-separator">/</span> <span>Competitions</span>{% endblock %}
 
 {% block extra_head %}
 {{ super() }}
@@ -328,6 +328,40 @@
         font-size: 0.9rem;
         color: var(--text-muted);
     }
+
+    .view-tabs {
+        display: inline-flex;
+        gap: 0.5rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .view-tab {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.5rem 0.85rem;
+        border: 1px solid var(--border-color);
+        border-radius: 999px;
+        color: var(--text-secondary);
+        text-decoration: none;
+        font-size: 0.8rem;
+        transition: all 0.2s ease;
+        background: var(--surface-1);
+    }
+
+    .view-tab:hover {
+        border-color: var(--primary-color);
+        color: var(--primary-color);
+        background: var(--surface-2);
+    }
+
+    .view-tab.active {
+        background: var(--gradient-primary);
+        color: var(--bg-primary);
+        border-color: transparent;
+        font-weight: 600;
+    }
 </style>
 {% endblock %}
 
@@ -338,7 +372,14 @@
             <h5 class="section-title">Ongoing {{ view_label }} Competitions</h5>
             <div class="section-subtitle">Active competitions you can join right now</div>
         </div>
-       
+        <div class="view-tabs">
+            <a href="{{ url_for('member.competitions_weekly') }}" class="view-tab {% if view_type == 'weekly' %}active{% endif %}">
+                <i class="fas fa-calendar-week"></i> Weekly
+            </a>
+            <a href="{{ url_for('member.competitions_monthly') }}" class="view-tab {% if view_type == 'monthly' %}active{% endif %}">
+                <i class="fas fa-calendar"></i> Monthly
+            </a>
+        </div>
     </div>
     <div class="admin-card-body">
         {% if ongoing %}
@@ -360,7 +401,7 @@
                     </div>
                     <div class="meta-item">
                         <i class="fas fa-user-check"></i>
-                        <span>{{ comp.enrollments.count() }} enrolled</span>
+                        <span>{{ enrollment_counts.get(comp.id, 0) }} enrolled</span>
                     </div>
                     <div class="meta-item">
                         <i class="fas fa-trophy"></i>

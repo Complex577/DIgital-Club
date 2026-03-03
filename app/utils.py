@@ -502,6 +502,95 @@ Digital Club Team
                 logging.error(f"Failed to send competition notice SMS: {exc}")
             return False
 
+    def send_team_notice_sms_to_leader(self, team, notice_message):
+        """Send team admin notice to team leader."""
+        try:
+            if not team or not notice_message:
+                return False
+            leader = team.leader()
+            if not leader or not (leader.phone or '').strip():
+                return False
+            sms = f"Team update for {team.name}: {notice_message}"
+            return self.send_sms(leader.phone, sms)
+        except Exception as exc:
+            try:
+                current_app.logger.error(f"Failed to send team notice SMS: {exc}")
+            except RuntimeError:
+                logging.error(f"Failed to send team notice SMS: {exc}")
+            return False
+
+    def send_team_status_sms_to_members(self, team, reason, status='suspended'):
+        """Send team status update SMS to all team members."""
+        try:
+            if not team:
+                return 0
+            sent = 0
+            members = team.members.all()
+            for tm in members:
+                member = tm.member
+                phone = (member.phone or '').strip() if member else ''
+                if not phone:
+                    continue
+                if status == 'deleted':
+                    message = f"Team {team.name} has been deleted by admin. Reason: {reason}"
+                elif status == 'restored':
+                    message = f"Team {team.name} suspension has been lifted. You can continue using team features."
+                else:
+                    message = f"Team {team.name} has been suspended by admin. Reason: {reason}"
+                if self.send_sms(phone, message):
+                    sent += 1
+            return sent
+        except Exception as exc:
+            try:
+                current_app.logger.error(f"Failed to send team status SMS: {exc}")
+            except RuntimeError:
+                logging.error(f"Failed to send team status SMS: {exc}")
+            return 0
+
+    def send_team_join_request_sms_to_admins(self, member, team):
+        """Notify admins about a team join request."""
+        try:
+            if not member or not team:
+                return 0
+            from app.models import User  # lazy import
+            admins = User.query.filter_by(role='admin').all()
+            sent = 0
+            details = f"{member.full_name} ({member.course or 'N/A'}, {member.year or 'N/A'}) requested to join {team.name}."
+            for admin in admins:
+                admin_member = getattr(admin, 'member', None)
+                phone = (admin_member.phone or '').strip() if admin_member else ''
+                if not phone:
+                    continue
+                if self.send_sms(phone, f"Team join request: {details}"):
+                    sent += 1
+            return sent
+        except Exception as exc:
+            try:
+                current_app.logger.error(f"Failed to send admin join-request SMS: {exc}")
+            except RuntimeError:
+                logging.error(f"Failed to send admin join-request SMS: {exc}")
+            return 0
+
+    def send_team_join_decision_sms(self, member, team, decision='approved'):
+        """Notify a member after team join approval/rejection."""
+        try:
+            if not member or not team:
+                return False
+            phone = (member.phone or '').strip()
+            if not phone:
+                return False
+            if decision == 'approved':
+                message = f"Your request to join team {team.name} has been approved."
+            else:
+                message = f"Your request to join team {team.name} has been rejected."
+            return self.send_sms(phone, message)
+        except Exception as exc:
+            try:
+                current_app.logger.error(f"Failed to send team join decision SMS: {exc}")
+            except RuntimeError:
+                logging.error(f"Failed to send team join decision SMS: {exc}")
+            return False
+
     def send_admin_promotion_email(self, user, promoted_by):
         """Notify a member they have been promoted to admin"""
         try:

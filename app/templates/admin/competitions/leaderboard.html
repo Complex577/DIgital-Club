@@ -217,6 +217,88 @@
         font-weight: 500;
         color: var(--admin-text-primary);
     }
+
+    .team-expand-btn {
+        width: 26px;
+        height: 26px;
+        border-radius: 6px;
+        border: 1px solid var(--admin-border);
+        background: var(--surface-2);
+        color: var(--admin-text-secondary);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .team-expand-btn:hover {
+        border-color: var(--admin-primary);
+        color: var(--admin-primary);
+    }
+
+    .team-expand-btn i {
+        transition: transform 0.2s ease;
+    }
+
+    .team-expand-btn.is-open i {
+        transform: rotate(90deg);
+    }
+
+    .team-members-row {
+        background: var(--surface-2);
+    }
+
+    .team-members-wrap {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+    }
+
+    .team-member-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        background: var(--surface-1);
+        border: 1px solid var(--admin-border);
+        border-radius: 999px;
+        padding: 0.3rem 0.6rem 0.3rem 0.3rem;
+    }
+
+    .team-member-chip .avatar {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: var(--surface-2);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: var(--admin-primary);
+        overflow: hidden;
+    }
+
+    .team-member-chip .avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .team-member-chip .meta {
+        line-height: 1.15;
+    }
+
+    .team-member-chip .name {
+        font-size: 0.75rem;
+        color: var(--admin-text-primary);
+        font-weight: 600;
+    }
+
+    .team-member-chip .course {
+        font-size: 0.67rem;
+        color: var(--admin-text-muted);
+    }
     
     .score-cell {
         font-family: 'Fira Code', monospace;
@@ -365,36 +447,53 @@
                                     {% endif %}
                                 </td>
                                 <td class="member-cell" data-label="Participant">
+                                    {% if s.record_type == 'team' %}
+                                    <button type="button"
+                                            class="team-expand-btn"
+                                            data-team-toggle="admin-team-{{ current_rank }}"
+                                            title="Show team members">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </button>
+                                    {% endif %}
                                     <div class="member-avatar">
-                                        {{ s.member.full_name[0]|upper }}
+                                        {{ s.participant_name[0]|upper }}
                                     </div>
                                     <div>
-                                        <div class="member-name">{{ s.member.full_name }}</div>
+                                        <div class="member-name">{{ s.participant_name }}</div>
                                         <div style="font-size: 0.75rem; color: var(--admin-text-muted);">
-                                            {{ s.member.email }}
+                                            {% if s.record_type == 'team' %}
+                                            <span class="admin-badge admin-badge-info" style="font-size: 0.65rem; margin-right: 0.35rem;">Team</span>
+                                            {% else %}
+                                            <span class="admin-badge admin-badge-secondary" style="font-size: 0.65rem; margin-right: 0.35rem;">Individual</span>
+                                            {% endif %}
+                                            {{ s.participant_email }}
                                         </div>
                                     </div>
                                 </td>
                                 <td class="score-cell" data-label="Score">
-                                    {% if s.final_score %}
+                                    {% if s.final_score is not none %}
                                     {{ s.final_score }}
                                     {% else %}
                                     <span style="color: var(--admin-text-muted); font-size: 0.85rem;">Pending</span>
                                     {% endif %}
                                 </td>
                                 <td class="submission-cell" data-label="Submission">
-                                    {% if s.submission_type in ['video', 'report'] %}
-                                        <a href="{{ url_for('static', filename='uploads/competitions/' + s.submission_value) }}" 
-                                           target="_blank" 
-                                           style="font-size: 0.85rem; color: var(--admin-primary);">
-                                            <i class="fas fa-download"></i> Download
-                                        </a>
+                                    {% if s.submission_value %}
+                                        {% if s.submission_type in ['video', 'report'] %}
+                                            <a href="{{ url_for('static', filename='uploads/competitions/' + s.submission_value) }}"
+                                               target="_blank"
+                                               style="font-size: 0.85rem; color: var(--admin-primary);">
+                                                <i class="fas fa-download"></i> Download
+                                            </a>
+                                        {% else %}
+                                            <a href="{{ s.submission_value }}"
+                                               target="_blank"
+                                               style="font-size: 0.85rem; color: var(--admin-primary);">
+                                                <i class="fas fa-external-link-alt"></i> View
+                                            </a>
+                                        {% endif %}
                                     {% else %}
-                                        <a href="{{ s.submission_value }}" 
-                                           target="_blank" 
-                                           style="font-size: 0.85rem; color: var(--admin-primary);">
-                                            <i class="fas fa-external-link-alt"></i> View
-                                        </a>
+                                        <span style="color: var(--admin-text-muted); font-size: 0.85rem;">-</span>
                                     {% endif %}
                                 </td>
                                 <td class="award-cell" data-label="Award">
@@ -407,6 +506,33 @@
                                     {% endif %}
                                 </td>
                             </tr>
+                            {% if s.record_type == 'team' %}
+                            <tr id="admin-team-{{ current_rank }}" class="team-members-row d-none">
+                                <td colspan="5">
+                                    {% if s.team_members %}
+                                    <div class="team-members-wrap">
+                                        {% for tm in s.team_members %}
+                                        <div class="team-member-chip">
+                                            <span class="avatar">
+                                                {% if tm.profile_image %}
+                                                <img src="{{ url_for('static', filename='uploads/profiles/' + tm.profile_image) }}" alt="{{ tm.full_name }}">
+                                                {% else %}
+                                                {{ tm.full_name[0]|upper }}
+                                                {% endif %}
+                                            </span>
+                                            <span class="meta">
+                                                <span class="name">{{ tm.full_name }}</span><br>
+                                                <span class="course">{{ tm.course or 'Member' }}{% if tm.year %} • {{ tm.year }}{% endif %}</span>
+                                            </span>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    {% else %}
+                                    <span style="font-size: 0.8rem; color: var(--admin-text-muted);">No team members snapshot available.</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endif %}
                             {% endfor %}
                         </tbody>
                     </table>
@@ -544,4 +670,15 @@
         {% endif %}
     </div>
 </div>
+<script>
+document.addEventListener('click', function (event) {
+    var btn = event.target.closest('[data-team-toggle]');
+    if (!btn) return;
+    var targetId = btn.getAttribute('data-team-toggle');
+    var row = document.getElementById(targetId);
+    if (!row) return;
+    row.classList.toggle('d-none');
+    btn.classList.toggle('is-open', !row.classList.contains('d-none'));
+});
+</script>
 {% endblock %}

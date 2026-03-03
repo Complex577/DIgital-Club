@@ -173,6 +173,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Dropdown Navigation Functionality
     initializeDropdowns();
 
+    // Flash notifications (styled + timed progress)
+    initializeFlashNotifications();
+
     // Typing Animation for Hero Title
     const heroTitle = document.querySelector('.hero-title');
     if (heroTitle) {
@@ -426,22 +429,21 @@ async function handleNewsletterSubmit(e) {
 function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
     notification.className = `flash-message flash-${type}`;
+    notification.setAttribute('data-flash-duration', '5200');
     notification.innerHTML = `
-        <span>${message}</span>
-        <button class="flash-close" onclick="this.parentElement.remove()">
+        <div class="flash-content">
+            <i class="flash-icon fas ${flashIconClass(type)}"></i>
+            <span class="flash-text">${message}</span>
+        </div>
+        <button class="flash-close" type="button" aria-label="Close notification">
             <i class="fas fa-times"></i>
         </button>
+        <div class="flash-progress"></div>
     `;
-    
+
     const flashContainer = document.querySelector('.flash-messages') || createFlashContainer();
     flashContainer.appendChild(notification);
-    
-    // Auto remove after 5 seconds
-    setTimeout(() => {
-        if (notification.parentElement) {
-            notification.remove();
-        }
-    }, 5000);
+    wireFlashNotification(notification);
 }
 
 function createFlashContainer() {
@@ -449,6 +451,48 @@ function createFlashContainer() {
     container.className = 'flash-messages';
     document.body.appendChild(container);
     return container;
+}
+
+function flashIconClass(type) {
+    if (type === 'success') return 'fa-circle-check';
+    if (type === 'error' || type === 'danger') return 'fa-circle-xmark';
+    if (type === 'warning') return 'fa-triangle-exclamation';
+    return 'fa-circle-info';
+}
+
+function dismissFlashNotification(notification) {
+    if (!notification || notification.classList.contains('is-closing')) return;
+    notification.classList.add('is-closing');
+    window.setTimeout(() => {
+        if (notification.parentElement) notification.remove();
+    }, 220);
+}
+
+function wireFlashNotification(notification) {
+    if (!notification || notification.dataset.flashWired === 'true') return;
+    notification.dataset.flashWired = 'true';
+
+    const duration = parseInt(notification.getAttribute('data-flash-duration') || '5200', 10);
+    const progress = notification.querySelector('.flash-progress');
+    if (progress) progress.style.animationDuration = `${duration}ms`;
+
+    const closeBtn = notification.querySelector('.flash-close');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => dismissFlashNotification(notification));
+    }
+
+    const typeClass = Array.from(notification.classList).find(c => c.startsWith('flash-') && c !== 'flash-message');
+    const icon = notification.querySelector('.flash-icon');
+    if (icon && !icon.classList.contains('fa-circle-check') && !icon.classList.contains('fa-circle-xmark') && !icon.classList.contains('fa-triangle-exclamation')) {
+        const inferred = typeClass ? typeClass.replace('flash-', '') : 'info';
+        icon.className = `flash-icon fas ${flashIconClass(inferred)}`;
+    }
+
+    window.setTimeout(() => dismissFlashNotification(notification), duration);
+}
+
+function initializeFlashNotifications() {
+    document.querySelectorAll('.flash-message').forEach(wireFlashNotification);
 }
 
 // Terminal-style typing effect

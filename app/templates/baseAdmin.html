@@ -196,11 +196,15 @@
         {% if messages %}
             <div class="flash-messages">
                 {% for category, message in messages %}
-                    <div class="flash-message flash-{{ category }}">
-                        <span>{{ message }}</span>
-                        <button class="flash-close" onclick="this.parentElement.remove()">
+                    <div class="flash-message flash-{{ category }}" data-flash-duration="5200">
+                        <div class="flash-content">
+                            <i class="flash-icon fas fa-circle-info"></i>
+                            <span class="flash-text">{{ message }}</span>
+                        </div>
+                        <button class="flash-close" type="button" aria-label="Close notification">
                             <i class="fas fa-times"></i>
                         </button>
+                        <div class="flash-progress"></div>
                     </div>
                 {% endfor %}
             </div>

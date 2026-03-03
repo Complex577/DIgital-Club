@@ -276,12 +276,12 @@
                 
                 <!-- Enrollments -->
                 <div class="competition-meta-cell" data-label="Enrollments">
-                    <span class="admin-code">{{ comp.enrollments.count() }}</span>
+                    <span class="admin-code">{{ enrollment_counts.get(comp.id, 0) }}</span>
                 </div>
                 
                 <!-- Submissions -->
                 <div class="competition-meta-cell" data-label="Submissions">
-                    <span class="admin-code">{{ comp.submissions.count() }}</span>
+                    <span class="admin-code">{{ submission_counts.get(comp.id, 0) }}</span>
                 </div>
                 
                 <!-- Actions -->

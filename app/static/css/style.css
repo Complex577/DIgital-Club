@@ -725,6 +725,8 @@ a:hover, .nav-link:hover { color: var(--primary-color); }
     right: 2rem;
     z-index: 10001;
     max-width: 400px;
+    display: grid;
+    gap: 0.6rem;
 }
 
 @media (max-width: 768px) {
@@ -737,15 +739,56 @@ a:hover, .nav-link:hover { color: var(--primary-color); }
 }
 
 .flash-message {
+    --flash-accent: var(--primary-color);
+    --flash-bg: color-mix(in srgb, var(--surface-1) 88%, transparent);
+    position: relative;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
-    padding: 1rem 1.5rem;
-    margin-bottom: 0.5rem;
-    border-radius: 10px;
-    backdrop-filter: blur(10px);
-    border: 1px solid;
-    animation: slideIn 0.3s ease;
+    gap: 0.8rem;
+    padding: 0.9rem 0.95rem 0.95rem;
+    border-radius: 12px;
+    background: var(--flash-bg);
+    border: 1px solid color-mix(in srgb, var(--flash-accent) 45%, var(--border-color));
+    color: var(--text-primary);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+    backdrop-filter: blur(8px);
+    animation: slideIn 0.28s ease;
+    overflow: hidden;
+}
+
+.flash-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    min-width: 0;
+}
+
+.flash-icon {
+    color: var(--flash-accent);
+    margin-top: 0.05rem;
+}
+
+.flash-text {
+    color: var(--text-primary);
+    font-size: 0.88rem;
+    line-height: 1.35;
+    word-wrap: break-word;
+}
+
+.flash-message.is-closing {
+    animation: slideOut 0.2s ease forwards;
+}
+
+.flash-progress {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 3px;
+    background: var(--flash-accent);
+    transform-origin: left center;
+    animation: flashProgress linear forwards;
 }
 
 @keyframes slideIn {
@@ -753,36 +796,48 @@ a:hover, .nav-link:hover { color: var(--primary-color); }
     to { transform: translateX(0); opacity: 1; }
 }
 
+@keyframes slideOut {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(20%); opacity: 0; }
+}
+
+@keyframes flashProgress {
+    from { transform: scaleX(1); opacity: 0.95; }
+    to { transform: scaleX(0); opacity: 0.65; }
+}
+
 .flash-success {
-    background: rgba(0, 255, 0, 0.1);
-    border-color: #00ff00;
-    color: #00ff00;
+    --flash-accent: #21c77a;
+    --flash-bg: color-mix(in srgb, #21c77a 12%, var(--surface-1));
 }
 
 .flash-error {
-    background: rgba(255, 0, 0, 0.1);
-    border-color: #ff0000;
-    color: #ff0000;
+    --flash-accent: #e45d6a;
+    --flash-bg: color-mix(in srgb, #e45d6a 13%, var(--surface-1));
 }
 
 .flash-warning {
-    background: rgba(255, 255, 0, 0.1);
-    border-color: #ffff00;
-    color: #4e4e34;
+    --flash-accent: #e6b21a;
+    --flash-bg: color-mix(in srgb, #e6b21a 14%, var(--surface-1));
 }
 
 .flash-info {
-    background: rgba(0, 255, 255, 0.1);
-    border-color: var(--primary-color);
-    color: var(--primary-color);
+    --flash-accent: var(--primary-color);
+    --flash-bg: color-mix(in srgb, var(--primary-color) 10%, var(--surface-1));
 }
 
 .flash-close {
     background: none;
     border: none;
-    color: inherit;
+    color: var(--text-muted);
     cursor: pointer;
-    margin-left: 1rem;
+    margin-left: auto;
+    padding: 0.1rem 0.15rem;
+    line-height: 1;
+}
+
+.flash-close:hover {
+    color: var(--flash-accent);
 }
 
 /* Main Content */

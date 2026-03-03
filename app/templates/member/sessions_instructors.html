@@ -1,8 +1,8 @@
 ﻿{% extends "member/member_base.html" %}
 
 {% block title %}Instructors - Digital Club{% endblock %}
-{% block page_title %}Instructors{% endblock %}
-{% block breadcrumb %}<span class="breadcrumb-separator">/</span> <span>Sessions</span><span class="breadcrumb-separator">/</span> <span>Instructors</span>{% endblock %}
+{% block page_title %}Sessions{% endblock %}
+{% block breadcrumb %}<span class="breadcrumb-separator">/</span> <span>Sessions</span>{% endblock %}
 
 {% block extra_head %}
 {{ super() }}
@@ -347,6 +347,39 @@
         color: var(--bg-primary);
         border-color: transparent;
     }
+
+    .session-tabs {
+        display: inline-flex;
+        gap: 0.5rem;
+        margin: 0.75rem 0 0.4rem;
+        flex-wrap: wrap;
+    }
+
+    .session-tab {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.45rem 0.8rem;
+        border-radius: 999px;
+        border: 1px solid var(--border-color);
+        text-decoration: none;
+        color: var(--text-secondary);
+        font-size: 0.8rem;
+        transition: all 0.2s ease;
+        background: var(--surface-1);
+    }
+
+    .session-tab:hover {
+        color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+
+    .session-tab.active {
+        background: var(--gradient-primary);
+        color: var(--bg-primary);
+        border-color: transparent;
+        font-weight: 600;
+    }
 </style>
 {% endblock %}
 
@@ -355,6 +388,10 @@
     <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
         <div>
             <h5 class="mb-1">Session Instructors</h5>
+            <div class="session-tabs">
+                <a href="{{ url_for('member.sessions_timetable') }}" class="session-tab"><i class="fas fa-calendar-alt"></i> Timetable</a>
+                <a href="{{ url_for('member.sessions_instructors') }}" class="session-tab active"><i class="fas fa-user-tie"></i> Instructors</a>
+            </div>
             <p class="mb-0">
                 Meet our team of expert instructors and session leaders
             </p>

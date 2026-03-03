@@ -873,6 +873,92 @@ class CompetitionEnrollment(db.Model):
     __table_args__ = (db.UniqueConstraint('competition_id', 'member_id', name='_competition_enrollment_uc'),)
 
 
+class CompetitionTeamEnrollment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    competition_id = db.Column(db.Integer, db.ForeignKey('competition.id'), nullable=False)
+    team_id = db.Column(db.Integer, db.ForeignKey('team.id'), nullable=False)
+    leader_member_id = db.Column(db.Integer, db.ForeignKey('member.id'), nullable=False)
+    status = db.Column(db.String(20), default='enrolled')  # enrolled, disqualified, withdrawn
+    enrolled_at = db.Column(db.DateTime, default=datetime.utcnow)
+    disqualified_reason = db.Column(db.Text)
+    disqualified_by = db.Column(db.Integer, db.ForeignKey('user.id'))
+    disqualified_at = db.Column(db.DateTime)
+    admin_notice = db.Column(db.Text)
+    admin_notice_by = db.Column(db.Integer, db.ForeignKey('user.id'))
+    admin_notice_at = db.Column(db.DateTime)
+
+    competition = db.relationship('Competition', backref='team_enrollments')
+    team = db.relationship('Team', backref='competition_enrollments')
+    leader_member = db.relationship('Member', foreign_keys=[leader_member_id], backref='competition_team_leads')
+    disqualifier = db.relationship('User', foreign_keys=[disqualified_by], backref='competition_team_disqualifications')
+    notice_author = db.relationship('User', foreign_keys=[admin_notice_by], backref='competition_team_notices_sent')
+    members = db.relationship('CompetitionTeamEnrollmentMember', backref='enrollment', lazy='dynamic', cascade='all, delete-orphan')
+    submissions = db.relationship('CompetitionTeamSubmission', backref='enrollment', lazy='dynamic', cascade='all, delete-orphan')
+
+    __table_args__ = (db.UniqueConstraint('competition_id', 'team_id', name='_competition_team_enrollment_uc'),)
+
+
+class CompetitionTeamEnrollmentMember(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    enrollment_id = db.Column(db.Integer, db.ForeignKey('competition_team_enrollment.id'), nullable=False)
+    member_id = db.Column(db.Integer, db.ForeignKey('member.id'), nullable=False)
+    added_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    member = db.relationship('Member', backref='competition_team_enrollment_snapshots')
+    __table_args__ = (db.UniqueConstraint('enrollment_id', 'member_id', name='_competition_team_enrollment_member_uc'),)
+
+
+class CompetitionTeamSubmission(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    competition_id = db.Column(db.Integer, db.ForeignKey('competition.id'), nullable=False)
+    enrollment_id = db.Column(db.Integer, db.ForeignKey('competition_team_enrollment.id'), nullable=False)
+    team_id = db.Column(db.Integer, db.ForeignKey('team.id'), nullable=False)
+    submitted_by_member_id = db.Column(db.Integer, db.ForeignKey('member.id'), nullable=False)
+    submission_type = db.Column(db.String(20), nullable=False)
+    submission_value = db.Column(db.String(255), nullable=False)
+    submitted_at = db.Column(db.DateTime, default=datetime.utcnow)
+    status = db.Column(db.String(20), default='submitted')  # submitted, reviewed, disqualified
+    total_score = db.Column(db.Float, default=0)
+    bonus_points = db.Column(db.Float, default=0)
+    final_score = db.Column(db.Float, default=0)
+    rank = db.Column(db.Integer)
+    points_awarded = db.Column(db.Integer, default=0)
+    is_winner = db.Column(db.Boolean, default=False)
+
+    competition = db.relationship('Competition', backref='team_submissions')
+    team = db.relationship('Team', backref='competition_submissions')
+    submitted_by_member = db.relationship('Member', foreign_keys=[submitted_by_member_id], backref='competition_team_submissions_authored')
+    scores = db.relationship('CompetitionTeamScore', backref='submission', lazy='dynamic', cascade='all, delete-orphan')
+
+    __table_args__ = (db.UniqueConstraint('competition_id', 'team_id', name='_competition_team_submission_uc'),)
+
+
+class CompetitionTeamScore(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    submission_id = db.Column(db.Integer, db.ForeignKey('competition_team_submission.id'), nullable=False)
+    judge_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    criteria_id = db.Column(db.Integer, db.ForeignKey('competition_criteria.id'), nullable=False)
+    score = db.Column(db.Float, default=0)
+    comment = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    judge = db.relationship('User', backref='competition_team_scores')
+    criteria = db.relationship('CompetitionCriteria')
+    __table_args__ = (db.UniqueConstraint('submission_id', 'judge_id', 'criteria_id', name='_competition_team_score_uc'),)
+
+
+class TeamCompetitionPoint(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    team_id = db.Column(db.Integer, db.ForeignKey('team.id'), nullable=False)
+    competition_id = db.Column(db.Integer, db.ForeignKey('competition.id'), nullable=False)
+    points = db.Column(db.Integer, default=0, nullable=False)
+    awarded_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    team = db.relationship('Team', backref='competition_point_transactions')
+    competition = db.relationship('Competition', backref='team_points_awarded')
+    __table_args__ = (db.UniqueConstraint('team_id', 'competition_id', name='_team_competition_point_uc'),)
+
+
 # Sessions
 class SessionWeek(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -949,9 +1035,30 @@ class Team(db.Model):
     name = db.Column(db.String(120), unique=True, nullable=False)
     description = db.Column(db.Text)
     rating = db.Column(db.Integer, default=0)  # 0-5
+    created_by_member_id = db.Column(db.Integer, db.ForeignKey('member.id'))
+    total_points = db.Column(db.Integer, default=0)
+    is_open = db.Column(db.Boolean, default=True)
+    is_suspended = db.Column(db.Boolean, default=False)
+    suspension_reason = db.Column(db.Text)
+    suspended_at = db.Column(db.DateTime)
+    suspended_by_user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    admin_notice = db.Column(db.Text)
+    admin_notice_at = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     members = db.relationship('TeamMember', backref='team', lazy='dynamic')
+    creator = db.relationship('Member', backref='teams_created', foreign_keys=[created_by_member_id])
+    suspended_by_user = db.relationship('User', backref='teams_suspended', foreign_keys=[suspended_by_user_id])
+
+    def approved_members(self):
+        return self.members.filter_by(status='approved')
+
+    def leader_membership(self):
+        return self.members.filter_by(is_leader=True, status='approved').first()
+
+    def leader(self):
+        lm = self.leader_membership()
+        return lm.member if lm else None
 
     def __repr__(self):
         return f'<Team {self.name}>'
@@ -962,8 +1069,13 @@ class TeamMember(db.Model):
     team_id = db.Column(db.Integer, db.ForeignKey('team.id'), nullable=False)
     member_id = db.Column(db.Integer, db.ForeignKey('member.id'), nullable=False)
     is_leader = db.Column(db.Boolean, default=False)
+    status = db.Column(db.String(20), default='approved')  # pending, approved, rejected
+    requested_at = db.Column(db.DateTime, default=datetime.utcnow)
+    approved_at = db.Column(db.DateTime)
+    approved_by_member_id = db.Column(db.Integer, db.ForeignKey('member.id'))
     joined_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    member = db.relationship('Member', backref='team_memberships')
+    member = db.relationship('Member', foreign_keys=[member_id], backref='team_memberships')
+    approver = db.relationship('Member', foreign_keys=[approved_by_member_id], backref='team_memberships_approved')
 
     __table_args__ = (db.UniqueConstraint('team_id', 'member_id', name='_team_member_uc'),)

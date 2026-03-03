@@ -4,7 +4,7 @@ from werkzeug.security import generate_password_hash
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 from urllib.parse import urlparse
 from app.routes import auth_bp
-from app.models import User, Member
+from app.models import User, Member, SystemSettings
 from app import db
 from app.id_generator import generate_digital_id
 from app.utils import get_notification_service
@@ -125,8 +125,11 @@ def register():
             flash('Please complete the human verification and try again.', 'error')
             return render_template('auth/register.html', allowed_courses=ALLOWED_COURSES, allowed_years=ALLOWED_YEARS, turnstile_site_key=current_app.config.get('TURNSTILE_SITE_KEY', ''))
         
+        approval_mode = SystemSettings.get_setting('registration_approval_mode', 'manual')
+        auto_approve = str(approval_mode).strip().lower() == 'auto'
+
         # Create user
-        user = User(email=email, role='student', is_approved=False)
+        user = User(email=email, role='student', is_approved=auto_approve)
         user.set_password(password)
         db.session.add(user)
         db.session.flush()  # Get user ID
@@ -145,8 +148,17 @@ def register():
         )
         db.session.add(member)
         db.session.commit()
-        
-        flash('Registration successful! Your account is pending admin approval.', 'success')
+
+        if auto_approve:
+            try:
+                notification_service = get_notification_service()
+                notification_service.send_user_approval_email(user)
+                notification_service.send_user_approval_sms(user)
+            except Exception:
+                current_app.logger.exception('Failed to send auto-approval notifications')
+            flash('Registration successful! Your account is approved. Please log in.', 'success')
+        else:
+            flash('Registration successful! Your account is pending admin approval.', 'success')
         return redirect(url_for('auth.login'))
     
     return render_template('auth/register.html', allowed_courses=ALLOWED_COURSES, allowed_years=ALLOWED_YEARS, turnstile_site_key=current_app.config.get('TURNSTILE_SITE_KEY', ''))

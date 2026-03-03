@@ -15,6 +15,26 @@
     </div>
 </div>
 
+<div class="admin-card mb-3">
+    <div class="admin-card-body">
+        <form method="POST" action="{{ url_for('admin.set_user_approval_mode') }}" class="d-flex flex-wrap align-items-end gap-3">
+            <div>
+                <label class="admin-form-label">Registration Approval Mode</label>
+                <select name="approval_mode" class="admin-form-control">
+                    <option value="manual" {% if approval_mode == 'manual' %}selected{% endif %}>Manual Approval</option>
+                    <option value="auto" {% if approval_mode == 'auto' %}selected{% endif %}>Auto Approval</option>
+                </select>
+            </div>
+            <div>
+                <button type="submit" class="admin-btn admin-btn-outline">
+                    <i class="fas fa-sliders-h"></i> Save Mode
+                </button>
+            </div>
+            <small class="text-muted">Auto: users are approved immediately. Manual: users wait for admin review.</small>
+        </form>
+    </div>
+</div>
+
 {% if pending_users %}
 <div class="admin-table-container">
     <div class="admin-card-header">

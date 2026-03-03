@@ -19,6 +19,10 @@ from app.models import (
     CompetitionScore,
     CompetitionSponsorLink,
     CompetitionEnrollment,
+    CompetitionTeamEnrollment,
+    CompetitionTeamEnrollmentMember,
+    CompetitionTeamSubmission,
+    TeamCompetitionPoint,
     CompetitionReward,
     SessionWeek,
     SessionSchedule,
@@ -28,10 +32,12 @@ from app.models import (
     Event,
 )
 from app import db
+from app.utils import get_notification_service
 from app.id_generator import generate_digital_id, delete_digital_id
 from app.member_requirements import is_allowed_course
 import os
 import json
+import math
 from datetime import datetime
 from sqlalchemy import inspect
 from sqlalchemy.exc import SQLAlchemyError
@@ -571,6 +577,169 @@ def membership():
                          payments=payments)
 
 
+def _member_primary_team(member_id):
+    return TeamMember.query.filter_by(member_id=member_id, status='approved').first()
+
+
+def _team_is_leader(team_id, member_id):
+    return TeamMember.query.filter_by(team_id=team_id, member_id=member_id, status='approved', is_leader=True).first() is not None
+
+
+@member_bp.route('/teams', methods=['GET', 'POST'])
+@login_required
+def teams_hub():
+    member = current_user.member
+    if not member:
+        flash('Please complete your profile first.', 'warning')
+        return redirect(url_for('member.profile'))
+
+    if request.method == 'POST':
+        action = (request.form.get('action') or '').strip()
+        if action == 'create':
+            name = (request.form.get('name') or '').strip()
+            description = (request.form.get('description') or '').strip()
+            if not name:
+                flash('Team name is required.', 'error')
+                return redirect(url_for('member.teams_hub'))
+            if Team.query.filter(db.func.lower(Team.name) == name.lower()).first():
+                flash('Team name already exists.', 'error')
+                return redirect(url_for('member.teams_hub'))
+            if _member_primary_team(member.id):
+                flash('You are already in an approved team.', 'error')
+                return redirect(url_for('member.teams_hub'))
+            team = Team(
+                name=name,
+                description=description,
+                rating=0,
+                created_by_member_id=member.id,
+                is_open=True,
+            )
+            db.session.add(team)
+            db.session.flush()
+            db.session.add(TeamMember(
+                team_id=team.id,
+                member_id=member.id,
+                is_leader=True,
+                status='approved',
+                requested_at=datetime.utcnow(),
+                approved_at=datetime.utcnow(),
+                approved_by_member_id=member.id,
+            ))
+            db.session.commit()
+            flash('Team created. You are now the team leader.', 'success')
+            return redirect(url_for('member.teams_hub'))
+
+        if action == 'request_join':
+            team_id = request.form.get('team_id', type=int)
+            team = Team.query.get_or_404(team_id)
+            if team.is_suspended:
+                flash('This team is currently suspended and not accepting requests.', 'error')
+                return redirect(url_for('member.teams_hub'))
+            if not team.is_open:
+                flash('This team is not open for join requests.', 'error')
+                return redirect(url_for('member.teams_hub'))
+            if _member_primary_team(member.id):
+                flash('You are already in an approved team.', 'error')
+                return redirect(url_for('member.teams_hub'))
+            existing = TeamMember.query.filter_by(team_id=team.id, member_id=member.id).first()
+            if existing:
+                if existing.status == 'pending':
+                    flash('You already requested to join this team.', 'info')
+                elif existing.status == 'approved':
+                    flash('You are already in this team.', 'info')
+                else:
+                    existing.status = 'pending'
+                    existing.requested_at = datetime.utcnow()
+                    existing.approved_at = None
+                    existing.approved_by_member_id = None
+                    db.session.commit()
+                    flash('Join request re-submitted.', 'success')
+                return redirect(url_for('member.teams_hub'))
+            db.session.add(TeamMember(
+                team_id=team.id,
+                member_id=member.id,
+                is_leader=False,
+                status='pending',
+                requested_at=datetime.utcnow(),
+            ))
+            db.session.commit()
+            try:
+                get_notification_service().send_team_join_request_sms_to_admins(member, team)
+            except Exception:
+                current_app.logger.exception('Failed to send team join request SMS to admins')
+            flash('Join request sent to team leader.', 'success')
+            return redirect(url_for('member.teams_hub'))
+
+    my_team_membership = _member_primary_team(member.id)
+    my_team = my_team_membership.team if my_team_membership else None
+    my_pending_requests = TeamMember.query.filter_by(member_id=member.id, status='pending').all()
+    leader_of = TeamMember.query.filter_by(member_id=member.id, status='approved', is_leader=True).all()
+    pending_for_my_teams = []
+    leader_team_ids = [tm.team_id for tm in leader_of]
+    if leader_team_ids:
+        pending_for_my_teams = TeamMember.query.filter(
+            TeamMember.team_id.in_(leader_team_ids),
+            TeamMember.status == 'pending'
+        ).join(Member, Member.id == TeamMember.member_id).order_by(TeamMember.requested_at.asc()).all()
+    open_teams = Team.query.filter(
+        Team.is_open == True,
+        Team.is_suspended == False
+    ).order_by(Team.rating.desc(), Team.name.asc()).all()
+    return render_template(
+        'member/teams_hub.html',
+        my_team=my_team,
+        my_team_membership=my_team_membership,
+        my_pending_requests=my_pending_requests,
+        pending_for_my_teams=pending_for_my_teams,
+        open_teams=open_teams,
+    )
+
+
+@member_bp.route('/teams/<int:team_id>/requests/<int:team_member_id>/<decision>', methods=['POST'])
+@login_required
+def teams_decide_request(team_id, team_member_id, decision):
+    member = current_user.member
+    if not member:
+        flash('Profile required.', 'error')
+        return redirect(url_for('member.profile'))
+    if not _team_is_leader(team_id, member.id):
+        flash('Only team leader can decide requests.', 'error')
+        return redirect(url_for('member.teams_hub'))
+
+    req = TeamMember.query.get_or_404(team_member_id)
+    if req.team_id != team_id or req.status != 'pending':
+        flash('Invalid request.', 'error')
+        return redirect(url_for('member.teams_hub'))
+
+    if decision == 'approve':
+        already = TeamMember.query.filter_by(member_id=req.member_id, status='approved').first()
+        if already and already.team_id != team_id:
+            flash(f'{req.member.full_name} is already approved in another team.', 'error')
+            return redirect(url_for('member.teams_hub'))
+        req.status = 'approved'
+        req.approved_at = datetime.utcnow()
+        req.approved_by_member_id = member.id
+        db.session.commit()
+        try:
+            get_notification_service().send_team_join_decision_sms(req.member, req.team, decision='approved')
+        except Exception:
+            current_app.logger.exception('Failed to send team join approval SMS')
+        flash('Member request approved.', 'success')
+    elif decision == 'reject':
+        req.status = 'rejected'
+        req.approved_at = datetime.utcnow()
+        req.approved_by_member_id = member.id
+        db.session.commit()
+        try:
+            get_notification_service().send_team_join_decision_sms(req.member, req.team, decision='rejected')
+        except Exception:
+            current_app.logger.exception('Failed to send team join rejection SMS')
+        flash('Member request rejected.', 'warning')
+    else:
+        flash('Invalid decision.', 'error')
+    return redirect(url_for('member.teams_hub'))
+
+
 
 
 @member_bp.route('/competitions/rankings')
@@ -605,18 +774,32 @@ def competitions_rankings():
         if current_user.member and member.id == current_user.member.id:
             my_entry = entry
         leaderboard.append(entry)
+    leaderboard = leaderboard[:50]
 
-    teams = Team.query.order_by(Team.rating.desc(), Team.name.asc()).all()
+    teams = Team.query.filter(
+        Team.is_suspended == False
+    ).order_by(Team.total_points.desc(), Team.rating.desc(), Team.name.asc()).all()
+    team_rows = []
     team_members = {}
-    for team in teams:
-        members = team.members.join(Member).order_by(TeamMember.is_leader.desc(), Member.full_name.asc()).all()
-        team_members[team.id] = members
+    for idx, team in enumerate(teams, start=1):
+        approved_memberships = team.members.filter_by(status='approved').join(
+            Member, TeamMember.member_id == Member.id
+        ).order_by(TeamMember.is_leader.desc(), Member.full_name.asc()).all()
+        team_members[team.id] = approved_memberships
+        participations = CompetitionTeamEnrollment.query.filter_by(team_id=team.id).count()
+        team_rows.append({
+            'rank': idx,
+            'team': team,
+            'points': int(team.total_points or 0),
+            'participations': participations,
+            'members_count': len(approved_memberships),
+        })
 
     return render_template(
         'member/competitions_rankings.html',
         leaderboard=leaderboard,
         top_member=top_member,
-        teams=teams,
+        teams=team_rows,
         team_members=team_members,
         my_entry=my_entry,
     )
@@ -786,6 +969,41 @@ def _member_visible_competitions():
     return Competition.query.filter(~Competition.status.in_(['draft', 'cancelled']))
 
 
+def _competition_effective_enrollment_counts(competition_ids):
+    """Count unique enrolled members per competition, including team snapshots."""
+    if not competition_ids:
+        return {}
+
+    counts = {cid: set() for cid in competition_ids}
+
+    individual_rows = CompetitionEnrollment.query.filter(
+        CompetitionEnrollment.competition_id.in_(competition_ids),
+        CompetitionEnrollment.status == 'enrolled'
+    ).with_entities(
+        CompetitionEnrollment.competition_id,
+        CompetitionEnrollment.member_id
+    ).all()
+    for competition_id, member_id in individual_rows:
+        if competition_id in counts and member_id:
+            counts[competition_id].add(member_id)
+
+    team_rows = db.session.query(
+        CompetitionTeamEnrollment.competition_id,
+        CompetitionTeamEnrollmentMember.member_id
+    ).join(
+        CompetitionTeamEnrollmentMember,
+        CompetitionTeamEnrollmentMember.enrollment_id == CompetitionTeamEnrollment.id
+    ).filter(
+        CompetitionTeamEnrollment.competition_id.in_(competition_ids),
+        CompetitionTeamEnrollment.status == 'enrolled'
+    ).all()
+    for competition_id, member_id in team_rows:
+        if competition_id in counts and member_id:
+            counts[competition_id].add(member_id)
+
+    return {cid: len(member_ids) for cid, member_ids in counts.items()}
+
+
 def _member_ongoing_competitions_for_frequency(frequency, user_id):
     now = datetime.now()
     base = _member_visible_competitions().filter(Competition.frequency == frequency)
@@ -810,6 +1028,8 @@ def _member_can_submit(competition, member, user_id):
         return False, 'Profile required before submitting.'
     if _member_is_judge(competition.id, user_id):
         return False, 'Judges cannot submit to the same competition.'
+    if _member_team_for_competition(member.id, competition.id):
+        return False, 'You are enrolled under a team for this competition. Only team leader submits.'
     if competition.status != 'published':
         return False, 'Competition is not open for submissions.'
     now = datetime.now()
@@ -828,6 +1048,81 @@ def _member_can_submit(competition, member, user_id):
     existing = CompetitionSubmission.query.filter_by(competition_id=competition.id, member_id=member.id).first()
     if existing:
         return False, 'You have already submitted for this competition.'
+    return True, ''
+
+
+def _member_team_membership(member_id):
+    return TeamMember.query.filter_by(member_id=member_id, status='approved').first()
+
+
+def _member_team_for_competition(member_id, competition_id):
+    return db.session.query(CompetitionTeamEnrollment).join(
+        CompetitionTeamEnrollmentMember,
+        CompetitionTeamEnrollmentMember.enrollment_id == CompetitionTeamEnrollment.id
+    ).filter(
+        CompetitionTeamEnrollment.competition_id == competition_id,
+        CompetitionTeamEnrollmentMember.member_id == member_id,
+        CompetitionTeamEnrollment.status != 'disqualified'
+    ).first()
+
+
+def _member_can_team_enroll(competition, member, user_id):
+    if not member:
+        return False, 'Profile required before team enrollment.'
+    if _member_is_judge(competition.id, user_id):
+        return False, 'Judges cannot enroll teams in this competition.'
+    if competition.status != 'published':
+        return False, 'Competition is not open for team enrollment.'
+    now = datetime.now()
+    if now < competition.starts_at or now > competition.ends_at:
+        return False, 'Competition enrollment window is closed.'
+    membership = _member_team_membership(member.id)
+    if not membership:
+        return False, 'You are not in an approved team.'
+    if not membership.is_leader:
+        return False, 'Only team leader can enroll the team.'
+    team = membership.team
+    if not team:
+        return False, 'Team not found.'
+    if team.is_suspended:
+        return False, f'Team is suspended by admin. {team.suspension_reason or ""}'.strip()
+    if _member_team_for_competition(member.id, competition.id):
+        return False, 'Your team is already enrolled in this competition.'
+    approved_members = team.members.filter_by(status='approved').join(
+        Member, TeamMember.member_id == Member.id
+    ).all()
+    allowed_years = competition.get_allowed_years()
+    ineligible = []
+    unpaid = []
+    for tm in approved_members:
+        m = tm.member
+        if m and m.year and allowed_years and m.year not in allowed_years:
+            ineligible.append(f'{m.full_name} ({m.year})')
+        if competition.requires_paid_membership and m and not m.has_valid_membership():
+            unpaid.append(m.full_name)
+    if ineligible:
+        return False, f'Team enrollment blocked due to eligibility year mismatch: {", ".join(ineligible)}'
+    if unpaid:
+        return False, f'Team enrollment blocked. Valid membership required for: {", ".join(unpaid)}'
+    blocked = []
+    for tm in approved_members:
+        conflict = _member_team_for_competition(tm.member_id, competition.id)
+        if conflict and conflict.team_id != team.id:
+            blocked.append(tm.member.full_name)
+    if blocked:
+        return False, f'Team enrollment blocked. Already enrolled in another team for this competition: {", ".join(blocked)}'
+
+    individual_conflicts = []
+    for tm in approved_members:
+        individual = CompetitionEnrollment.query.filter_by(
+            competition_id=competition.id,
+            member_id=tm.member_id,
+            status='enrolled'
+        ).first()
+        if individual:
+            individual_conflicts.append(tm.member.full_name)
+    if individual_conflicts:
+        return False, f'Team enrollment blocked. Already individually enrolled: {", ".join(individual_conflicts)}'
     return True, ''
 
 
@@ -893,10 +1188,18 @@ def _submission_judge_progress(competition, submission):
 def competitions_weekly():
     base = _member_visible_competitions().filter(Competition.frequency == 'weekly')
     ongoing = _member_ongoing_competitions_for_frequency('weekly', current_user.id)
+    enrollment_counts = _competition_effective_enrollment_counts([c.id for c in ongoing])
     past_query = base.filter(Competition.status == 'finalized').order_by(Competition.ends_at.desc())
     page = request.args.get('page', 1, type=int)
     past = past_query.paginate(page=page, per_page=10, error_out=False)
-    return render_template('member/competitions_list.html', view_label='Weekly', ongoing=ongoing, past=past)
+    return render_template(
+        'member/competitions_list.html',
+        view_label='Weekly',
+        view_type='weekly',
+        ongoing=ongoing,
+        past=past,
+        enrollment_counts=enrollment_counts
+    )
 
 
 @member_bp.route('/competitions/monthly')
@@ -904,10 +1207,18 @@ def competitions_weekly():
 def competitions_monthly():
     base = _member_visible_competitions().filter(Competition.frequency == 'monthly')
     ongoing = _member_ongoing_competitions_for_frequency('monthly', current_user.id)
+    enrollment_counts = _competition_effective_enrollment_counts([c.id for c in ongoing])
     past_query = base.filter(Competition.status == 'finalized').order_by(Competition.ends_at.desc())
     page = request.args.get('page', 1, type=int)
     past = past_query.paginate(page=page, per_page=10, error_out=False)
-    return render_template('member/competitions_list.html', view_label='Monthly', ongoing=ongoing, past=past)
+    return render_template(
+        'member/competitions_list.html',
+        view_label='Monthly',
+        view_type='monthly',
+        ongoing=ongoing,
+        past=past,
+        enrollment_counts=enrollment_counts
+    )
 
 
 @member_bp.route('/competitions/<int:competition_id>')
@@ -921,9 +1232,28 @@ def competition_detail(competition_id):
     eligible, reason = _member_can_submit(competition, member, current_user.id)
     submission = None
     enrollment = None
+    team_membership = None
+    team_enrollment = None
+    team_submission = None
+    member_team_competition_enrollment = None
+    can_team_enroll = False
+    can_team_enroll_reason = ''
     if member:
         submission = CompetitionSubmission.query.filter_by(competition_id=competition.id, member_id=member.id).first()
         enrollment = CompetitionEnrollment.query.filter_by(competition_id=competition.id, member_id=member.id).first()
+        team_membership = _member_team_membership(member.id)
+        member_team_competition_enrollment = _member_team_for_competition(member.id, competition.id)
+        if team_membership:
+            team_enrollment = CompetitionTeamEnrollment.query.filter_by(
+                competition_id=competition.id,
+                team_id=team_membership.team_id
+            ).first()
+            if team_enrollment:
+                team_submission = CompetitionTeamSubmission.query.filter_by(
+                    competition_id=competition.id,
+                    team_id=team_membership.team_id
+                ).first()
+        can_team_enroll, can_team_enroll_reason = _member_can_team_enroll(competition, member, current_user.id)
     is_judge = _member_is_judge(competition.id, current_user.id) is not None
     rewards = competition.rewards.order_by(CompetitionReward.id.asc()).all()
     visible_criteria = competition.criteria.filter_by(is_visible_to_members=True).order_by(CompetitionCriteria.id.asc()).all()
@@ -954,6 +1284,12 @@ def competition_detail(competition_id):
         my_rank=my_rank,
         my_award=my_award,
         total_ranked=total_ranked,
+        team_membership=team_membership,
+        team_enrollment=team_enrollment,
+        team_submission=team_submission,
+        can_team_enroll=can_team_enroll,
+        can_team_enroll_reason=can_team_enroll_reason,
+        member_team_competition_enrollment=member_team_competition_enrollment,
     )
 
 
@@ -1033,9 +1369,65 @@ def competition_leaderboard(competition_id):
     if competition.status != 'finalized' and not is_judge:
         flash('Leaderboard will be available after competition finalization.', 'info')
         return redirect(url_for('member.competition_detail', competition_id=competition.id))
-    submissions_query = competition.submissions.filter(CompetitionSubmission.status != 'disqualified').order_by(CompetitionSubmission.final_score.desc())
+    individual_rows = competition.submissions.filter(CompetitionSubmission.status != 'disqualified').all()
+    team_rows = CompetitionTeamSubmission.query.filter_by(
+        competition_id=competition.id
+    ).filter(CompetitionTeamSubmission.status != 'disqualified').all()
+
+    combined = []
+    for s in individual_rows:
+        combined.append({
+            'record_type': 'individual',
+            'participant_name': s.member.full_name if s.member else f"Member #{s.member_id}",
+            'participant_email': (
+                s.member.user.email
+                if s.member and getattr(s.member, 'user', None)
+                else '-'
+            ),
+            'participant_avatar': s.member.profile_image if s.member else None,
+            'submitted_at': s.submitted_at,
+            'final_score': s.final_score,
+            'submission_type': s.submission_type,
+            'submission_value': s.submission_value,
+            'submission_id': s.id,
+            'team_members': [],
+            'team_member_ids': [],
+        })
+    for ts in team_rows:
+        team_members = []
+        team_member_ids = []
+        if ts.enrollment:
+            for snap in ts.enrollment.members.all():
+                if not snap.member:
+                    continue
+                team_member_ids.append(snap.member_id)
+                team_members.append({
+                    'full_name': snap.member.full_name,
+                    'course': snap.member.course,
+                    'year': snap.member.year,
+                    'profile_image': snap.member.profile_image,
+                })
+        combined.append({
+            'record_type': 'team',
+            'participant_name': ts.team.name if ts.team else f"Team #{ts.team_id}",
+            'participant_email': (
+                ts.submitted_by_member.user.email
+                if ts.submitted_by_member and getattr(ts.submitted_by_member, 'user', None)
+                else '-'
+            ),
+            'participant_avatar': None,
+            'submitted_at': ts.submitted_at,
+            'final_score': ts.final_score,
+            'submission_type': ts.submission_type,
+            'submission_value': ts.submission_value,
+            'submission_id': None,
+            'team_members': team_members,
+            'team_member_ids': team_member_ids,
+        })
+
+    combined.sort(key=lambda row: row.get('final_score') or 0, reverse=True)
     page = request.args.get('page', 1, type=int)
-    submissions_page = submissions_query.paginate(page=page, per_page=20, error_out=False)
+    submissions_page = _ListPagination(combined, page=page, per_page=20)
     rewards = competition.rewards.order_by(CompetitionReward.id.asc()).all()
     badges = _build_reward_badges(rewards, submissions_page.total)
     member = current_user.member
@@ -1043,9 +1435,15 @@ def competition_leaderboard(competition_id):
     my_rank = None
     my_award = None
     if member:
-        for idx, s in enumerate(submissions_query.all(), start=1):
-            if s.member_id == member.id:
-                my_submission = s
+        for idx, row in enumerate(combined, start=1):
+            is_me = False
+            if row['record_type'] == 'individual':
+                submission_id = row.get('submission_id')
+                is_me = any(s.id == submission_id and s.member_id == member.id for s in individual_rows)
+            else:
+                is_me = member.id in (row.get('team_member_ids') or [])
+            if is_me:
+                my_submission = row
                 my_rank = idx
                 my_award = badges.get(idx)
                 break
@@ -1141,9 +1539,42 @@ def competition_enroll(competition_id):
         flash('You are already enrolled.', 'info')
         return redirect(url_for('member.competition_detail', competition_id=competition.id))
 
+    if _member_team_for_competition(member.id, competition.id):
+        flash('You are already enrolled via a team for this competition.', 'error')
+        return redirect(url_for('member.competition_detail', competition_id=competition.id))
+
     agree = request.form.get('agree_terms')
     if not agree:
         flash('You must agree to the terms before enrolling.', 'error')
+        return redirect(url_for('member.competition_detail', competition_id=competition.id))
+
+    enroll_mode = (request.form.get('enroll_mode') or 'individual').strip().lower()
+    if enroll_mode == 'team':
+        allowed, reason = _member_can_team_enroll(competition, member, current_user.id)
+        if not allowed:
+            flash(reason, 'error')
+            return redirect(url_for('member.competition_detail', competition_id=competition.id))
+        team_membership = _member_team_membership(member.id)
+        team = team_membership.team
+        approved_members = team.members.filter_by(status='approved').join(
+            Member, TeamMember.member_id == Member.id
+        ).all()
+        team_enrollment = CompetitionTeamEnrollment(
+            competition_id=competition.id,
+            team_id=team.id,
+            leader_member_id=member.id,
+            status='enrolled',
+            enrolled_at=datetime.utcnow(),
+        )
+        db.session.add(team_enrollment)
+        db.session.flush()
+        for tm in approved_members:
+            db.session.add(CompetitionTeamEnrollmentMember(
+                enrollment_id=team_enrollment.id,
+                member_id=tm.member_id
+            ))
+        db.session.commit()
+        flash(f'Team "{team.name}" enrolled successfully. Only team leader can submit.', 'success')
         return redirect(url_for('member.competition_detail', competition_id=competition.id))
 
     enrollment = CompetitionEnrollment(
@@ -1155,6 +1586,122 @@ def competition_enroll(competition_id):
     db.session.add(enrollment)
     db.session.commit()
     flash('Enrollment successful. You may submit once.', 'success')
+    return redirect(url_for('member.competition_detail', competition_id=competition.id))
+
+
+@member_bp.route('/competitions/<int:competition_id>/team-enroll', methods=['POST'])
+@login_required
+def competition_team_enroll(competition_id):
+    competition = Competition.query.get_or_404(competition_id)
+    if competition.status in ['draft', 'cancelled']:
+        abort(404)
+    member = current_user.member
+    allowed, reason = _member_can_team_enroll(competition, member, current_user.id)
+    if not allowed:
+        flash(reason, 'error')
+        return redirect(url_for('member.competition_detail', competition_id=competition.id))
+
+    team_membership = _member_team_membership(member.id)
+    team = team_membership.team
+    approved_members = team.members.filter_by(status='approved').join(
+        Member, TeamMember.member_id == Member.id
+    ).all()
+
+    enrollment = CompetitionTeamEnrollment(
+        competition_id=competition.id,
+        team_id=team.id,
+        leader_member_id=member.id,
+        status='enrolled',
+        enrolled_at=datetime.utcnow(),
+    )
+    db.session.add(enrollment)
+    db.session.flush()
+    for tm in approved_members:
+        db.session.add(CompetitionTeamEnrollmentMember(
+            enrollment_id=enrollment.id,
+            member_id=tm.member_id
+        ))
+    db.session.commit()
+    flash(f'Team "{team.name}" enrolled successfully.', 'success')
+    return redirect(url_for('member.competition_detail', competition_id=competition.id))
+
+
+@member_bp.route('/competitions/<int:competition_id>/team-submit', methods=['POST'])
+@login_required
+def competition_team_submit(competition_id):
+    competition = Competition.query.get_or_404(competition_id)
+    if competition.status in ['draft', 'cancelled']:
+        abort(404)
+    member = current_user.member
+    if not member:
+        flash('Please complete your profile first.', 'warning')
+        return redirect(url_for('member.profile'))
+    team_membership = _member_team_membership(member.id)
+    if not team_membership or not team_membership.is_leader:
+        flash('Only team leader can submit for team.', 'error')
+        return redirect(url_for('member.competition_detail', competition_id=competition.id))
+
+    now = datetime.now()
+    if competition.status != 'published' or now < competition.starts_at or now > competition.ends_at:
+        flash('Competition is not open for submissions.', 'error')
+        return redirect(url_for('member.competition_detail', competition_id=competition.id))
+
+    team = team_membership.team
+    enrollment = CompetitionTeamEnrollment.query.filter_by(
+        competition_id=competition.id,
+        team_id=team.id,
+        status='enrolled'
+    ).first()
+    if not enrollment:
+        flash('Enroll your team first.', 'error')
+        return redirect(url_for('member.competition_detail', competition_id=competition.id))
+    existing = CompetitionTeamSubmission.query.filter_by(competition_id=competition.id, team_id=team.id).first()
+    if existing:
+        flash('Team already submitted for this competition.', 'error')
+        return redirect(url_for('member.competition_detail', competition_id=competition.id))
+
+    submission_value = ''
+    if competition.submission_type in ['video', 'report']:
+        file = request.files.get('submission_file')
+        if not file or not file.filename:
+            flash('Submission file is required.', 'error')
+            return redirect(url_for('member.competition_detail', competition_id=competition.id))
+        filename = secure_filename(file.filename)
+        ext = filename.lower().split('.')[-1]
+        if competition.submission_type == 'video' and ext not in ['mp4', 'mov', 'avi', 'webm']:
+            flash('Invalid video file type.', 'error')
+            return redirect(url_for('member.competition_detail', competition_id=competition.id))
+        if competition.submission_type == 'report' and ext not in ['pdf', 'doc', 'docx']:
+            flash('Invalid report file type.', 'error')
+            return redirect(url_for('member.competition_detail', competition_id=competition.id))
+        file.stream.seek(0, os.SEEK_END)
+        size_mb = file.stream.tell() / (1024 * 1024)
+        file.stream.seek(0)
+        if size_mb > (competition.submission_max_mb or 10):
+            flash(f'File exceeds {competition.submission_max_mb}MB limit.', 'error')
+            return redirect(url_for('member.competition_detail', competition_id=competition.id))
+        timestamp = int(datetime.utcnow().timestamp())
+        upload_name = f"comp_{competition.id}_team_{team.id}_{timestamp}_{filename}"
+        upload_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'competitions', upload_name)
+        file.save(upload_path)
+        submission_value = upload_name
+    else:
+        submission_value = request.form.get('submission_url', '').strip()
+        if not submission_value:
+            flash('Submission link is required.', 'error')
+            return redirect(url_for('member.competition_detail', competition_id=competition.id))
+
+    submission = CompetitionTeamSubmission(
+        competition_id=competition.id,
+        enrollment_id=enrollment.id,
+        team_id=team.id,
+        submitted_by_member_id=member.id,
+        submission_type=competition.submission_type,
+        submission_value=submission_value,
+    )
+    db.session.add(submission)
+    db.session.commit()
+    flash('Team submission received successfully.', 'success')
     return redirect(url_for('member.competition_detail', competition_id=competition.id))
 
 
@@ -1173,3 +1720,31 @@ def _build_reward_badges(rewards, total_submissions):
             for rank in range(start, end + 1):
                 badges[rank] = (reward.points or 0, reward.prize_title, reward.prize_description, f"Rank {start}-{end}")
     return badges
+
+
+class _ListPagination:
+    def __init__(self, items, page, per_page):
+        self.total = len(items)
+        self.page = max(1, page)
+        self.per_page = per_page
+        self.pages = max(1, math.ceil(self.total / float(self.per_page))) if self.total else 1
+        start = (self.page - 1) * self.per_page
+        end = start + self.per_page
+        self.items = items[start:end]
+        self.has_prev = self.page > 1
+        self.has_next = self.page < self.pages
+        self.prev_num = self.page - 1
+        self.next_num = self.page + 1
+
+    def iter_pages(self, left_edge=1, right_edge=1, left_current=1, right_current=2):
+        last = 0
+        for num in range(1, self.pages + 1):
+            if (
+                num <= left_edge
+                or num > self.pages - right_edge
+                or (self.page - left_current <= num <= self.page + right_current)
+            ):
+                if last + 1 != num:
+                    yield None
+                yield num
+                last = num
