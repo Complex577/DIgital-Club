@@ -19,7 +19,7 @@ def upgrade():
     with op.batch_alter_table('team') as batch_op:
         batch_op.add_column(sa.Column('created_by_member_id', sa.Integer(), nullable=True))
         batch_op.add_column(sa.Column('total_points', sa.Integer(), nullable=False, server_default='0'))
-        batch_op.add_column(sa.Column('is_open', sa.Boolean(), nullable=False, server_default=sa.text('1')))
+        batch_op.add_column(sa.Column('is_open', sa.Boolean(), nullable=False, server_default='1')))
         batch_op.create_foreign_key('fk_team_created_by_member_id', 'member', ['created_by_member_id'], ['id'])
 
     with op.batch_alter_table('team_member') as batch_op:
