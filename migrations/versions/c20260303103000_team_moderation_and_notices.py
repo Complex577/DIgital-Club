@@ -24,7 +24,7 @@ def _has_column(table_name, column_name):
 
 def upgrade():
     if not _has_column('team', 'is_suspended'):
-        op.add_column('team', sa.Column('is_suspended', sa.Boolean(), nullable=False, server_default=sa.text('0')))
+        op.add_column('team', sa.Column('is_suspended', sa.Boolean(), nullable=False, server_default=server_default=sa.false()))
     if not _has_column('team', 'suspension_reason'):
         op.add_column('team', sa.Column('suspension_reason', sa.Text(), nullable=True))
     if not _has_column('team', 'suspended_at'):
