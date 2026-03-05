@@ -1,0 +1,107 @@
+{% extends "admin/admin_base.html" %}
+
+{% block admin_title %}Score Team Submission - Admin{% endblock %}
+{% block page_title %}Score Team Submission{% endblock %}
+{% block breadcrumb %}<span class="breadcrumb-separator">/</span> <a href="{{ url_for('admin.competitions_submissions', competition_id=competition.id) }}">Submissions</a><span class="breadcrumb-separator">/</span> <span>Team Score</span>{% endblock %}
+
+{% block admin_content %}
+<div class="admin-card mb-4">
+    <div class="admin-card-header">
+        <h5>Team Scoring</h5>
+    </div>
+    <div class="admin-card-body">
+        <p class="mb-2"><strong>Team:</strong> {{ submission.team.name if submission.team else ('Team #' ~ submission.team_id) }}</p>
+        <p class="mb-2"><strong>Competition:</strong> {{ competition.title }}</p>
+        <p class="mb-2"><strong>Submitted by:</strong> {{ submission.submitted_by_member.full_name if submission.submitted_by_member else '-' }}</p>
+        <p class="mb-3"><strong>Submitted at:</strong> {{ submission.submitted_at.strftime('%b %d, %Y %H:%M') if submission.submitted_at else '-' }}</p>
+        <p class="mb-3">
+            <strong>Submission:</strong>
+            {% if submission.submission_type in ['video', 'report'] %}
+            <a href="{{ url_for('static', filename='uploads/competitions/' + submission.submission_value) }}" target="_blank">Open file</a>
+            {% else %}
+            <a href="{{ submission.submission_value }}" target="_blank">Open link</a>
+            {% endif %}
+        </p>
+    </div>
+</div>
+
+<div class="admin-card mb-4">
+    <div class="admin-card-header">
+        <h5>Judge Progress</h5>
+    </div>
+    <div class="admin-card-body">
+        <div class="admin-table-responsive">
+            <table class="table admin-table">
+                <thead>
+                    <tr>
+                        <th>Judge</th>
+                        <th>Criteria Coverage</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for jp in judge_progress %}
+                    <tr>
+                        <td>{{ jp.name }}{% if jp.is_chair %} (Chair){% endif %}</td>
+                        <td>{{ jp.scored_count }}/{{ jp.criteria_count }}</td>
+                        <td>{{ jp.total_score if jp.graded else '--' }}</td>
+                        <td>{{ 'Graded' if jp.graded else 'Not yet graded' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="admin-card">
+    <div class="admin-card-header">
+        <h5>Scoring Criteria</h5>
+    </div>
+    <div class="admin-card-body">
+        <form method="POST">
+            {% for c in criteria %}
+            {% set existing = existing_scores.get(c.id) %}
+            <div class="mb-3 p-3" style="border: 1px solid var(--admin-border); border-radius: var(--border-radius-sm);">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <strong>{{ c.name }}</strong>
+                    <span class="admin-badge admin-badge-info">{{ c.weight_percent }}% / max {{ c.max_points }}</span>
+                </div>
+                {% if c.description %}
+                <div class="mb-2" style="font-size: 0.85rem; color: var(--admin-text-muted);">{{ c.description }}</div>
+                {% endif %}
+                <div class="row g-2">
+                    <div class="col-md-4">
+                        <label class="form-label">Score</label>
+                        <input type="number" step="0.1" min="0" max="{{ c.max_points }}" class="form-control"
+                               name="criteria_{{ c.id }}" value="{{ existing.score if existing else '' }}">
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label">Comment</label>
+                        <input type="text" class="form-control" name="comment_{{ c.id }}" value="{{ existing.comment if existing else '' }}">
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+            {% if is_chair %}
+            <div class="mb-3">
+                <label class="form-label">Bonus Points (Chair only)</label>
+                <input type="number" step="0.1" name="bonus_points" class="form-control" value="{{ submission.bonus_points or 0 }}">
+            </div>
+            {% endif %}
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="admin-btn admin-btn-primary">
+                    <i class="fas fa-save"></i> Save Scores
+                </button>
+                <a href="{{ url_for('admin.competitions_submissions', competition_id=competition.id) }}" class="admin-btn admin-btn-outline">
+                    <i class="fas fa-arrow-left"></i> Back
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

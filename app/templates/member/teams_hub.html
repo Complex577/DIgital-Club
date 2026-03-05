@@ -1,0 +1,307 @@
+{% extends "member/member_base.html" %}
+
+{% block page_title %}Teams{% endblock %}
+{% block breadcrumb %}<span class="breadcrumb-separator">/</span> <span>Teams</span>{% endblock %}
+
+{% block extra_head %}
+{{ super() }}
+<style>
+    .teams-hero {
+        background: var(--gradient-secondary);
+        border-radius: var(--border-radius-md);
+        padding: 2rem;
+        border: 1px solid var(--border-color);
+        margin-bottom: 1.5rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .teams-hero::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--gradient-primary);
+    }
+
+    .teams-title {
+        font-size: 1.45rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 0.45rem;
+    }
+
+    .teams-subtitle {
+        font-size: 0.92rem;
+        color: var(--text-secondary);
+        max-width: 720px;
+    }
+
+    .teams-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+        gap: 1rem;
+    }
+
+    .team-panel {
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-md);
+        background: var(--surface-1);
+        overflow: hidden;
+        position: relative;
+    }
+
+    .team-panel::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: var(--gradient-primary);
+        opacity: 0.65;
+    }
+
+    .team-panel .head {
+        padding: 0.9rem 1rem;
+        border-bottom: 1px solid var(--border-color);
+        background: color-mix(in srgb, var(--surface-2) 78%, transparent);
+    }
+
+    .team-panel .head strong {
+        font-size: 0.95rem;
+        color: var(--text-primary);
+    }
+
+    .team-panel .body {
+        padding: 1rem;
+    }
+
+    .request-item {
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-sm);
+        padding: 0.65rem 0.75rem;
+        margin-bottom: 0.55rem;
+        background: var(--surface-2);
+    }
+
+    .team-name {
+        font-size: 0.93rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    .team-meta {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+    }
+
+    .rating-stars {
+        display: inline-flex;
+        gap: 0.15rem;
+        white-space: nowrap;
+    }
+
+    .leaderboard-table-container {
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-md);
+        overflow: hidden;
+        background: var(--surface-1);
+    }
+
+    .teams-table-wrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .teams-table {
+        width: 100%;
+        min-width: 820px;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+    }
+
+    .teams-table thead {
+        background: var(--surface-2);
+    }
+
+    .teams-table th {
+        padding: 0.95rem 0.75rem;
+        border-bottom: 2px solid var(--border-color);
+        text-align: left;
+        font-family: 'Fira Code', monospace;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--text-primary);
+        white-space: nowrap;
+    }
+
+    .teams-table td {
+        padding: 0.82rem 0.75rem;
+        border-bottom: 1px solid var(--border-color);
+        vertical-align: middle;
+        color: var(--text-secondary);
+    }
+
+    .teams-table tbody tr:hover td {
+        background: var(--surface-2);
+    }
+
+    .section-title {
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    .section-subtitle {
+        font-size: 0.83rem;
+        color: var(--text-muted);
+    }
+
+    @media (max-width: 768px) {
+        .teams-hero {
+            padding: 1.35rem;
+        }
+
+        .teams-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block member_content %}
+<div class="teams-hero">
+    <h5 class="teams-title">Team Hub</h5>
+    <p class="teams-subtitle mb-0">Create teams, approve join requests, and manage team participation in competitions.</p>
+</div>
+
+{% if my_team and my_team.is_suspended %}
+<div class="admin-card mb-3">
+    <div class="admin-card-body">
+        <span class="admin-badge admin-badge-warning mb-2">Team Suspended</span>
+        <div><strong>{{ my_team.name }}</strong> is currently suspended by admin.</div>
+        <small class="text-muted">Reason: {{ my_team.suspension_reason or 'No reason provided.' }}</small>
+    </div>
+</div>
+{% endif %}
+
+<div class="teams-grid">
+    <div class="team-panel">
+        <div class="head"><strong>Create Team</strong></div>
+        <div class="body">
+            {% if my_team %}
+            <div class="alert alert-info">You already belong to <strong>{{ my_team.name }}</strong>.</div>
+            {% endif %}
+            <form method="POST">
+                <input type="hidden" name="action" value="create">
+                <div class="mb-2">
+                    <label class="admin-form-label">Team Name</label>
+                    <input type="text" name="name" class="admin-form-control" placeholder="e.g. Alpha Logic Unit" {% if my_team %}disabled{% endif %}>
+                </div>
+                <div class="mb-3">
+                    <label class="admin-form-label">Description</label>
+                    <textarea name="description" rows="3" class="admin-form-control" {% if my_team %}disabled{% endif %}></textarea>
+                </div>
+                <button type="submit" class="admin-btn admin-btn-primary" {% if my_team %}disabled{% endif %}>
+                    <i class="fas fa-plus"></i> Create Team
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="team-panel">
+        <div class="head"><strong>Leader Join Requests</strong></div>
+        <div class="body">
+            {% if pending_for_my_teams %}
+                {% for req in pending_for_my_teams %}
+                <div class="request-item">
+                    <div class="d-flex justify-content-between align-items-center gap-2">
+                        <div>
+                            <div class="team-name">{{ req.member.full_name }}</div>
+                            <small class="team-meta">{{ req.team.name }} - {{ req.requested_at.strftime('%b %d, %Y %H:%M') if req.requested_at else '' }}</small>
+                        </div>
+                        <div class="d-flex gap-1">
+                            <form method="POST" action="{{ url_for('member.teams_decide_request', team_id=req.team_id, team_member_id=req.id, decision='approve') }}">
+                                <button type="submit" class="admin-btn admin-btn-sm admin-btn-success"><i class="fas fa-check"></i></button>
+                            </form>
+                            <form method="POST" action="{{ url_for('member.teams_decide_request', team_id=req.team_id, team_member_id=req.id, decision='reject') }}">
+                                <button type="submit" class="admin-btn admin-btn-sm admin-btn-danger"><i class="fas fa-times"></i></button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="mb-0 text-muted">No pending requests for your teams.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="team-panel mt-3">
+    <div class="head d-flex justify-content-between align-items-center gap-2">
+        <strong class="section-title">Open Teams</strong>
+        <span class="section-subtitle">Browse and request to join available teams</span>
+    </div>
+    <div class="body">
+        <div class="leaderboard-table-container">
+            <div class="teams-table-wrap">
+                <table class="teams-table">
+                    <thead>
+                        <tr>
+                            <th>Team</th>
+                            <th>Rating</th>
+                            <th>Points</th>
+                            <th>Members</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for team in open_teams %}
+                        {% set has_membership = my_team_membership and my_team_membership.team_id == team.id %}
+                        {% set existing_request = my_pending_requests | selectattr('team_id', 'equalto', team.id) | list | first %}
+                        <tr>
+                            <td>
+                                <div class="team-name">{{ team.name }}</div>
+                                <small class="team-meta">{{ team.description or 'No description' }}</small>
+                            </td>
+                            <td>
+                                <div class="rating-stars">
+                                    {% for i in range(1, 6) %}
+                                        <i class="fas fa-star {% if i <= team.rating %}text-warning{% else %}text-muted{% endif %}"></i>
+                                    {% endfor %}
+                                </div>
+                            </td>
+                            <td><span class="admin-badge admin-badge-primary">{{ team.total_points or 0 }}</span></td>
+                            <td>{{ team.approved_members().count() }}</td>
+                            <td>
+                                {% if has_membership %}
+                                    <span class="admin-badge admin-badge-success">Your Team</span>
+                                {% elif existing_request %}
+                                    <span class="admin-badge admin-badge-warning">Request Pending</span>
+                                {% elif my_team %}
+                                    <span class="admin-badge admin-badge-secondary">Already in team</span>
+                                {% else %}
+                                    <form method="POST">
+                                        <input type="hidden" name="action" value="request_join">
+                                        <input type="hidden" name="team_id" value="{{ team.id }}">
+                                        <button type="submit" class="admin-btn admin-btn-sm admin-btn-outline">Request Join</button>
+                                    </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="5" class="text-center">No teams available.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

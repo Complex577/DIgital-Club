@@ -160,11 +160,15 @@
         {% if messages %}
             <div class="flash-messages">
                 {% for category, message in messages %}
-                    <div class="flash-message flash-{{ category }}">
-                        <span>{{ message }}</span>
-                        <button class="flash-close" onclick="this.parentElement.remove()">
+                    <div class="flash-message flash-{{ category }}" data-flash-duration="5200">
+                        <div class="flash-content">
+                            <i class="flash-icon fas fa-circle-info"></i>
+                            <span class="flash-text">{{ message }}</span>
+                        </div>
+                        <button class="flash-close" type="button" aria-label="Close notification">
                             <i class="fas fa-times"></i>
                         </button>
+                        <div class="flash-progress"></div>
                     </div>
                 {% endfor %}
             </div>
@@ -442,105 +446,17 @@
           button.addEventListener("click", function () {
             toggleChatWindow();
             playSound(); // Play sound when button is clicked
-            hideToastNotification(); // Hide toast when button is clicked
           });
-  
-          fetch(`https://fightforme.hudumabot.com/v1/chatbot/welcome/${userId}`)
-            .then((response) => response.json())
-            .then((data) => {
-              showToastNotification(data.message, data.color);
-            })
-            .catch((error) =>
-              showToastNotification(
-                "Sorry, chat service is currently unavailable",
-                "#ff9900"
-              )
-            );
-          // Show toast notification
         }
-  
-        // Function to show toast notification within Shadow DOM
+
+        // Toast removed: keep only the round chatbot button
         function showToastNotification(welcome_message, theme_color) {
-          // Check if toast already exists
-          if (document.getElementById("toast-notification-container")) {
-            console.error("Toast notification container already exists.");
-            return;
-          }
-  
-          // Create a container for the toast with Shadow DOM
-          const toastContainer = document.createElement("div");
-          toastContainer.id = "toast-notification-container";
-          toastContainer.style.position = "fixed";
-          toastContainer.style.bottom = "99px";
-          toastContainer.style.right = "27px";
-          toastContainer.style.width = "280px";
-          toastContainer.style.zIndex = "20001";
-  
-          // Attach Shadow DOM to the container
-          const toastShadow = toastContainer.attachShadow({ mode: "closed" });
-  
-          // Create the toast element
-          const toast = document.createElement("div");
-          toast.className = "toast-notification";
-          toast.innerHTML = `
-      <span>${welcome_message}</span>
-      <button>&times;</button>
-    `;
-  
-          // Style the toast within Shadow DOM
-          const toastStyle = document.createElement("style");
-          toastStyle.textContent = `
-      .toast-notification {
-        background-color: ${theme_color};
-        color: #fff;
-        padding: 10px 20px;
-        border-radius: 5px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        min-width: 250px;
-        font-family: Arial, sans-serif;
-      }
-  
-      .toast-notification button {
-        background: none;
-        border: none;
-        color: #fff;
-        font-size: 16px;
-        cursor: pointer;
-        margin-left: 10px;
-      }
-    `;
-  
-          // Append styles and toast to Shadow DOM
-          toastShadow.appendChild(toastStyle);
-          toastShadow.appendChild(toast);
-  
-          // Add event listener to close button
-          toast.querySelector("button").addEventListener("click", () => {
-            toastContainer.style.display = "none";
-          });
-  
-          // Append the container to the body
-          document.body.appendChild(toastContainer);
-  
-          // Automatically hide the toast after 30 seconds
-          /* setTimeout(() => {
-      if (toastContainer) {
-        toastContainer.style.display = 'none';
-      }
-    }, 30000); */
+          return;
         }
-  
-        // Function to hide the toast notification
+
+        // Toast removed
         function hideToastNotification() {
-          const container = document.getElementById(
-            "toast-notification-container"
-          );
-          if (container) {
-            container.style.display = "none";
-          }
+          return;
         }
   
         // Function to play the sound
@@ -567,7 +483,6 @@
               iframe.classList.add("open");
               iframe.style.display = "block";
               buttonContainer.style.display = "none"; // Hide the button
-              hideToastNotification();
               playSound(); // Play sound when opened
             } else {
               // Hide the iframe with animation
@@ -576,7 +491,6 @@
               setTimeout(() => {
                 iframe.style.display = "none";
                 buttonContainer.style.display = "flex"; // Show the button again
-                showToastNotification(); // Optionally show the toast again when chat is closed
               }, 300); // Match CSS transition duration
             }
           } else {
@@ -591,11 +505,7 @@
             .then((data) => {
               showChatbotButton(data.color);
             })
-            .catch((error) =>
-              showToastNotification(
-                "If you have any problems or inquiries, chat with us!"
-              )
-            );
+            .catch((error) => showChatbotButton("#00c8e6"));
   
           showChatbotIframe(); // Create and append the iframe once
         });

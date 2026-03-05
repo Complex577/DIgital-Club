@@ -884,12 +884,85 @@
         </div>
         
         <!-- Submission -->
+        <div class="admin-card section-card mb-4">
+            <div class="section-card-header">
+                <div class="section-icon">
+                    <i class="fas fa-people-group"></i>
+                </div>
+                <h5 class="section-title">Team Submission</h5>
+            </div>
+            <div class="admin-card-body">
+                {% if team_submission %}
+                <div class="alert-card alert-success">
+                    <div class="d-flex align-items-center">
+                        <div class="alert-icon"><i class="fas fa-check-circle"></i></div>
+                        <div>
+                            <strong>Team submission received ({{ team_membership.team.name if team_membership else 'Team' }})</strong>
+                            <div class="mt-1">Submitted at {{ team_submission.submitted_at.strftime('%b %d, %Y %H:%M') }}</div>
+                            {% if team_submission.submission_type in ['video', 'report'] %}
+                            <div class="mt-2">
+                                <a href="{{ url_for('static', filename='uploads/competitions/' + team_submission.submission_value) }}" target="_blank" class="admin-btn admin-btn-outline admin-btn-sm">
+                                    <i class="fas fa-download"></i> Download Team Submission
+                                </a>
+                            </div>
+                            {% else %}
+                            <div class="mt-2">
+                                <a href="{{ team_submission.submission_value }}" target="_blank" class="admin-btn admin-btn-outline admin-btn-sm">
+                                    <i class="fas fa-external-link-alt"></i> View Team Submission
+                                </a>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% elif team_enrollment and team_membership and team_membership.is_leader and competition.status == 'published' %}
+                <form method="POST" action="{{ url_for('member.competition_team_submit', competition_id=competition.id) }}" enctype="multipart/form-data">
+                    {% if competition.submission_type in ['video', 'report'] %}
+                    <div class="mb-3">
+                        <label class="admin-form-label">Upload Team Submission File</label>
+                        <input type="file" name="submission_file" class="admin-form-control" required>
+                    </div>
+                    {% else %}
+                    <div class="mb-3">
+                        <label class="admin-form-label">Team Submission Link</label>
+                        <input type="text" name="submission_url" class="admin-form-control" placeholder="https://your-team-link.com" required>
+                    </div>
+                    {% endif %}
+                    <button type="submit" class="admin-btn admin-btn-primary">
+                        <i class="fas fa-paper-plane"></i> Submit as Team Leader
+                    </button>
+                </form>
+                {% elif team_enrollment %}
+                <div class="alert-card alert-info">
+                    <div class="d-flex align-items-center">
+                        <div class="alert-icon"><i class="fas fa-info-circle"></i></div>
+                        <div>
+                            {% if team_membership and not team_membership.is_leader %}
+                                Team is enrolled. Waiting for team leader to submit.
+                            {% else %}
+                                Team enrolled. Submission opens during publish window.
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert-card alert-warning">
+                    <div class="d-flex align-items-center">
+                        <div class="alert-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                        <div>Team is not enrolled yet.</div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Individual Submission -->
         <div class="admin-card section-card">
             <div class="section-card-header">
                 <div class="section-icon">
                     <i class="fas fa-paper-plane"></i>
                 </div>
-                <h5 class="section-title">Your Submission</h5>
+                <h5 class="section-title">Individual Submission</h5>
             </div>
             <div class="admin-card-body">
                 {% if enrollment and enrollment.admin_notice and enrollment.status != 'disqualified' %}
@@ -1019,8 +1092,21 @@
                     One submission only will be recorded. Ensure your contact info is up to date for notifications.
                 </p>
                 
-                {% if not enrollment %}
+                {% if not enrollment and not member_team_competition_enrollment %}
                 <form method="POST" action="{{ url_for('member.competition_enroll', competition_id=competition.id) }}">
+                    {% if team_membership and team_membership.is_leader and can_team_enroll %}
+                    <div class="mb-3">
+                        <label class="admin-form-label d-block">Enrollment Mode</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="enroll_mode" id="enroll_individual" value="individual" checked>
+                            <label class="form-check-label" for="enroll_individual">Enroll as Individual</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="enroll_mode" id="enroll_team" value="team">
+                            <label class="form-check-label" for="enroll_team">Enroll as Team (all approved team members)</label>
+                        </div>
+                    </div>
+                    {% endif %}
                     <div class="form-check mb-3">
                         <input class="form-check-input" type="checkbox" name="agree_terms" id="agree_terms" required>
                         <label class="form-check-label" for="agree_terms" style="font-size: 0.85rem;">
@@ -1031,6 +1117,18 @@
                         <i class="fas fa-user-check"></i> Enroll Now
                     </button>
                 </form>
+                {% elif member_team_competition_enrollment and not enrollment %}
+                <div class="alert-card alert-info">
+                    <div class="d-flex align-items-center">
+                        <div class="alert-icon">
+                            <i class="fas fa-people-group"></i>
+                        </div>
+                        <div>
+                            <strong>Enrolled as team participant.</strong>
+                            <div class="mt-1">Individual enrollment and individual submission are disabled for this competition.</div>
+                        </div>
+                    </div>
+                </div>
                 {% else %}
                 <div class="alert-card alert-success">
                     <div class="d-flex align-items-center">

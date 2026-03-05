@@ -40,45 +40,24 @@
                 <span>Dashboard</span>
             </a>
 
-            <div class="admin-nav-dropdown">
-                <a href="#" class="admin-nav-item admin-nav-dropdown-toggle" data-dropdown="sessions">
-                    <i class="fas fa-chalkboard-teacher"></i>
-                    <span>Sessions</span>
-                    <i class="fas fa-chevron-down admin-dropdown-icon"></i>
-                </a>
-                <div class="admin-nav-dropdown-menu" id="dropdown-sessions">
-                    <a href="{{ url_for('member.sessions_timetable') }}" class="admin-nav-item admin-nav-subitem {% if request.endpoint == 'member.sessions_timetable' %}active{% endif %}">
-                        <i class="fas fa-calendar-alt"></i>
-                        <span>Timetable</span>
-                    </a>
-                    <a href="{{ url_for('member.sessions_instructors') }}" class="admin-nav-item admin-nav-subitem {% if request.endpoint == 'member.sessions_instructors' %}active{% endif %}">
-                        <i class="fas fa-user-tie"></i>
-                        <span>Instructors</span>
-                    </a>
-                </div>
-            </div>
+            <a href="{{ url_for('member.sessions_timetable') }}" class="admin-nav-item {% if request.endpoint in ['member.sessions_timetable', 'member.sessions_instructors', 'member.session_report_submit'] %}active{% endif %}">
+                <i class="fas fa-chalkboard-teacher"></i>
+                <span>Sessions</span>
+            </a>
 
-            <div class="admin-nav-dropdown">
-                <a href="#" class="admin-nav-item admin-nav-dropdown-toggle" data-dropdown="competitions">
-                    <i class="fas fa-trophy"></i>
-                    <span>Competitions</span>
-                    <i class="fas fa-chevron-down admin-dropdown-icon"></i>
-                </a>
-                <div class="admin-nav-dropdown-menu" id="dropdown-competitions">
-                    <a href="{{ url_for('member.competitions_weekly') }}" class="admin-nav-item admin-nav-subitem {% if request.endpoint == 'member.competitions_weekly' %}active{% endif %}">
-                        <i class="fas fa-calendar-week"></i>
-                        <span>Weekly</span>
-                    </a>
-                    <a href="{{ url_for('member.competitions_monthly') }}" class="admin-nav-item admin-nav-subitem {% if request.endpoint == 'member.competitions_monthly' %}active{% endif %}">
-                        <i class="fas fa-calendar"></i>
-                        <span>Monthly</span>
-                    </a>
-                </div>
-            </div>
+            <a href="{{ url_for('member.competitions_weekly') }}" class="admin-nav-item {% if request.endpoint in ['member.competitions_weekly', 'member.competitions_monthly', 'member.competition_detail', 'member.competition_submit', 'member.competition_leaderboard', 'member.competition_score_member', 'member.competition_enroll', 'member.competition_team_enroll', 'member.competition_team_submit'] %}active{% endif %}">
+                <i class="fas fa-trophy"></i>
+                <span>Competitions</span>
+            </a>
 
             <a href="{{ url_for('member.competitions_rankings') }}" class="admin-nav-item {% if request.endpoint == 'member.competitions_rankings' %}active{% endif %}">
                 <i class="fas fa-ranking-star"></i>
                 <span>Rankings</span>
+            </a>
+
+            <a href="{{ url_for('member.teams_hub') }}" class="admin-nav-item {% if request.endpoint in ['member.teams_hub', 'member.teams_decide_request'] %}active{% endif %}">
+                <i class="fas fa-people-group"></i>
+                <span>Teams</span>
             </a>
 
             <a href="{{ url_for('member.events') }}" class="admin-nav-item {% if request.endpoint in ['member.events', 'member.event_rsvp'] %}active{% endif %}">

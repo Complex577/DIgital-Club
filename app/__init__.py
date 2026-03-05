@@ -169,6 +169,80 @@ def _migrate_competition_criteria_visibility():
     except Exception:
         pass
 
+
+def _migrate_team_member_workflow_and_competition_team_tables():
+    """Compatibility migration for member-owned teams + team competitions."""
+    try:
+        from sqlalchemy import inspect, text
+        from app.models import (
+            CompetitionTeamEnrollment,
+            CompetitionTeamEnrollmentMember,
+            CompetitionTeamSubmission,
+            CompetitionTeamScore,
+            TeamCompetitionPoint,
+        )
+
+        inspector = inspect(db.engine)
+        table_names = set(inspector.get_table_names())
+
+        if 'team' in table_names:
+            cols = {c['name'] for c in inspector.get_columns('team')}
+            with db.engine.connect() as conn:
+                if 'created_by_member_id' not in cols:
+                    conn.execute(text("ALTER TABLE team ADD COLUMN created_by_member_id INTEGER"))
+                if 'total_points' not in cols:
+                    conn.execute(text("ALTER TABLE team ADD COLUMN total_points INTEGER NOT NULL DEFAULT 0"))
+                if 'is_open' not in cols:
+                    conn.execute(text("ALTER TABLE team ADD COLUMN is_open BOOLEAN NOT NULL DEFAULT 1"))
+                if 'is_suspended' not in cols:
+                    conn.execute(text("ALTER TABLE team ADD COLUMN is_suspended BOOLEAN NOT NULL DEFAULT 0"))
+                if 'suspension_reason' not in cols:
+                    conn.execute(text("ALTER TABLE team ADD COLUMN suspension_reason TEXT"))
+                if 'suspended_at' not in cols:
+                    conn.execute(text("ALTER TABLE team ADD COLUMN suspended_at DATETIME"))
+                if 'suspended_by_user_id' not in cols:
+                    conn.execute(text("ALTER TABLE team ADD COLUMN suspended_by_user_id INTEGER"))
+                if 'admin_notice' not in cols:
+                    conn.execute(text("ALTER TABLE team ADD COLUMN admin_notice TEXT"))
+                if 'admin_notice_at' not in cols:
+                    conn.execute(text("ALTER TABLE team ADD COLUMN admin_notice_at DATETIME"))
+                conn.commit()
+
+        if 'team_member' in table_names:
+            cols = {c['name'] for c in inspector.get_columns('team_member')}
+            with db.engine.connect() as conn:
+                if 'status' not in cols:
+                    conn.execute(text("ALTER TABLE team_member ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'approved'"))
+                if 'requested_at' not in cols:
+                    conn.execute(text("ALTER TABLE team_member ADD COLUMN requested_at DATETIME"))
+                if 'approved_at' not in cols:
+                    conn.execute(text("ALTER TABLE team_member ADD COLUMN approved_at DATETIME"))
+                if 'approved_by_member_id' not in cols:
+                    conn.execute(text("ALTER TABLE team_member ADD COLUMN approved_by_member_id INTEGER"))
+                conn.commit()
+
+        # Create new team-competition tables if migration wasn't applied.
+        CompetitionTeamEnrollment.__table__.create(bind=db.engine, checkfirst=True)
+        CompetitionTeamEnrollmentMember.__table__.create(bind=db.engine, checkfirst=True)
+        CompetitionTeamSubmission.__table__.create(bind=db.engine, checkfirst=True)
+        CompetitionTeamScore.__table__.create(bind=db.engine, checkfirst=True)
+        TeamCompetitionPoint.__table__.create(bind=db.engine, checkfirst=True)
+
+        # Backfill new team-enrollment notice columns for older databases.
+        inspector = inspect(db.engine)
+        if 'competition_team_enrollment' in inspector.get_table_names():
+            cols = {c['name'] for c in inspector.get_columns('competition_team_enrollment')}
+            with db.engine.connect() as conn:
+                if 'admin_notice' not in cols:
+                    conn.execute(text("ALTER TABLE competition_team_enrollment ADD COLUMN admin_notice TEXT"))
+                if 'admin_notice_by' not in cols:
+                    conn.execute(text("ALTER TABLE competition_team_enrollment ADD COLUMN admin_notice_by INTEGER"))
+                if 'admin_notice_at' not in cols:
+                    conn.execute(text("ALTER TABLE competition_team_enrollment ADD COLUMN admin_notice_at DATETIME"))
+                conn.commit()
+    except Exception:
+        pass
+
 def create_app():
     app = Flask(__name__)
     
@@ -211,6 +285,7 @@ def create_app():
         _migrate_rsvp_attendee_fields()
         _migrate_competition_enrollment_notice_fields()
         _migrate_competition_criteria_visibility()
+        _migrate_team_member_workflow_and_competition_team_tables()
     
     # Configure login manager
     login_manager.login_view = 'auth.login'

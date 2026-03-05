@@ -9,7 +9,9 @@ from app.models import (
     FinancialTransaction, Competition, CompetitionJudge, CompetitionCriteria,
     CompetitionSubmission, CompetitionScore, CompetitionReward,
     CompetitionSponsor, CompetitionSponsorLink, CompetitionWinner, CompetitionGuard,
-    CompetitionEnrollment, SessionWeek, SessionSchedule, SessionReport, Team, TeamMember,
+    CompetitionEnrollment, CompetitionTeamEnrollment, CompetitionTeamEnrollmentMember,
+    CompetitionTeamSubmission, CompetitionTeamScore, TeamCompetitionPoint,
+    SessionWeek, SessionSchedule, SessionReport, Team, TeamMember,
     DailyActiveUser
 )
 from app import db
@@ -24,6 +26,7 @@ import os
 import json
 import csv
 import io
+import math
 
 def admin_required(f):
     """Decorator to require admin role"""
@@ -81,7 +84,29 @@ def dashboard():
 @admin_required
 def users():
     pending_users = User.query.filter_by(role='student', is_approved=False).all()
-    return render_template('admin/users.html', pending_users=pending_users)
+    approval_mode = SystemSettings.get_setting('registration_approval_mode', 'manual')
+    if approval_mode not in ['manual', 'auto']:
+        approval_mode = 'manual'
+    return render_template('admin/users.html', pending_users=pending_users, approval_mode=approval_mode)
+
+
+@admin_bp.route('/users/approval-mode', methods=['POST'])
+@login_required
+@admin_required
+def set_user_approval_mode():
+    mode = (request.form.get('approval_mode') or 'manual').strip().lower()
+    if mode not in ['manual', 'auto']:
+        flash('Invalid approval mode.', 'error')
+        return redirect(url_for('admin.users'))
+    SystemSettings.set_setting(
+        'registration_approval_mode',
+        mode,
+        description='Controls if new registrations are auto-approved or require manual approval.',
+        user_id=current_user.id
+    )
+    db.session.commit()
+    flash(f'Registration approval mode set to {mode}.', 'success')
+    return redirect(url_for('admin.users'))
 
 @admin_bp.route('/approve-user/<int:user_id>')
 @login_required
@@ -1157,6 +1182,26 @@ def _delete_member_account_data(user):
         CompetitionWinner.query.filter_by(member_id=member_id).delete(synchronize_session=False)
         CompetitionGuard.query.filter_by(member_id=member_id).delete(synchronize_session=False)
         CompetitionEnrollment.query.filter_by(member_id=member_id).delete(synchronize_session=False)
+        team_enrollment_ids = [eid for (eid,) in db.session.query(CompetitionTeamEnrollment.id).filter_by(leader_member_id=member_id).all()]
+        if team_enrollment_ids:
+            CompetitionTeamScore.query.filter(
+                CompetitionTeamScore.submission_id.in_(
+                    db.session.query(CompetitionTeamSubmission.id).filter(CompetitionTeamSubmission.enrollment_id.in_(team_enrollment_ids))
+                )
+            ).delete(synchronize_session=False)
+            CompetitionTeamSubmission.query.filter(
+                CompetitionTeamSubmission.enrollment_id.in_(team_enrollment_ids)
+            ).delete(synchronize_session=False)
+            CompetitionTeamEnrollmentMember.query.filter(
+                CompetitionTeamEnrollmentMember.enrollment_id.in_(team_enrollment_ids)
+            ).delete(synchronize_session=False)
+            CompetitionTeamEnrollment.query.filter(
+                CompetitionTeamEnrollment.id.in_(team_enrollment_ids)
+            ).delete(synchronize_session=False)
+        CompetitionTeamEnrollmentMember.query.filter_by(member_id=member_id).delete(synchronize_session=False)
+        CompetitionTeamSubmission.query.filter_by(submitted_by_member_id=member_id).delete(synchronize_session=False)
+        Team.query.filter_by(created_by_member_id=member_id).update({'created_by_member_id': None}, synchronize_session=False)
+        TeamMember.query.filter_by(approved_by_member_id=member_id).update({'approved_by_member_id': None}, synchronize_session=False)
         TeamMember.query.filter_by(member_id=member_id).delete(synchronize_session=False)
         MembershipPayment.query.filter_by(member_id=member_id).delete(synchronize_session=False)
         MemberTrophy.query.filter_by(member_id=member_id).delete(synchronize_session=False)
@@ -1168,6 +1213,7 @@ def _delete_member_account_data(user):
 
     # Remove user-linked technical/assignment rows.
     CompetitionScore.query.filter_by(judge_id=user.id).delete(synchronize_session=False)
+    CompetitionTeamScore.query.filter_by(judge_id=user.id).delete(synchronize_session=False)
     CompetitionJudge.query.filter_by(user_id=user.id).delete(synchronize_session=False)
     CompetitionEnrollment.query.filter_by(disqualified_by=user.id).update({'disqualified_by': None}, synchronize_session=False)
     RSVP.query.filter_by(approved_by=user.id).update({'approved_by': None}, synchronize_session=False)
@@ -3019,12 +3065,124 @@ def _submission_judge_progress(competition, submission):
     return progress
 
 
+def _calculate_team_submission_scores(submission):
+    competition = submission.competition
+    criteria = competition.criteria.order_by(CompetitionCriteria.id.asc()).all()
+    judges = competition.judges.filter_by(is_active=True).all()
+
+    judge_totals = []
+    for judge in judges:
+        total = 0
+        scored_any = False
+        for c in criteria:
+            score_row = CompetitionTeamScore.query.filter_by(
+                submission_id=submission.id,
+                judge_id=judge.user_id,
+                criteria_id=c.id
+            ).first()
+            if score_row:
+                scored_any = True
+                max_points = c.max_points or 1
+                total += (score_row.score / max_points) * (c.weight_percent or 0)
+        if scored_any:
+            judge_totals.append(total)
+
+    submission.total_score = round(sum(judge_totals) / len(judge_totals), 2) if judge_totals else 0
+    submission.final_score = round(submission.total_score + (submission.bonus_points or 0), 2)
+
+
+def _team_submission_judge_progress(competition, submission):
+    criteria = competition.criteria.order_by(CompetitionCriteria.id.asc()).all()
+    criteria_count = len(criteria)
+    judges = competition.judges.filter_by(is_active=True).all()
+    rows = CompetitionTeamScore.query.filter_by(submission_id=submission.id).all()
+    score_map = {(r.judge_id, r.criteria_id): r.score for r in rows}
+
+    progress = []
+    for j in judges:
+        total = 0.0
+        scored_count = 0
+        for c in criteria:
+            key = (j.user_id, c.id)
+            if key in score_map:
+                scored_count += 1
+                total += (score_map[key] / (c.max_points or 1)) * (c.weight_percent or 0)
+        judge_user = j.judge
+        progress.append({
+            'judge_id': j.user_id,
+            'name': judge_user.member.full_name if getattr(judge_user, 'member', None) else judge_user.email,
+            'email': judge_user.email,
+            'is_chair': j.is_chair,
+            'scored_count': scored_count,
+            'criteria_count': criteria_count,
+            'graded': scored_count > 0,
+            'total_score': round(total, 2),
+        })
+    return progress
+
+
+class _ListPagination:
+    def __init__(self, items, page, per_page):
+        self.total = len(items)
+        self.page = max(1, page)
+        self.per_page = per_page
+        self.pages = max(1, math.ceil(self.total / float(self.per_page))) if self.total else 1
+        start = (self.page - 1) * self.per_page
+        end = start + self.per_page
+        self.items = items[start:end]
+        self.has_prev = self.page > 1
+        self.has_next = self.page < self.pages
+        self.prev_num = self.page - 1
+        self.next_num = self.page + 1
+
+    def iter_pages(self, left_edge=1, right_edge=1, left_current=1, right_current=2):
+        last = 0
+        for num in range(1, self.pages + 1):
+            if (
+                num <= left_edge
+                or num > self.pages - right_edge
+                or (self.page - left_current <= num <= self.page + right_current)
+            ):
+                if last + 1 != num:
+                    yield None
+                yield num
+                last = num
+
+
+def _build_competition_admin_count_maps(competitions):
+    enrollment_counts = {}
+    submission_counts = {}
+    for comp in competitions:
+        individual_enrollments = CompetitionEnrollment.query.filter_by(competition_id=comp.id).count()
+        team_member_enrollments = (
+            db.session.query(CompetitionTeamEnrollmentMember)
+            .join(
+                CompetitionTeamEnrollment,
+                CompetitionTeamEnrollment.id == CompetitionTeamEnrollmentMember.enrollment_id
+            )
+            .filter(CompetitionTeamEnrollment.competition_id == comp.id)
+            .count()
+        )
+        individual_submissions = CompetitionSubmission.query.filter_by(competition_id=comp.id).count()
+        team_submissions = CompetitionTeamSubmission.query.filter_by(competition_id=comp.id).count()
+        enrollment_counts[comp.id] = individual_enrollments + team_member_enrollments
+        submission_counts[comp.id] = individual_submissions + team_submissions
+    return enrollment_counts, submission_counts
+
+
 @admin_bp.route('/competitions')
 @login_required
 @admin_required
 def competitions():
     items = Competition.query.order_by(Competition.created_at.desc()).all()
-    return render_template('admin/competitions/index.html', competitions=items, view_label='All')
+    enrollment_counts, submission_counts = _build_competition_admin_count_maps(items)
+    return render_template(
+        'admin/competitions/index.html',
+        competitions=items,
+        view_label='All',
+        enrollment_counts=enrollment_counts,
+        submission_counts=submission_counts
+    )
 
 
 @admin_bp.route('/competitions/weekly')
@@ -3032,7 +3190,14 @@ def competitions():
 @admin_required
 def competitions_weekly():
     items = Competition.query.filter_by(frequency='weekly').order_by(Competition.created_at.desc()).all()
-    return render_template('admin/competitions/index.html', competitions=items, view_label='Weekly')
+    enrollment_counts, submission_counts = _build_competition_admin_count_maps(items)
+    return render_template(
+        'admin/competitions/index.html',
+        competitions=items,
+        view_label='Weekly',
+        enrollment_counts=enrollment_counts,
+        submission_counts=submission_counts
+    )
 
 
 @admin_bp.route('/competitions/monthly')
@@ -3040,7 +3205,14 @@ def competitions_weekly():
 @admin_required
 def competitions_monthly():
     items = Competition.query.filter_by(frequency='monthly').order_by(Competition.created_at.desc()).all()
-    return render_template('admin/competitions/index.html', competitions=items, view_label='Monthly')
+    enrollment_counts, submission_counts = _build_competition_admin_count_maps(items)
+    return render_template(
+        'admin/competitions/index.html',
+        competitions=items,
+        view_label='Monthly',
+        enrollment_counts=enrollment_counts,
+        submission_counts=submission_counts
+    )
 
 
 @admin_bp.route('/competitions/add', methods=['GET', 'POST'])
@@ -3150,9 +3322,33 @@ def competitions_view(competition_id):
     criteria_total = sum(c.weight_percent or 0 for c in criteria)
     rewards = competition.rewards.order_by(CompetitionReward.id.asc()).all()
     sponsors = competition.sponsors.order_by(CompetitionSponsorLink.display_order.asc()).all()
-    submissions_count = competition.submissions.count()
-    enrollments_count = competition.enrollments.count()
-    return render_template('admin/competitions/detail.html', competition=competition, judges=judges, criteria=criteria, rewards=rewards, sponsors=sponsors, submissions_count=submissions_count, enrollments_count=enrollments_count, users=users, sponsors_all=sponsors_all, criteria_total=criteria_total)
+    individual_submissions_count = CompetitionSubmission.query.filter_by(competition_id=competition.id).count()
+    team_submissions_count = CompetitionTeamSubmission.query.filter_by(competition_id=competition.id).count()
+    submissions_count = individual_submissions_count + team_submissions_count
+    individual_enrollments_count = CompetitionEnrollment.query.filter_by(competition_id=competition.id).count()
+    team_enrollments_count = (
+        db.session.query(CompetitionTeamEnrollmentMember)
+        .join(
+            CompetitionTeamEnrollment,
+            CompetitionTeamEnrollment.id == CompetitionTeamEnrollmentMember.enrollment_id
+        )
+        .filter(CompetitionTeamEnrollment.competition_id == competition.id)
+        .count()
+    )
+    enrollments_count = individual_enrollments_count + team_enrollments_count
+    return render_template(
+        'admin/competitions/detail.html',
+        competition=competition,
+        judges=judges,
+        criteria=criteria,
+        rewards=rewards,
+        sponsors=sponsors,
+        submissions_count=submissions_count,
+        enrollments_count=enrollments_count,
+        users=users,
+        sponsors_all=sponsors_all,
+        criteria_total=criteria_total
+    )
 
 
 @admin_bp.route('/competitions/<int:competition_id>/criteria/add', methods=['POST'])
@@ -3365,6 +3561,7 @@ def competitions_sponsor_delete(sponsor_id):
 def competitions_submissions(competition_id):
     competition = Competition.query.get_or_404(competition_id)
     submissions = competition.submissions.join(Member).order_by(CompetitionSubmission.submitted_at.desc()).all()
+    team_submissions = CompetitionTeamSubmission.query.filter_by(competition_id=competition.id).order_by(CompetitionTeamSubmission.submitted_at.desc()).all()
     judge = _competition_is_judge(competition.id, current_user.id)
     is_judge = judge is not None
     is_chair = judge.is_chair if judge else False
@@ -3372,13 +3569,99 @@ def competitions_submissions(competition_id):
         e.member_id: e
         for e in CompetitionEnrollment.query.filter_by(competition_id=competition.id).all()
     }
+    team_enrollment_map = {
+        te.id: te
+        for te in CompetitionTeamEnrollment.query.filter_by(competition_id=competition.id).all()
+    }
+    submitted_count = (
+        sum(1 for s in submissions if s.status == 'submitted') +
+        sum(1 for s in team_submissions if s.status == 'submitted')
+    )
+    reviewed_count = (
+        sum(1 for s in submissions if s.status == 'reviewed') +
+        sum(1 for s in team_submissions if s.status == 'reviewed')
+    )
+    disqualified_count = (
+        sum(1 for s in submissions if s.status == 'disqualified') +
+        sum(1 for s in team_submissions if s.status == 'disqualified')
+    )
+    total_count = len(submissions) + len(team_submissions)
     return render_template(
         'admin/competitions/submissions.html',
         competition=competition,
         submissions=submissions,
+        team_submissions=team_submissions,
         is_judge=is_judge,
         is_chair=is_chair,
-        enrollment_map=enrollment_map
+        enrollment_map=enrollment_map,
+        team_enrollment_map=team_enrollment_map,
+        submitted_count=submitted_count,
+        reviewed_count=reviewed_count,
+        disqualified_count=disqualified_count,
+        total_count=total_count
+    )
+
+
+@admin_bp.route('/competitions/<int:competition_id>/team-submissions/<int:submission_id>/score', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def competitions_team_submission_score(competition_id, submission_id):
+    competition = Competition.query.get_or_404(competition_id)
+    submission = CompetitionTeamSubmission.query.get_or_404(submission_id)
+    if submission.competition_id != competition.id:
+        flash('Invalid team submission.', 'error')
+        return redirect(url_for('admin.competitions_submissions', competition_id=competition.id))
+    if competition.status == 'finalized':
+        flash('Competition is finalized. Team scoring is locked.', 'error')
+        return redirect(url_for('admin.competitions_submissions', competition_id=competition.id))
+
+    judge = _competition_is_judge(competition.id, current_user.id)
+    if not judge:
+        flash('You are not assigned to judge this competition.', 'error')
+        return redirect(url_for('admin.competitions_submissions', competition_id=competition.id))
+
+    criteria = competition.criteria.order_by(CompetitionCriteria.id.asc()).all()
+    if request.method == 'POST':
+        for c in criteria:
+            value = float(request.form.get(f'criteria_{c.id}') or 0)
+            if value > c.max_points:
+                value = c.max_points
+            score_row = CompetitionTeamScore.query.filter_by(
+                submission_id=submission.id,
+                judge_id=current_user.id,
+                criteria_id=c.id
+            ).first()
+            if not score_row:
+                score_row = CompetitionTeamScore(
+                    submission_id=submission.id,
+                    judge_id=current_user.id,
+                    criteria_id=c.id
+                )
+                db.session.add(score_row)
+            score_row.score = value
+            score_row.comment = request.form.get(f'comment_{c.id}')
+
+        if judge.is_chair:
+            bonus = request.form.get('bonus_points', type=float)
+            if bonus is not None:
+                submission.bonus_points = float(bonus)
+
+        db.session.commit()
+        _calculate_team_submission_scores(submission)
+        db.session.commit()
+        flash('Team scores saved.', 'success')
+        return redirect(url_for('admin.competitions_submissions', competition_id=competition.id))
+
+    existing_scores = {s.criteria_id: s for s in submission.scores.filter_by(judge_id=current_user.id).all()}
+    judge_progress = _team_submission_judge_progress(competition, submission)
+    return render_template(
+        'admin/competitions/team_score.html',
+        competition=competition,
+        submission=submission,
+        criteria=criteria,
+        existing_scores=existing_scores,
+        judge_progress=judge_progress,
+        is_chair=judge.is_chair
     )
 
 
@@ -3483,6 +3766,107 @@ def competitions_submission_delete(competition_id, submission_id):
     return redirect(url_for('admin.competitions_submissions', competition_id=competition.id))
 
 
+@admin_bp.route('/competitions/<int:competition_id>/team-submissions/<int:submission_id>/notice', methods=['POST'])
+@login_required
+@admin_required
+def competitions_team_submission_notice(competition_id, submission_id):
+    competition = Competition.query.get_or_404(competition_id)
+    if competition.status == 'finalized':
+        flash('Competition is finalized. Submission notices are locked.', 'error')
+        return redirect(url_for('admin.competitions_submissions', competition_id=competition.id))
+    submission = CompetitionTeamSubmission.query.get_or_404(submission_id)
+    if submission.competition_id != competition.id:
+        flash('Invalid team submission.', 'error')
+        return redirect(url_for('admin.competitions_submissions', competition_id=competition.id))
+
+    notice = (request.form.get('notice') or '').strip()
+    if not notice:
+        flash('Notice message is required.', 'error')
+        return redirect(url_for('admin.competitions_submissions', competition_id=competition.id))
+
+    enrollment = submission.enrollment
+    if not enrollment:
+        flash('Team enrollment record was not found.', 'error')
+        return redirect(url_for('admin.competitions_submissions', competition_id=competition.id))
+
+    enrollment.admin_notice = notice
+    enrollment.admin_notice_by = current_user.id
+    enrollment.admin_notice_at = datetime.now()
+    db.session.commit()
+
+    try:
+        notification_service = get_notification_service()
+        for snapshot in enrollment.members.all():
+            if snapshot.member:
+                notification_service.send_competition_member_notice_sms(
+                    snapshot.member,
+                    f"KIUT Digital Club: Team competition notice for {competition.title}. {notice}"
+                )
+    except Exception as exc:
+        current_app.logger.error(f"Failed to send team competition notice SMS: {exc}")
+
+    flash('Team notice saved and sent to team members (if phone numbers are available).', 'success')
+    return redirect(url_for('admin.competitions_submissions', competition_id=competition.id))
+
+
+@admin_bp.route('/competitions/<int:competition_id>/team-submissions/<int:submission_id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def competitions_team_submission_delete(competition_id, submission_id):
+    competition = Competition.query.get_or_404(competition_id)
+    if competition.status == 'finalized':
+        flash('Competition is finalized. Submissions are locked.', 'error')
+        return redirect(url_for('admin.competitions_submissions', competition_id=competition.id))
+    submission = CompetitionTeamSubmission.query.get_or_404(submission_id)
+    if submission.competition_id != competition.id:
+        flash('Invalid team submission.', 'error')
+        return redirect(url_for('admin.competitions_submissions', competition_id=competition.id))
+
+    reason = (request.form.get('delete_reason') or '').strip()
+    if not reason:
+        flash('A reason is required before deleting a team submission.', 'error')
+        return redirect(url_for('admin.competitions_submissions', competition_id=competition.id))
+
+    enrollment = submission.enrollment
+    if enrollment:
+        enrollment.admin_notice = (
+            "Your team submission was returned by admin: "
+            f"{reason}. Team leader can submit again."
+        )
+        enrollment.admin_notice_by = current_user.id
+        enrollment.admin_notice_at = datetime.now()
+        if enrollment.status != 'disqualified':
+            enrollment.status = 'enrolled'
+
+    if submission.submission_type in ['video', 'report'] and submission.submission_value:
+        try:
+            file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'competitions', submission.submission_value)
+            if os.path.exists(file_path):
+                os.remove(file_path)
+        except Exception as exc:
+            current_app.logger.warning(f"Failed to remove team submission file {submission.submission_value}: {exc}")
+
+    CompetitionTeamScore.query.filter_by(submission_id=submission.id).delete(synchronize_session=False)
+    db.session.delete(submission)
+    db.session.commit()
+
+    try:
+        notification_service = get_notification_service()
+        if enrollment:
+            for snapshot in enrollment.members.all():
+                if snapshot.member:
+                    notification_service.send_competition_member_notice_sms(
+                        snapshot.member,
+                        f"KIUT Digital Club: Team submission in {competition.title} was removed by admin. "
+                        f"Reason: {reason}. Team leader can submit again."
+                    )
+    except Exception as exc:
+        current_app.logger.error(f"Failed to send team submission delete SMS: {exc}")
+
+    flash('Team submission deleted. Team leader can submit again.', 'success')
+    return redirect(url_for('admin.competitions_submissions', competition_id=competition.id))
+
+
 @admin_bp.route('/competitions/<int:competition_id>/submissions/<int:submission_id>/score', methods=['GET', 'POST'])
 @login_required
 def competitions_score(competition_id, submission_id):
@@ -3563,58 +3947,125 @@ def competitions_finalize(competition_id):
         RewardTransaction.transaction_type == 'competition',
         RewardTransaction.reason.ilike(f"Competition {competition.id}%")
     ).delete(synchronize_session=False)
+    # Roll back previously awarded team points for this competition.
+    old_team_points = TeamCompetitionPoint.query.filter_by(competition_id=competition.id).all()
+    for tp in old_team_points:
+        if tp.team:
+            tp.team.total_points = max(0, int(tp.team.total_points or 0) - int(tp.points or 0))
+    TeamCompetitionPoint.query.filter_by(competition_id=competition.id).delete(synchronize_session=False)
 
-    submissions = competition.submissions.filter(CompetitionSubmission.status != 'disqualified').all()
-    submissions = sorted(submissions, key=lambda s: s.final_score, reverse=True)
-    for idx, submission in enumerate(submissions, start=1):
-        submission.rank = idx
+    individual_submissions = competition.submissions.filter(CompetitionSubmission.status != 'disqualified').all()
+    team_submissions = CompetitionTeamSubmission.query.filter_by(
+        competition_id=competition.id
+    ).filter(CompetitionTeamSubmission.status != 'disqualified').all()
+
+    for submission in individual_submissions:
+        submission.rank = None
         submission.is_winner = False
         submission.points_awarded = 0
-    prize_map = {}
+    for submission in team_submissions:
+        submission.rank = None
+        submission.is_winner = False
+        submission.points_awarded = 0
 
-    # Apply rewards
-    total_submissions = len(submissions)
+    combined_entries = []
+    for s in individual_submissions:
+        combined_entries.append(('individual', s))
+    for ts in team_submissions:
+        combined_entries.append(('team', ts))
+    combined_entries.sort(key=lambda row: (row[1].final_score or 0), reverse=True)
+
+    for idx, (_, submission) in enumerate(combined_entries, start=1):
+        submission.rank = idx
+
+    # Build global rank->award mapping so rewards are applied once across both individual and team results.
+    rank_awards = {}
+    total_entries = len(combined_entries)
     for reward in competition.rewards.all():
+        points = int(reward.points or 0)
         if reward.reward_type == 'percent' and reward.percent:
-            if total_submissions == 0:
+            if total_entries == 0:
                 continue
-            count = max(1, int((reward.percent / 100.0) * total_submissions))
-            for submission in submissions[:count]:
-                submission.points_awarded = max(submission.points_awarded or 0, reward.points or 0)
-                submission.is_winner = True
-                prize_map[submission.id] = (reward.prize_title, reward.prize_description)
+            count = max(1, int((reward.percent / 100.0) * total_entries))
+            ranks = range(1, count + 1)
         else:
             start = reward.rank_from or 1
             end = reward.rank_to or start
-            for submission in submissions:
-                if submission.rank and start <= submission.rank <= end:
-                    submission.points_awarded = max(submission.points_awarded or 0, reward.points or 0)
-                    submission.is_winner = True
-                    prize_map[submission.id] = (reward.prize_title, reward.prize_description)
+            ranks = range(start, end + 1)
 
-    for submission in submissions:
-        if submission.is_winner:
-            prize_title, prize_description = prize_map.get(submission.id, (None, None))
+        for rank in ranks:
+            if rank > total_entries:
+                continue
+            existing = rank_awards.get(rank)
+            if not existing or points > existing['points']:
+                rank_awards[rank] = {
+                    'points': points,
+                    'prize_title': reward.prize_title,
+                    'prize_description': reward.prize_description,
+                }
+
+    # Apply awards.
+    for kind, submission in combined_entries:
+        award = rank_awards.get(submission.rank)
+        if not award or award['points'] <= 0:
+            continue
+
+        submission.points_awarded = int(award['points'])
+        submission.is_winner = True
+
+        if kind == 'individual':
             db.session.add(CompetitionWinner(
                 competition_id=competition.id,
                 member_id=submission.member_id,
                 level=competition.level,
                 rank=submission.rank,
                 points_awarded=submission.points_awarded,
-                prize_title=prize_title,
-                prize_description=prize_description,
+                prize_title=award['prize_title'],
+                prize_description=award['prize_description'],
             ))
-            if submission.points_awarded:
-                db.session.add(RewardTransaction(
-                    member_id=submission.member_id,
-                    points=submission.points_awarded,
-                    transaction_type='competition',
-                    reason=f"Competition {competition.id} - {competition.title} (Rank {submission.rank})",
-                    admin_id=current_user.id
+            db.session.add(RewardTransaction(
+                member_id=submission.member_id,
+                points=submission.points_awarded,
+                transaction_type='competition',
+                reason=f"Competition {competition.id} - {competition.title} (Rank {submission.rank})",
+                admin_id=current_user.id
+            ))
+            continue
+
+        team = submission.team
+        if team:
+            team.total_points = int(team.total_points or 0) + int(submission.points_awarded or 0)
+            existing_team_point = TeamCompetitionPoint.query.filter_by(
+                team_id=team.id,
+                competition_id=competition.id
+            ).first()
+            if existing_team_point:
+                existing_team_point.points = int(submission.points_awarded or 0)
+            else:
+                db.session.add(TeamCompetitionPoint(
+                    team_id=team.id,
+                    competition_id=competition.id,
+                    points=int(submission.points_awarded or 0),
+                    awarded_at=datetime.utcnow()
                 ))
 
-    if submissions:
-        top = submissions[0]
+        # Award each enrolled team member snapshot.
+        snapshots = submission.enrollment.members.all() if submission.enrollment else []
+        for snapshot in snapshots:
+            db.session.add(RewardTransaction(
+                member_id=snapshot.member_id,
+                points=int(submission.points_awarded or 0),
+                transaction_type='competition',
+                reason=(
+                    f"Competition {competition.id} - {competition.title} "
+                    f"(Team {submission.team.name if submission.team else submission.team_id}, Rank {submission.rank})"
+                ),
+                admin_id=current_user.id
+            ))
+
+    top_individual = next((entry[1] for entry in combined_entries if entry[0] == 'individual'), None)
+    if top_individual:
+        top = top_individual
         today = datetime.now().date()
         db.session.add(CompetitionGuard(
             competition_id=competition.id,
@@ -3632,14 +4083,23 @@ def competitions_finalize(competition_id):
     # Notify top 3 ranked members by SMS.
     try:
         notification_service = get_notification_service()
-        for winner in submissions[:3]:
+        for kind, winner in combined_entries[:3]:
             if not winner.rank:
                 continue
-            notification_service.send_competition_member_notice_sms(
-                winner.member,
-                f"Congratulations! You placed #{winner.rank} in {competition.title}. "
-                "Your result has been finalized by KIUT Digital Club."
-            )
+            if kind == 'individual' and winner.member:
+                notification_service.send_competition_member_notice_sms(
+                    winner.member,
+                    f"Congratulations! You placed #{winner.rank} in {competition.title}. "
+                    "Your result has been finalized by KIUT Digital Club."
+                )
+            elif kind == 'team' and winner.enrollment:
+                for snapshot in winner.enrollment.members.all():
+                    if snapshot.member:
+                        notification_service.send_competition_member_notice_sms(
+                            snapshot.member,
+                            f"Congratulations! Your team placed #{winner.rank} in {competition.title}. "
+                            "Results are finalized by KIUT Digital Club."
+                        )
     except Exception as exc:
         current_app.logger.error(f"Failed to send winners SMS for competition {competition.id}: {exc}")
 
@@ -3670,7 +4130,27 @@ def competitions_bonus(competition_id, submission_id):
 def competitions_enrollments(competition_id):
     competition = Competition.query.get_or_404(competition_id)
     enrollments = CompetitionEnrollment.query.filter_by(competition_id=competition.id).join(Member).order_by(CompetitionEnrollment.enrolled_at.desc()).all()
-    return render_template('admin/competitions/enrollments.html', competition=competition, enrollments=enrollments)
+    team_enrollments = CompetitionTeamEnrollment.query.filter_by(competition_id=competition.id).order_by(CompetitionTeamEnrollment.enrolled_at.desc()).all()
+    team_members_total = sum(te.members.count() for te in team_enrollments)
+    individual_enrolled = sum(1 for e in enrollments if e.status == 'enrolled')
+    team_enrolled = sum(te.members.count() for te in team_enrollments if te.status == 'enrolled')
+    individual_disqualified = sum(1 for e in enrollments if e.status == 'disqualified')
+    team_disqualified = sum(te.members.count() for te in team_enrollments if te.status == 'disqualified')
+    total_participants = len(enrollments) + team_members_total
+    active_count = individual_enrolled + team_enrolled
+    disqualified_count = individual_disqualified + team_disqualified
+    other_count = max(0, total_participants - active_count - disqualified_count)
+    return render_template(
+        'admin/competitions/enrollments.html',
+        competition=competition,
+        enrollments=enrollments,
+        team_enrollments=team_enrollments,
+        total_participants=total_participants,
+        active_count=active_count,
+        disqualified_count=disqualified_count,
+        other_count=other_count,
+        team_members_total=team_members_total
+    )
 
 
 @admin_bp.route('/competitions/<int:competition_id>/enrollments/<int:enrollment_id>/disqualify', methods=['POST'])
@@ -3705,6 +4185,44 @@ def competitions_disqualify(competition_id, enrollment_id):
     return redirect(url_for('admin.competitions_enrollments', competition_id=competition.id))
 
 
+@admin_bp.route('/competitions/<int:competition_id>/team-enrollments/<int:enrollment_id>/disqualify', methods=['POST'])
+@login_required
+@admin_required
+def competitions_team_disqualify(competition_id, enrollment_id):
+    competition = Competition.query.get_or_404(competition_id)
+    enrollment = CompetitionTeamEnrollment.query.get_or_404(enrollment_id)
+    if enrollment.competition_id != competition.id:
+        flash('Invalid team enrollment.', 'error')
+        return redirect(url_for('admin.competitions_enrollments', competition_id=competition.id))
+
+    reason = request.form.get('disqualified_reason')
+    enrollment.status = 'disqualified'
+    enrollment.disqualified_reason = reason
+    enrollment.disqualified_by = current_user.id
+    enrollment.disqualified_at = datetime.now()
+
+    CompetitionTeamSubmission.query.filter_by(
+        competition_id=competition.id,
+        enrollment_id=enrollment.id
+    ).update({'status': 'disqualified'}, synchronize_session=False)
+    db.session.commit()
+
+    try:
+        notification_service = get_notification_service()
+        for snapshot in enrollment.members.all():
+            if snapshot.member:
+                notification_service.send_competition_member_notice_sms(
+                    snapshot.member,
+                    f"KIUT Digital Club: Your team was disqualified from {competition.title}. "
+                    f"Reason: {reason or 'Contact admin for details.'}"
+                )
+    except Exception as exc:
+        current_app.logger.error(f"Failed to send team disqualification SMS: {exc}")
+
+    flash('Team disqualified.', 'success')
+    return redirect(url_for('admin.competitions_enrollments', competition_id=competition.id))
+
+
 def _build_reward_badges(rewards, total_submissions):
     badges = {}
     if total_submissions == 0:
@@ -3727,9 +4245,55 @@ def _build_reward_badges(rewards, total_submissions):
 @admin_required
 def competitions_leaderboard(competition_id):
     competition = Competition.query.get_or_404(competition_id)
-    submissions_query = competition.submissions.filter(CompetitionSubmission.status != 'disqualified').order_by(CompetitionSubmission.final_score.desc())
+    individual_rows = competition.submissions.filter(CompetitionSubmission.status != 'disqualified').all()
+    team_rows = CompetitionTeamSubmission.query.filter_by(
+        competition_id=competition.id
+    ).filter(CompetitionTeamSubmission.status != 'disqualified').all()
+
+    combined = []
+    for s in individual_rows:
+        combined.append({
+            'record_type': 'individual',
+            'participant_name': s.member.full_name if s.member else f"Member #{s.member_id}",
+            'participant_email': (
+                s.member.user.email
+                if s.member and getattr(s.member, 'user', None)
+                else '-'
+            ),
+            'final_score': s.final_score,
+            'submission_type': s.submission_type,
+            'submission_value': s.submission_value,
+            'team_members': [],
+        })
+    for ts in team_rows:
+        team_members = []
+        if ts.enrollment:
+            for snap in ts.enrollment.members.all():
+                if not snap.member:
+                    continue
+                team_members.append({
+                    'full_name': snap.member.full_name,
+                    'course': snap.member.course,
+                    'year': snap.member.year,
+                    'profile_image': snap.member.profile_image,
+                })
+        combined.append({
+            'record_type': 'team',
+            'participant_name': ts.team.name if ts.team else f"Team #{ts.team_id}",
+            'participant_email': (
+                ts.submitted_by_member.user.email
+                if ts.submitted_by_member and getattr(ts.submitted_by_member, 'user', None)
+                else '-'
+            ),
+            'final_score': ts.final_score,
+            'submission_type': ts.submission_type,
+            'submission_value': ts.submission_value,
+            'team_members': team_members,
+        })
+
+    combined.sort(key=lambda row: row.get('final_score') or 0, reverse=True)
     page = request.args.get('page', 1, type=int)
-    submissions_page = submissions_query.paginate(page=page, per_page=20, error_out=False)
+    submissions_page = _ListPagination(combined, page=page, per_page=20)
     rewards = competition.rewards.order_by(CompetitionReward.id.asc()).all()
     badges = _build_reward_badges(rewards, submissions_page.total)
     chair = CompetitionJudge.query.filter_by(competition_id=competition.id, user_id=current_user.id, is_chair=True, is_active=True).first()
@@ -4021,43 +4585,12 @@ def sessions_report_reject(report_id):
     return redirect(url_for('admin.sessions_reports'))
 
 
-# Teams
-def _default_team_names():
-    return [
-        'Alpha Company',
-        'Bravo Company',
-        'Charlie Company',
-        'Delta Company',
-        'Echo Company',
-        'Foxtrot Company',
-        'Golf Company',
-        'Hotel Company',
-        'India Company',
-        'Juliet Company',
-    ]
-
-
 @admin_bp.route('/teams')
 @login_required
 @admin_required
 def teams_index():
     teams = Team.query.order_by(Team.rating.desc(), Team.name.asc()).all()
     return render_template('admin/teams/index.html', teams=teams)
-
-
-@admin_bp.route('/teams/seed', methods=['POST'])
-@login_required
-@admin_required
-def teams_seed():
-    existing = {t.name for t in Team.query.all()}
-    created = 0
-    for name in _default_team_names():
-        if name not in existing:
-            db.session.add(Team(name=name, rating=0))
-            created += 1
-    db.session.commit()
-    flash(f'{created} teams created.', 'success')
-    return redirect(url_for('admin.teams_index'))
 
 
 @admin_bp.route('/teams/<int:team_id>', methods=['GET', 'POST'])
@@ -4068,15 +4601,27 @@ def teams_view(team_id):
     members = Member.query.order_by(Member.full_name.asc()).all()
     if request.method == 'POST':
         team.description = request.form.get('description')
+        team.is_open = bool(request.form.get('is_open'))
+        admin_notice = (request.form.get('admin_notice') or '').strip()
+        old_notice = (team.admin_notice or '').strip()
+        team.admin_notice = admin_notice or None
+        team.admin_notice_at = datetime.utcnow() if admin_notice else None
         rating = request.form.get('rating')
         try:
             team.rating = max(0, min(5, int(rating)))
         except (TypeError, ValueError):
             team.rating = 0
         db.session.commit()
+        if admin_notice and admin_notice != old_notice:
+            try:
+                get_notification_service().send_team_notice_sms_to_leader(team, admin_notice)
+            except Exception:
+                current_app.logger.exception('Failed to send team notice SMS to leader')
         flash('Team updated.', 'success')
         return redirect(url_for('admin.teams_view', team_id=team.id))
-    team_members = team.members.join(Member).order_by(Member.full_name.asc()).all()
+    team_members = team.members.join(
+        Member, TeamMember.member_id == Member.id
+    ).order_by(TeamMember.status.asc(), TeamMember.is_leader.desc(), Member.full_name.asc()).all()
     return render_template('admin/teams/detail.html', team=team, team_members=team_members, members=members)
 
 
@@ -4085,6 +4630,9 @@ def teams_view(team_id):
 @admin_required
 def teams_assign_member(team_id):
     team = Team.query.get_or_404(team_id)
+    if team.is_suspended:
+        flash('Team is suspended. Unsuspend first to assign members.', 'error')
+        return redirect(url_for('admin.teams_view', team_id=team.id))
     member_id = request.form.get('member_id')
     is_leader = bool(request.form.get('is_leader'))
     if not member_id:
@@ -4094,9 +4642,21 @@ def teams_assign_member(team_id):
     if existing:
         flash('Member already in this team.', 'warning')
         return redirect(url_for('admin.teams_view', team_id=team.id))
+    existing_approved = TeamMember.query.filter_by(member_id=int(member_id), status='approved').first()
+    if existing_approved and existing_approved.team_id != team.id:
+        flash('Member already belongs to another approved team.', 'error')
+        return redirect(url_for('admin.teams_view', team_id=team.id))
     if is_leader:
-        TeamMember.query.filter_by(team_id=team.id, is_leader=True).update({'is_leader': False})
-    tm = TeamMember(team_id=team.id, member_id=int(member_id), is_leader=is_leader)
+        TeamMember.query.filter_by(team_id=team.id, is_leader=True, status='approved').update({'is_leader': False})
+    tm = TeamMember(
+        team_id=team.id,
+        member_id=int(member_id),
+        is_leader=is_leader,
+        status='approved',
+        requested_at=datetime.utcnow(),
+        approved_at=datetime.utcnow(),
+        approved_by_member_id=current_user.member.id if current_user.member else None
+    )
     db.session.add(tm)
     db.session.commit()
     flash('Member assigned to team.', 'success')
@@ -4125,8 +4685,126 @@ def teams_set_leader(team_id, team_member_id):
     if tm.team_id != team_id:
         flash('Invalid team member.', 'error')
         return redirect(url_for('admin.teams_view', team_id=team_id))
-    TeamMember.query.filter_by(team_id=team_id, is_leader=True).update({'is_leader': False})
-    tm.is_leader = True
+    make_leader = request.form.get('make_leader', '1') == '1'
+    if tm.status != 'approved':
+        tm.status = 'approved'
+        tm.approved_at = datetime.utcnow()
+        tm.approved_by_member_id = current_user.member.id if current_user.member else None
+    if make_leader:
+        TeamMember.query.filter_by(team_id=team_id, is_leader=True, status='approved').update({'is_leader': False})
+        tm.is_leader = True
     db.session.commit()
-    flash('Team leader updated.', 'success')
+    flash('Team member updated.', 'success')
     return redirect(url_for('admin.teams_view', team_id=team_id))
+
+
+@admin_bp.route('/teams/<int:team_id>/members/<int:team_member_id>/decision/<decision>', methods=['POST'])
+@login_required
+@admin_required
+def teams_decide_request_admin(team_id, team_member_id, decision):
+    team = Team.query.get_or_404(team_id)
+    tm = TeamMember.query.get_or_404(team_member_id)
+    if tm.team_id != team_id or tm.status != 'pending':
+        flash('Invalid team request.', 'error')
+        return redirect(url_for('admin.teams_view', team_id=team_id))
+
+    if decision == 'approve':
+        existing_approved = TeamMember.query.filter_by(member_id=tm.member_id, status='approved').first()
+        if existing_approved and existing_approved.team_id != team_id:
+            flash('Member already belongs to another approved team.', 'error')
+            return redirect(url_for('admin.teams_view', team_id=team_id))
+        tm.status = 'approved'
+        tm.approved_at = datetime.utcnow()
+        tm.approved_by_member_id = current_user.member.id if current_user.member else None
+        db.session.commit()
+        try:
+            get_notification_service().send_team_join_decision_sms(tm.member, team, decision='approved')
+        except Exception:
+            current_app.logger.exception('Failed to send join approval SMS')
+        flash('Join request approved.', 'success')
+    elif decision == 'reject':
+        tm.status = 'rejected'
+        tm.approved_at = datetime.utcnow()
+        tm.approved_by_member_id = current_user.member.id if current_user.member else None
+        db.session.commit()
+        try:
+            get_notification_service().send_team_join_decision_sms(tm.member, team, decision='rejected')
+        except Exception:
+            current_app.logger.exception('Failed to send join rejection SMS')
+        flash('Join request rejected.', 'warning')
+    else:
+        flash('Invalid decision.', 'error')
+    return redirect(url_for('admin.teams_view', team_id=team_id))
+
+
+@admin_bp.route('/teams/<int:team_id>/suspend', methods=['POST'])
+@login_required
+@admin_required
+def teams_suspend(team_id):
+    team = Team.query.get_or_404(team_id)
+    action = (request.form.get('action') or 'suspend').strip().lower()
+    reason = (request.form.get('reason') or '').strip()
+    if action == 'suspend':
+        if not reason:
+            flash('Suspension reason is required.', 'error')
+            return redirect(url_for('admin.teams_view', team_id=team_id))
+        team.is_suspended = True
+        team.is_open = False
+        team.suspension_reason = reason
+        team.suspended_at = datetime.utcnow()
+        team.suspended_by_user_id = current_user.id
+        db.session.commit()
+        try:
+            get_notification_service().send_team_status_sms_to_members(team, reason, status='suspended')
+        except Exception:
+            current_app.logger.exception('Failed to send suspension SMS')
+        flash('Team suspended successfully.', 'warning')
+    else:
+        team.is_suspended = False
+        team.suspension_reason = None
+        team.suspended_at = None
+        team.suspended_by_user_id = None
+        db.session.commit()
+        try:
+            get_notification_service().send_team_status_sms_to_members(team, '', status='restored')
+        except Exception:
+            current_app.logger.exception('Failed to send restore SMS')
+        flash('Team suspension removed.', 'success')
+    return redirect(url_for('admin.teams_view', team_id=team_id))
+
+
+@admin_bp.route('/teams/<int:team_id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def teams_delete(team_id):
+    team = Team.query.get_or_404(team_id)
+    reason = (request.form.get('reason') or '').strip()
+    if not reason:
+        flash('Deletion reason is required.', 'error')
+        return redirect(url_for('admin.teams_view', team_id=team_id))
+
+    # Notify members before removal.
+    try:
+        get_notification_service().send_team_status_sms_to_members(team, reason, status='deleted')
+    except Exception:
+        current_app.logger.exception('Failed to send team deletion SMS')
+
+    # Remove team-linked competition artifacts first.
+    team_submission_ids = [sid for (sid,) in db.session.query(CompetitionTeamSubmission.id).filter_by(team_id=team_id).all()]
+    team_enrollment_ids = [eid for (eid,) in db.session.query(CompetitionTeamEnrollment.id).filter_by(team_id=team_id).all()]
+
+    if team_submission_ids:
+        CompetitionTeamScore.query.filter(CompetitionTeamScore.submission_id.in_(team_submission_ids)).delete(synchronize_session=False)
+        CompetitionTeamSubmission.query.filter(CompetitionTeamSubmission.id.in_(team_submission_ids)).delete(synchronize_session=False)
+    if team_enrollment_ids:
+        CompetitionTeamEnrollmentMember.query.filter(
+            CompetitionTeamEnrollmentMember.enrollment_id.in_(team_enrollment_ids)
+        ).delete(synchronize_session=False)
+        CompetitionTeamEnrollment.query.filter(CompetitionTeamEnrollment.id.in_(team_enrollment_ids)).delete(synchronize_session=False)
+
+    TeamCompetitionPoint.query.filter_by(team_id=team_id).delete(synchronize_session=False)
+    TeamMember.query.filter_by(team_id=team_id).delete(synchronize_session=False)
+    Team.query.filter_by(id=team_id).delete(synchronize_session=False)
+    db.session.commit()
+    flash(f'Team deleted. Reason logged: {reason}', 'success')
+    return redirect(url_for('admin.teams_index'))
