@@ -232,6 +232,10 @@
         background: var(--surface-2);
     }
 
+    .leaderboard-table tbody tr.clickable-row {
+        cursor: pointer;
+    }
+
     .leaderboard-table td {
         padding: 0.875rem 0.75rem;
         color: var(--text-secondary);
@@ -350,6 +354,44 @@
         margin-bottom: 0.5rem;
     }
 
+    .rules-modal .modal-content {
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-md);
+        box-shadow: 0 16px 40px rgba(0,0,0,0.28);
+    }
+
+    .rules-modal .modal-header {
+        border-bottom: 1px solid var(--border-color);
+        background: var(--gradient-secondary);
+    }
+
+    .rules-block {
+        border: 1px solid var(--border-color);
+        background: var(--surface-1);
+        border-radius: var(--border-radius-sm);
+        padding: 0.7rem 0.8rem;
+        margin-bottom: 0.65rem;
+    }
+
+    .rules-block h6 {
+        margin: 0 0 0.45rem 0;
+        font-size: 0.82rem;
+        color: var(--text-primary);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        font-family: 'Fira Code', monospace;
+    }
+
+    .rules-list {
+        display: grid;
+        gap: 0.45rem;
+        padding-left: 1rem;
+        margin: 0;
+        color: var(--text-secondary);
+        font-size: 0.84rem;
+    }
+
     @media (max-width: 768px) {
         .leaderboard-header {
             flex-direction: column;
@@ -430,9 +472,10 @@
     <div class="leaderboard-header">
         <div>
             <h5 class="section-title">Leaderboard</h5>
-            <div class="section-subtitle">Top 50 members and top teams based on competition performance</div>
+            <div class="section-subtitle">Top 50 members and top teams based on competition performance. Click a member row to view that member's point transactions.</div>
         </div>
         <div class="ranking-filters">
+            <button type="button" class="filter-pill" data-bs-toggle="modal" data-bs-target="#pointsRulesModal"><i class="fas fa-circle-info"></i> How Points are awarded?</button>
             <button type="button" class="filter-pill active" id="tab-individual-btn"><i class="fas fa-user"></i> Individuals</button>
             <button type="button" class="filter-pill" id="tab-teams-btn"><i class="fas fa-people-group"></i> Teams</button>
         </div>
@@ -451,12 +494,13 @@
                                     <th class="member-cell">Member</th>
                                     <th>Points</th>
                                     <th>Competitions</th>
+                                    <th>Warmups</th>
                                     <th>Best Rank</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for row in leaderboard[:50] %}
-                                <tr class="rank-{{ row.rank if row.rank <= 3 else '' }}">
+                                <tr class="rank-{{ row.rank if row.rank <= 3 else '' }} clickable-row" data-href="{{ url_for('member.points_transactions', member_id=row.member.id) }}">
                                     <td class="rank-cell">{{ row.rank }}{% if row.rank <= 3 %}<i class="fas fa-medal ms-1"></i>{% endif %}</td>
                                     <td class="member-cell">
                                         <div class="member-info">
@@ -468,13 +512,14 @@
                                                 {% endif %}
                                             </div>
                                             <div class="member-details">
-                                                <div class="member-name">{{ row.member.full_name }}</div>
+                                                <div class="member-name"><a href="{{ url_for('member.points_transactions', member_id=row.member.id) }}" style="color:inherit;text-decoration:none;">{{ row.member.full_name }}</a></div>
                                                 <div class="member-meta">{{ row.member.course or 'Member' }}{% if row.member.year %} - {{ row.member.year }}{% endif %}</div>
                                             </div>
                                         </div>
                                     </td>
                                     <td><span class="admin-badge admin-badge-primary" style="font-size: 0.8rem;">{{ row.points }}</span></td>
                                     <td><div class="text-center"><div style="font-size: 0.9rem; font-weight: 600;">{{ row.competitions }}</div><div style="font-size: 0.7rem; color: var(--text-muted);">participated</div></div></td>
+                                    <td><div class="text-center"><div style="font-size: 0.9rem; font-weight: 600;">{{ row.warmups_done }}</div><div style="font-size: 0.7rem; color: var(--text-muted);">attempted</div></div></td>
                                     <td>{% if row.best_rank %}<div class="text-center"><div style="font-size: 0.9rem; font-weight: 600;">#{{ row.best_rank }}</div><div style="font-size: 0.7rem; color: var(--text-muted);">best</div></div>{% else %}<span style="color: var(--text-muted); font-size: 0.85rem;">-</span>{% endif %}</td>
                                 </tr>
                                 {% endfor %}
@@ -564,6 +609,41 @@
     </div>
 </div>
 
+<div class="modal fade rules-modal" id="pointsRulesModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="false">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">How Points Are Awarded</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="rules-block">
+          <h6>Competitions</h6>
+          <ul class="rules-list">
+            <li>Competition rankings award points based on configured rewards.</li>
+            <li>Team awards can contribute to member and team points where configured.</li>
+          </ul>
+        </div>
+        <div class="rules-block">
+          <h6>Warmups</h6>
+          <ul class="rules-list">
+            <li>Top ranks: 30 / 20 / 10 points; others receive participation points.</li>
+            <li>Violation penalties can reduce score and may trigger additional point deduction.</li>
+          </ul>
+        </div>
+        <div class="rules-block">
+          <h6>Other Activities</h6>
+          <ul class="rules-list">
+            <li>Admins may add/deduct points with explicit reasons.</li>
+            <li>Events and approved activities can create point transactions.</li>
+          </ul>
+        </div>
+        <div class="text-muted" style="font-size:0.8rem;">Use "Points Transactions" for full transparent history per member.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const tabIndividualBtn = document.getElementById('tab-individual-btn');
@@ -588,6 +668,15 @@ document.addEventListener('DOMContentLoaded', function () {
             if (row) {
                 row.style.display = row.style.display === 'none' ? '' : 'none';
             }
+        });
+    });
+
+    document.querySelectorAll('.clickable-row[data-href]').forEach(function (row) {
+        row.addEventListener('click', function (e) {
+            const target = e.target.closest('a,button,input,label,select,textarea');
+            if (target) return;
+            const href = row.getAttribute('data-href');
+            if (href) window.location.href = href;
         });
     });
 });
