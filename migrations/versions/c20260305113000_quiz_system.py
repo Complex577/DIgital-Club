@@ -84,7 +84,7 @@ def upgrade():
         sa.Column("question_id", sa.Integer(), nullable=False),
         sa.Column("option_key", sa.String(length=8), nullable=False),
         sa.Column("option_text", sa.Text(), nullable=False),
-        sa.Column("is_correct", sa.Boolean(), nullable=False, server_default=sa.text("0")),
+        sa.Column("is_correct", sa.Boolean(), nullable=False, server_default=sa.false()),
         sa.ForeignKeyConstraint(["question_id"], ["quiz_question.id"]),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("question_id", "option_key", name="uq_quiz_option_key"),
