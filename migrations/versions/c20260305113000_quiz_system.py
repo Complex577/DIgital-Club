@@ -71,7 +71,7 @@ def upgrade():
         sa.Column("question_text", sa.Text(), nullable=False),
         sa.Column("explanation", sa.Text(), nullable=True),
         sa.Column("difficulty", sa.String(length=20), nullable=True, server_default="medium"),
-        sa.Column("is_active", sa.Boolean(), nullable=True, server_default=sa.text("1")),
+        sa.Column("is_active", sa.Boolean(), nullable=True, server_default=sa.true()),
         sa.Column("created_at", sa.DateTime(), nullable=True),
         sa.ForeignKeyConstraint(["quiz_id"], ["quiz.id"]),
         sa.PrimaryKeyConstraint("id"),
