@@ -7,7 +7,7 @@ from app.models import (
     QuizReminderPreference,
     QuizReminderNotification,
 )
-from app.time_utils import app_now_naive
+from app.time_utils import app_now_naive, app_timezone_label
 from app.utils import get_notification_service
 
 
@@ -75,9 +75,10 @@ def process_quiz_reminders_once():
             ).first()
             if exists:
                 continue
+            timezone_label = app_timezone_label()
             sms_ok = bool(sender.send_sms(
                 member.phone,
-                f"Warmup reminder: {quiz.title} starts at {quiz.scheduled_start_at.strftime('%H:%M')} EAT. Join in 5 minutes."
+                f"Warmup reminder: {quiz.title} starts at {quiz.scheduled_start_at.strftime('%H:%M')} {timezone_label}. Join in 5 minutes."
             ))
             db.session.add(QuizReminderNotification(
                 quiz_id=quiz.id,
