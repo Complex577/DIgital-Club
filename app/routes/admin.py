@@ -29,6 +29,7 @@ import csv
 import io
 import math
 from app.quiz_constants import QUIZ_FIELDS_OF_STUDY
+from app.time_utils import utc_to_app_naive
 
 def admin_required(f):
     """Decorator to require admin role"""
@@ -51,7 +52,7 @@ def dashboard():
     upcoming_events = Event.query.filter(Event.event_date >= datetime.utcnow()).count()
     newsletter_subscribers = Newsletter.query.filter_by(is_active=True).count()
     try:
-        today_local = datetime.utcnow().date()
+        today_local = utc_to_app_naive(datetime.utcnow()).date()
         daily_active_users = DailyActiveUser.query.filter_by(activity_date=today_local).count()
     except Exception:
         daily_active_users = 0

@@ -3,8 +3,9 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, current_user, logout_user
 from flask_migrate import Migrate
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
+from app.time_utils import utc_to_app_naive, app_timezone_label
 try:
     from zoneinfo import ZoneInfo
 except Exception:  # pragma: no cover
@@ -267,7 +268,7 @@ def create_app():
     app.config['TURNSTILE_SITE_KEY'] = os.environ.get('TURNSTILE_SITE_KEY', '')
     app.config['TURNSTILE_SECRET_KEY'] = os.environ.get('TURNSTILE_SECRET_KEY', '')
     app.config['REDIS_URL'] = os.environ.get('REDIS_URL', '')
-    app.config['APP_TIMEZONE'] = os.environ.get('APP_TIMEZONE', 'UTC')
+    app.config['APP_TIMEZONE'] = os.environ.get('APP_TIMEZONE', 'Africa/Nairobi')
     app.config['APP_UTC_OFFSET_HOURS'] = os.environ.get('APP_UTC_OFFSET_HOURS', '3')
     app.config['QUIZ_REMINDER_RUN_ON_REQUEST'] = os.environ.get('QUIZ_REMINDER_RUN_ON_REQUEST', '0') == '1'
     # Session / remember-me settings
@@ -314,6 +315,10 @@ def create_app():
     os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'competitions'), exist_ok=True)
     os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'quiz_resources'), exist_ok=True)
 
+    @app.template_filter('app_local')
+    def app_local_filter(value):
+        return utc_to_app_naive(value)
+
     @app.context_processor
     def inject_guards():
         try:
@@ -336,7 +341,11 @@ def create_app():
         except Exception:
             db.session.rollback()
             guards = []
-        return {'guards_week': guards, 'current_year': datetime.now().year}
+        return {
+            'guards_week': guards,
+            'current_year': datetime.now().year,
+            'app_timezone_label': app_timezone_label()
+        }
 
     @app.before_request
     def enforce_active_accounts():
@@ -358,8 +367,8 @@ def create_app():
             return
         try:
             from app.models import DailyActiveUser
-            local_date = datetime.utcnow().date()
-            now_utc = datetime.utcnow()
+            now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
+            local_date = utc_to_app_naive(now_utc).date()
             entry = DailyActiveUser.query.filter_by(
                 user_id=current_user.id,
                 activity_date=local_date

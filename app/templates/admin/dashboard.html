@@ -229,7 +229,7 @@
                         <tr>
                             <th>User</th>
                             <th>Date</th>
-                            <th>Last Seen</th>
+                            <th>Last Seen ({{ app_timezone_label }})</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -237,7 +237,7 @@
                         <tr>
                             <td>{{ entry.user.email if entry.user else 'User #' ~ entry.user_id }}</td>
                             <td>{{ entry.activity_date.strftime('%b %d, %Y') }}</td>
-                            <td>{{ entry.last_seen_at.strftime('%H:%M') }}</td>
+                            <td>{{ (entry.last_seen_at|app_local).strftime('%H:%M') if entry.last_seen_at else '-' }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
