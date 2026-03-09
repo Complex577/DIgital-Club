@@ -124,7 +124,7 @@ def upgrade():
         sa.Column("attempt_id", sa.Integer(), nullable=False),
         sa.Column("question_id", sa.Integer(), nullable=False),
         sa.Column("selected_option_id", sa.Integer(), nullable=True),
-        sa.Column("is_correct", sa.Boolean(), nullable=True, server_default=sa.text("0")),
+        sa.Column("is_correct", sa.Boolean(), nullable=True, server_default=sa.false()),
         sa.Column("time_spent_seconds", sa.Integer(), nullable=True, server_default="0"),
         sa.Column("submitted_at", sa.DateTime(), nullable=True),
         sa.ForeignKeyConstraint(["attempt_id"], ["quiz_attempt.id"]),
