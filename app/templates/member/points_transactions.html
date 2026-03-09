@@ -1,0 +1,176 @@
+{% extends "member/member_base.html" %}
+{% block page_title %}Points Transactions{% endblock %}
+{% block breadcrumb %}<span class="breadcrumb-separator">/</span><span>Rankings</span><span class="breadcrumb-separator">/</span><span>Points Transactions</span>{% endblock %}
+
+{% block extra_head %}
+{{ super() }}
+<style>
+  .tx-hero {
+    background: var(--gradient-secondary);
+    border-radius: var(--border-radius-md);
+    padding: 1.3rem;
+    border: 1px solid var(--border-color);
+    margin-bottom: 1rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .tx-hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--gradient-primary);
+  }
+  .tx-title {
+    margin: 0;
+    font-size: 1.2rem;
+    color: var(--text-primary);
+    font-weight: 700;
+    font-family: 'Fira Code', monospace;
+  }
+  .tx-subtitle {
+    margin-top: 0.25rem;
+    color: var(--text-secondary);
+    font-size: 0.84rem;
+  }
+  .tx-member-card {
+    background: var(--surface-1);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-md);
+    padding: 0.9rem;
+    margin-bottom: 0.9rem;
+  }
+  .leaderboard-table-container {
+    background: var(--surface-1);
+    border-radius: var(--border-radius-md);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+  }
+  .leaderboard-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .leaderboard-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    min-width: 760px;
+  }
+  .leaderboard-table thead { background: var(--surface-2); }
+  .leaderboard-table th {
+    padding: 1rem 0.75rem;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-primary);
+    border-bottom: 2px solid var(--border-color);
+    font-family: 'Fira Code', monospace;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+  .leaderboard-table td {
+    padding: 0.875rem 0.75rem;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+  }
+  .leaderboard-table tbody tr:hover { background: var(--surface-2); }
+  .tx-type {
+    font-size: 0.75rem;
+    border: 1px solid var(--border-color);
+    background: var(--surface-2);
+    color: var(--text-muted);
+    border-radius: 999px;
+    padding: 0.2rem 0.5rem;
+    display: inline-flex;
+  }
+  .tx-empty {
+    text-align: center;
+    padding: 2rem 1.2rem;
+    color: var(--text-muted);
+    border: 1px dashed var(--border-color);
+    border-radius: var(--border-radius-md);
+    background: var(--surface-1);
+  }
+</style>
+{% endblock %}
+
+{% block member_content %}
+<div class="tx-hero d-flex justify-content-between align-items-start flex-wrap gap-2">
+  <div>
+    <h5 class="tx-title">Points Transactions</h5>
+    <div class="tx-subtitle">Transparent history of points changes for a selected member.</div>
+  </div>
+  <a href="{{ url_for('member.competitions_rankings') }}" class="admin-btn admin-btn-outline"><i class="fas fa-arrow-left"></i> Back to Rankings</a>
+</div>
+
+{% if not selected_member %}
+  <div class="tx-empty">
+    <i class="fas fa-circle-info mb-2"></i>
+    <div>Select a member from rankings by clicking a row to view only that member's transactions.</div>
+  </div>
+{% else %}
+  <div class="tx-member-card">
+    <div class="fw-semibold" style="color:var(--text-primary);">{{ selected_member.full_name }}</div>
+    <div class="text-muted" style="font-size:0.8rem;">
+      {{ selected_member.course or 'Member' }}{% if selected_member.year %} • {{ selected_member.year }}{% endif %}
+    </div>
+  </div>
+
+  <div class="leaderboard-table-container">
+    <div class="leaderboard-scroll">
+      <table class="leaderboard-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Points</th>
+            <th>Type</th>
+            <th>Reason</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for tx in transactions %}
+          <tr>
+            <td>{{ tx.created_at.strftime('%b %d, %Y %H:%M') if tx.created_at else '-' }}</td>
+            <td>
+              <span class="admin-badge {% if tx.points >= 0 %}admin-badge-success{% else %}admin-badge-danger{% endif %}">
+                {{ tx.points }}
+              </span>
+            </td>
+            <td><span class="tx-type">{{ tx.transaction_type }}</span></td>
+            <td>{{ tx.reason }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" class="text-center">No transactions found.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% if pagination and pagination.pages > 1 %}
+  <nav aria-label="Transactions pages" class="mt-3">
+    <ul class="pagination">
+      <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+        <a class="page-link" href="{{ url_for('member.points_transactions', page=pagination.prev_num, member_id=selected_member.id) if pagination.has_prev else '#' }}">Previous</a>
+      </li>
+      {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=1) %}
+        {% if p %}
+          <li class="page-item {% if p == pagination.page %}active{% endif %}">
+            <a class="page-link" href="{{ url_for('member.points_transactions', page=p, member_id=selected_member.id) }}">{{ p }}</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">...</span></li>
+        {% endif %}
+      {% endfor %}
+      <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+        <a class="page-link" href="{{ url_for('member.points_transactions', page=pagination.next_num, member_id=selected_member.id) if pagination.has_next else '#' }}">Next</a>
+      </li>
+    </ul>
+  </nav>
+  {% endif %}
+{% endif %}
+{% endblock %}

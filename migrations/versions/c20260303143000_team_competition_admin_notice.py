@@ -16,16 +16,21 @@ depends_on = None
 
 
 def upgrade():
-    with op.batch_alter_table("competition_team_enrollment", schema=None) as batch_op:
-        batch_op.add_column(sa.Column("admin_notice", sa.Text(), nullable=True))
-        batch_op.add_column(sa.Column("admin_notice_by", sa.Integer(), nullable=True))
-        batch_op.add_column(sa.Column("admin_notice_at", sa.DateTime(), nullable=True))
-        batch_op.create_foreign_key(
-            "fk_comp_team_enrollment_admin_notice_by_user",
-            "user",
-            ["admin_notice_by"],
-            ["id"],
-        )
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    table_name = "competition_team_enrollment"
+
+    if table_name not in inspector.get_table_names():
+        return
+
+    existing_columns = {col["name"] for col in inspector.get_columns(table_name)}
+
+    if "admin_notice" not in existing_columns:
+        op.add_column(table_name, sa.Column("admin_notice", sa.Text(), nullable=True))
+    if "admin_notice_by" not in existing_columns:
+        op.add_column(table_name, sa.Column("admin_notice_by", sa.Integer(), nullable=True))
+    if "admin_notice_at" not in existing_columns:
+        op.add_column(table_name, sa.Column("admin_notice_at", sa.DateTime(), nullable=True))
 
 
 def downgrade():
@@ -34,4 +39,3 @@ def downgrade():
         batch_op.drop_column("admin_notice_at")
         batch_op.drop_column("admin_notice_by")
         batch_op.drop_column("admin_notice")
-

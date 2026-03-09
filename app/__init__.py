@@ -243,6 +243,16 @@ def _migrate_team_member_workflow_and_competition_team_tables():
     except Exception:
         pass
 
+
+def _migrate_quiz_reminder_tables():
+    """Compatibility migration for warmup reminder preference/log tables."""
+    try:
+        from app.models import QuizReminderPreference, QuizReminderNotification
+        QuizReminderPreference.__table__.create(bind=db.engine, checkfirst=True)
+        QuizReminderNotification.__table__.create(bind=db.engine, checkfirst=True)
+    except Exception:
+        pass
+
 def create_app():
     app = Flask(__name__)
     
@@ -256,7 +266,10 @@ def create_app():
     app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
     app.config['TURNSTILE_SITE_KEY'] = os.environ.get('TURNSTILE_SITE_KEY', '')
     app.config['TURNSTILE_SECRET_KEY'] = os.environ.get('TURNSTILE_SECRET_KEY', '')
+    app.config['REDIS_URL'] = os.environ.get('REDIS_URL', '')
     app.config['APP_TIMEZONE'] = os.environ.get('APP_TIMEZONE', 'UTC')
+    app.config['APP_UTC_OFFSET_HOURS'] = os.environ.get('APP_UTC_OFFSET_HOURS', '3')
+    app.config['QUIZ_REMINDER_RUN_ON_REQUEST'] = os.environ.get('QUIZ_REMINDER_RUN_ON_REQUEST', '0') == '1'
     # Session / remember-me settings
     app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=int(os.environ.get('SESSION_LIFETIME_DAYS', '30')))
     app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=int(os.environ.get('REMEMBER_LIFETIME_DAYS', '30')))
@@ -286,6 +299,7 @@ def create_app():
         _migrate_competition_enrollment_notice_fields()
         _migrate_competition_criteria_visibility()
         _migrate_team_member_workflow_and_competition_team_tables()
+        _migrate_quiz_reminder_tables()
     
     # Configure login manager
     login_manager.login_view = 'auth.login'
@@ -298,6 +312,7 @@ def create_app():
     os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'gallery'), exist_ok=True)
     os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'digital_ids'), exist_ok=True)
     os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'competitions'), exist_ok=True)
+    os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'quiz_resources'), exist_ok=True)
 
     @app.context_processor
     def inject_guards():
@@ -362,6 +377,18 @@ def create_app():
             db.session.commit()
         except Exception:
             db.session.rollback()
+
+    @app.before_request
+    def process_quiz_reminders():
+        if not app.config.get('QUIZ_REMINDER_RUN_ON_REQUEST', False):
+            return
+        if request.endpoint == 'static' or request.path.startswith('/static/'):
+            return
+        try:
+            from app.quiz_reminders import process_quiz_reminders_once
+            process_quiz_reminders_once()
+        except Exception:
+            db.session.rollback()
     
     # User loader for Flask-Login
     from app.models import User
@@ -375,12 +402,14 @@ def create_app():
     from app.routes.auth import auth_bp
     from app.routes.admin import admin_bp
     from app.routes.member import member_bp
+    from app.routes.quizmaster import quizmaster_bp
     from app.routes.verification import verification_bp
     
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(member_bp, url_prefix='/member')
+    app.register_blueprint(quizmaster_bp, url_prefix='/quizmaster')
     app.register_blueprint(verification_bp)
     
     return app

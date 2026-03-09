@@ -20,6 +20,29 @@
     color: var(--admin-text-primary);
 }
 
+.member-layout .admin-nav-item.warmup-link {
+    padding-right: 3.6rem;
+}
+
+.member-layout .admin-nav-item .warmup-badge {
+    position: absolute;
+    top: 0.38rem;
+    right: 0.6rem;
+    font-size: 0.58rem;
+    line-height: 1;
+    padding: 0.2rem 0.35rem;
+    border-radius: 999px;
+    background: rgba(255, 170, 0, 0.16);
+    border: 1px solid rgba(255, 170, 0, 0.45);
+    color: #ffb020;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+}
+
+.member-layout .admin-sidebar.collapsed .admin-nav-item .warmup-badge {
+    display: none;
+}
+
 @media (max-width: 768px) {
     .member-mobile-toggle {
         display: inline-flex;

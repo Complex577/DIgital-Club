@@ -24,6 +24,8 @@ services:
       - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID:-}
       - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN:-}
       - TWILIO_PHONE_NUMBER=${TWILIO_PHONE_NUMBER:-}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - QUIZ_REMINDER_RUN_ON_REQUEST=${QUIZ_REMINDER_RUN_ON_REQUEST:-0}
     volumes:
       # Persist database
       - ./instance:/app/instance
@@ -51,6 +53,46 @@ services:
       - POSTGRES_PASSWORD=digital_club_password
     volumes:
       - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: digital_club_redis
+    restart: unless-stopped
+
+  worker:
+    build: .
+    container_name: digital_club_worker
+    command: python scripts/rq_worker.py
+    depends_on:
+      - redis
+      - db
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-postgresql+psycopg2://digital_club_user:digital_club_password@db:5432/digital_club_db}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+    volumes:
+      - ./instance:/app/instance
+      - ./app/static/uploads:/app/app/static/uploads
+    restart: unless-stopped
+
+  reminder_worker:
+    build: .
+    container_name: digital_club_reminder_worker
+    command: python scripts/quiz_reminder_worker.py
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-postgresql+psycopg2://digital_club_user:digital_club_password@db:5432/digital_club_db}
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
+      - BEEM_API_KEY=${BEEM_API_KEY}
+      - BEEM_SECRET_KEY=${BEEM_SECRET_KEY}
+      - QUIZ_REMINDER_INTERVAL_SECONDS=${QUIZ_REMINDER_INTERVAL_SECONDS:-30}
+    volumes:
+      - ./instance:/app/instance
+      - ./app/static/uploads:/app/app/static/uploads
+    restart: unless-stopped
 
 volumes:
   postgres_data:
