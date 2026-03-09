@@ -270,7 +270,7 @@ def create_app():
     app.config['REDIS_URL'] = os.environ.get('REDIS_URL', '')
     app.config['APP_TIMEZONE'] = os.environ.get('APP_TIMEZONE', 'Africa/Nairobi')
     app.config['APP_UTC_OFFSET_HOURS'] = os.environ.get('APP_UTC_OFFSET_HOURS', '3')
-    app.config['QUIZ_REMINDER_RUN_ON_REQUEST'] = os.environ.get('QUIZ_REMINDER_RUN_ON_REQUEST', '0') == '1'
+    app.config['QUIZ_REMINDER_RUN_ON_REQUEST'] = os.environ.get('QUIZ_REMINDER_RUN_ON_REQUEST', '1') == '1'
     # Session / remember-me settings
     app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=int(os.environ.get('SESSION_LIFETIME_DAYS', '30')))
     app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=int(os.environ.get('REMEMBER_LIFETIME_DAYS', '30')))

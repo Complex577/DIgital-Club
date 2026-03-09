@@ -180,13 +180,13 @@ The app reads configuration mainly from:
 Create a `.env` file in the **project root**:
 
 ```bash
-cp config_example.1env config.py  # (Linux/macOS)
+cp config_example.1env .env  # (Linux/macOS)
 ```
 
 On **Windows** (PowerShell), just copy the file using Explorer or:
 
 ```powershell
-Copy-Item config_example.1env config.py
+Copy-Item config_example.1env .env
 ```
 
 Then, create a `.env` file (using any editor) with at least:
@@ -207,10 +207,11 @@ FLASK_ENV=development
 
 For email/SMS notifications, configure values in `.env` (copied from `config_example.1env`):
 
-```python
-BEEM_API_KEY = '19example62d4ee1b0726e'
-BEEM_SECRET_KEY = 'example_MGMwNGJlZWM5NNlMDA1YmNiYjk0U4OGZlY2I0OY2MDzY4NWNlNTMzdDZlYjE5NTE1ZWkYTk2MTVlOTQ4YzJhNg=='
-
+```env
+BEEM_API_KEY=19example62d4ee1b0726e
+BEEM_SECRET_KEY=example_MGMwNGJlZWM5NNlMDA1YmNiYjk0U4OGZlY2I0OY2MDzY4NWNlNTMzdDZlYjE5NTE1ZWkYTk2MTVlOTQ4YzJhNg==
+QUIZ_REMINDER_RUN_ON_REQUEST=1
+QUIZ_REMINDER_INTERVAL_SECONDS=30
 ```
 
 These are used by the `NotificationService` in `app/utils.py` and `app/sms.py` to send emails and SMS (e.g., confirmations, alerts).

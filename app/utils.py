@@ -341,7 +341,7 @@ class NotificationService:
             return False
     
     def send_sms(self, phone_number, message):
-        """Send SMS notification using Twilio"""
+        """Send SMS notification via Beem."""
         if not phone_number:
             return False
         if phone_number[0] == '0':
@@ -349,8 +349,10 @@ class NotificationService:
         elif phone_number[0] == '+':
             phone_number = phone_number[1:]
         try:
-            current_app.logger.info(send_sms(phone_number, message))
-            return True
+            result = bool(send_sms(phone_number, message))
+            if not result:
+                current_app.logger.warning("SMS delivery failed for %s", phone_number)
+            return result
         except Exception as e:
             print(f"Failed to send SMS to {phone_number}: {str(e)}")
             try:
