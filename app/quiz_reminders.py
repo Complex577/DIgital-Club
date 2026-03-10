@@ -47,7 +47,7 @@ def process_quiz_reminders_once():
                 pref.consecutive_missed_count = 0
             else:
                 pref.consecutive_missed_count += 1
-                if pref.consecutive_missed_count >= 3:
+                if pref.consecutive_missed_count >= 5:
                     pref.is_enabled = False
                     pref.is_blocked = True
 

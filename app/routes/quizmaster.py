@@ -12,6 +12,7 @@ from app.quiz_constants import QUIZ_FIELDS_OF_STUDY, QUIZ_MAX_QUESTIONS, QUIZ_DE
 from app.quiz_queue import enqueue_quiz_generation
 from app.models import Quiz, QuizQuestion, QuizOption, QuizResource
 from app.routes import quizmaster_bp
+from app.quiz_cleanup import delete_quiz_and_related
 
 
 def quizmaster_required(f):
@@ -318,3 +319,20 @@ def quiz_builder(quiz_id):
     questions = quiz.questions.order_by(QuizQuestion.order_index.asc()).all()
     notes_resources = quiz.resources.order_by(QuizResource.uploaded_at.desc()).all()
     return render_template("quizmaster/quiz_builder.html", quiz=quiz, questions=questions, notes_resources=notes_resources)
+
+
+@quizmaster_bp.route("/quizzes/<int:quiz_id>/delete", methods=["POST"])
+@login_required
+@quizmaster_required
+def quiz_delete(quiz_id):
+    quiz = Quiz.query.get_or_404(quiz_id)
+    if quiz.created_by_user_id != current_user.id and current_user.role != "admin":
+        abort(403)
+    if quiz.status in ["approved", "published"]:
+        flash("Approved/published quizzes can only be deleted by admins.", "warning")
+        return redirect(url_for("quizmaster.quiz_builder", quiz_id=quiz.id))
+
+    delete_quiz_and_related(quiz)
+    db.session.commit()
+    flash("Quiz deleted successfully.", "success")
+    return redirect(url_for("quizmaster.dashboard"))

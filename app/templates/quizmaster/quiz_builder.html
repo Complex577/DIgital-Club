@@ -128,16 +128,21 @@
       </span>
     </div>
   </div>
-  <div class="d-flex gap-2">
-    <form method="POST" action="{{ url_for('quizmaster.quiz_generate', quiz_id=quiz.id) }}">
-      <button type="submit" class="admin-btn admin-btn-primary" {% if quiz.status == 'generating' %}disabled{% endif %}><i class="fas fa-robot"></i> Generate</button>
-    </form>
-    <form method="POST">
-      <input type="hidden" name="action" value="submit_for_approval">
-      <button type="submit" class="admin-btn admin-btn-success"><i class="fas fa-paper-plane"></i> Submit for Approval</button>
-    </form>
+    <div class="d-flex gap-2">
+      <form method="POST" action="{{ url_for('quizmaster.quiz_generate', quiz_id=quiz.id) }}">
+        <button type="submit" class="admin-btn admin-btn-primary" {% if quiz.status == 'generating' %}disabled{% endif %}><i class="fas fa-robot"></i> Generate</button>
+      </form>
+      <form method="POST">
+        <input type="hidden" name="action" value="submit_for_approval">
+        <button type="submit" class="admin-btn admin-btn-success"><i class="fas fa-paper-plane"></i> Submit for Approval</button>
+      </form>
+      {% if quiz.status not in ['approved', 'published'] %}
+      <form method="POST" action="{{ url_for('quizmaster.quiz_delete', quiz_id=quiz.id) }}" onsubmit="return confirm('Delete this quiz and all related data?');">
+        <button type="submit" class="admin-btn admin-btn-danger"><i class="fas fa-trash"></i> Delete</button>
+      </form>
+      {% endif %}
+    </div>
   </div>
-</div>
 
 {% if quiz.generation_error %}
 <div class="alert alert-danger">{{ quiz.generation_error }}</div>

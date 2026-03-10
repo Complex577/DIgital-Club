@@ -125,13 +125,18 @@
         </div>
         <button class="admin-btn admin-btn-primary"><i class="fas fa-bullhorn"></i> Publish</button>
       </form>
-      <form method="POST" action="{{ url_for('admin.quizzes_unpublish', quiz_id=quiz.id) }}">
-        <button class="admin-btn admin-btn-outline" {% if quiz.status != 'published' %}disabled{% endif %}>
-          <i class="fas fa-ban"></i> Unpublish
-        </button>
-      </form>
+        <form method="POST" action="{{ url_for('admin.quizzes_unpublish', quiz_id=quiz.id) }}">
+          <button class="admin-btn admin-btn-outline" {% if quiz.status != 'published' %}disabled{% endif %}>
+            <i class="fas fa-ban"></i> Unpublish
+          </button>
+        </form>
+        <form method="POST" action="{{ url_for('admin.quizzes_delete', quiz_id=quiz.id) }}" onsubmit="return confirm('Delete this quiz and all related data?');">
+          <button class="admin-btn admin-btn-danger">
+            <i class="fas fa-trash"></i> Delete
+          </button>
+        </form>
+      </div>
     </div>
-  </div>
 </div>
 
 {% set notes = quiz.resources.all() %}
