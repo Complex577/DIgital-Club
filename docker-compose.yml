@@ -77,18 +77,37 @@ services:
       - ./app/static/uploads:/app/app/static/uploads
     restart: unless-stopped
 
-  reminder_worker:
+  celery_worker:
     build: .
-    container_name: digital_club_reminder_worker
-    command: python scripts/quiz_reminder_worker.py
+    container_name: digital_club_celery_worker
+    command: celery -A app.celery_tasks.celery worker --loglevel=info
     depends_on:
+      - redis
       - db
     environment:
       - DATABASE_URL=${DATABASE_URL:-postgresql+psycopg2://digital_club_user:digital_club_password@db:5432/digital_club_db}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
       - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
       - BEEM_API_KEY=${BEEM_API_KEY}
       - BEEM_SECRET_KEY=${BEEM_SECRET_KEY}
-      - QUIZ_REMINDER_INTERVAL_SECONDS=${QUIZ_REMINDER_INTERVAL_SECONDS:-30}
+    volumes:
+      - ./instance:/app/instance
+      - ./app/static/uploads:/app/app/static/uploads
+    restart: unless-stopped
+
+  celery_beat:
+    build: .
+    container_name: digital_club_celery_beat
+    command: celery -A app.celery_tasks.celery beat --loglevel=info
+    depends_on:
+      - redis
+      - db
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-postgresql+psycopg2://digital_club_user:digital_club_password@db:5432/digital_club_db}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
+      - BEEM_API_KEY=${BEEM_API_KEY}
+      - BEEM_SECRET_KEY=${BEEM_SECRET_KEY}
     volumes:
       - ./instance:/app/instance
       - ./app/static/uploads:/app/app/static/uploads

@@ -29,6 +29,7 @@ import csv
 import io
 import math
 from app.quiz_constants import QUIZ_FIELDS_OF_STUDY
+from app.quiz_cleanup import delete_quiz_and_related
 from app.time_utils import utc_to_app_naive
 
 def admin_required(f):
@@ -4980,6 +4981,17 @@ def quizzes_unpublish(quiz_id):
     db.session.commit()
     flash('Quiz unpublished and moved back to approved.', 'success')
     return redirect(url_for('admin.quizzes_view', quiz_id=quiz.id))
+
+
+@admin_bp.route('/quizzes/<int:quiz_id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def quizzes_delete(quiz_id):
+    quiz = Quiz.query.get_or_404(quiz_id)
+    delete_quiz_and_related(quiz)
+    db.session.commit()
+    flash('Quiz deleted successfully.', 'success')
+    return redirect(url_for('admin.quizzes_index'))
 
 
 @admin_bp.route('/quizzes/analytics')

@@ -138,7 +138,16 @@
               <td>{{ q.field_of_study }}</td>
               <td><span class="admin-badge admin-badge-info">{{ q.status|replace('_',' ')|title }}</span></td>
               <td>{{ q.questions.count() }}/{{ q.total_questions }}</td>
-              <td><a href="{{ url_for('quizmaster.quiz_builder', quiz_id=q.id) }}" class="admin-btn admin-btn-sm admin-btn-outline"><i class="fas fa-pen"></i></a></td>
+                <td>
+                  <div class="d-flex gap-1">
+                    <a href="{{ url_for('quizmaster.quiz_builder', quiz_id=q.id) }}" class="admin-btn admin-btn-sm admin-btn-outline"><i class="fas fa-pen"></i></a>
+                    {% if q.status not in ['approved', 'published'] %}
+                    <form method="POST" action="{{ url_for('quizmaster.quiz_delete', quiz_id=q.id) }}" onsubmit="return confirm('Delete this quiz and all related data?');">
+                      <button type="submit" class="admin-btn admin-btn-sm admin-btn-danger"><i class="fas fa-trash"></i></button>
+                    </form>
+                    {% endif %}
+                  </div>
+                </td>
             </tr>
             {% else %}
             <tr><td colspan="5" class="text-center py-3">No quizzes yet.</td></tr>

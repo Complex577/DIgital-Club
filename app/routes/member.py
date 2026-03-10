@@ -1288,7 +1288,7 @@ def quiz_reminder_toggle(quiz_id):
         db.session.add(pref)
 
     if pref.is_blocked:
-        flash('Reminder notifications are blocked after 3 consecutive missed warmups.', 'warning')
+        flash('Reminder notifications are blocked after 5 consecutive missed warmups.', 'warning')
         return redirect(url_for('member.quiz_detail', quiz_id=quiz.id))
 
     enabled = '1' in request.form.getlist('reminder_enabled')
