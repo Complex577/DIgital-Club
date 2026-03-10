@@ -1,4 +1,4 @@
-from flask import Flask, flash, redirect, url_for, request, current_app
+from flask import Flask, flash, redirect, url_for, request, current_app, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, current_user, logout_user
 from flask_migrate import Migrate
@@ -420,5 +420,11 @@ def create_app():
     app.register_blueprint(member_bp, url_prefix='/member')
     app.register_blueprint(quizmaster_bp, url_prefix='/quizmaster')
     app.register_blueprint(verification_bp)
-    
+
+    @app.errorhandler(404)
+    def handle_not_found(error):
+        if request.path.startswith('/api/'):
+            return jsonify({'error': 'Not found'}), 404
+        return redirect(url_for('main.index'))
+
     return app
