@@ -13,8 +13,8 @@ import json
 from app.time_utils import app_now_naive
 from flask_login import current_user
 
-@main_bp.route('/')
-def index():
+@main_bp.route('/home')
+def home():
     try:
         # Get latest news (limit to 3)
         latest_news = News.query.order_by(News.published_date.desc()).limit(3).all()
@@ -37,6 +37,11 @@ def index():
                          latest_news=latest_news,
                          upcoming_events=upcoming_events,
                          featured_projects=featured_projects)
+
+
+@main_bp.route('/')
+def index():
+    return redirect(url_for('main.home'))
 
 @main_bp.route('/about')
 def about():
