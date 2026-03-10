@@ -61,9 +61,10 @@ def process_quiz_reminders_once():
     ]
     if not due_quizzes:
         db.session.commit()
-        return
+        return {"sent": 0, "due_quizzes": 0}
 
     sender = get_notification_service()
+    sent_count = 0
     for pref in QuizReminderPreference.query.filter_by(is_enabled=True, is_blocked=False).all():
         member = pref.member
         if not member or not member.phone:
@@ -85,5 +86,8 @@ def process_quiz_reminders_once():
                 member_id=member.id,
                 sms_sent=sms_ok
             ))
+            if sms_ok:
+                sent_count += 1
     db.session.commit()
+    return {"sent": sent_count, "due_quizzes": len(due_quizzes)}
 
