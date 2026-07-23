@@ -1,6 +1,21 @@
+SECRET_KEY=your-very-secret-key
+DATABASE_URL=sqlite:///digital_club_01.db
+FLASK_ENV=development
+
+# Cloudflare Turnstile (required for login, register, and public RSVP)
+# Local / student development: use Cloudflare's official always-pass test keys below.
+# Production: replace with real keys from https://dash.cloudflare.com/ → Turnstile
+#   and set Hostname to your real domain only (e.g. digitalclub.kiut.ac.tz).
+#   Do NOT put production keys that allow localhost, and do NOT use test keys in production.
+TURNSTILE_SITE_KEY=1x00000000000000000000AA
+TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
+
+# Optional: Beem SMS
 BEEM_API_KEY=19example62d4ee1b0726e
 BEEM_SECRET_KEY=example_MGMwNGJlZWM5NNlMDA1YmNiYjk0U4OGZlY2I0OY2MDzY4NWNlNTMzdDZlYjE5NTE1ZWkYTk2MTVlOTQ4YzJhNg==
-DATABASE_URL=postgresql+psycopg2://digital_club_user:digital_club_password@db:5432/digital_club_db
+
+# Optional: Postgres when using Docker Compose (overrides SQLite above)
+# DATABASE_URL=postgresql+psycopg2://digital_club_user:digital_club_password@db:5432/digital_club_db
 
 APP_TIMEZONE=Africa/Nairobi
 APP_UTC_OFFSET_HOURS=3

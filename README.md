@@ -183,18 +183,22 @@ Create a `.env` file in the **project root**:
 cp config_example.1env .env  # (Linux/macOS)
 ```
 
-On **Windows** (PowerShell), just copy the file using Explorer or:
+On **Windows** (PowerShell):
 
 ```powershell
 Copy-Item config_example.1env .env
 ```
 
-Then, create a `.env` file (using any editor) with at least:
+`config_example.1env` already includes sensible local defaults. After copying, your `.env` should at least contain:
 
 ```env
 SECRET_KEY=your-very-secret-key
 DATABASE_URL=sqlite:///digital_club_01.db
 FLASK_ENV=development
+
+# Cloudflare Turnstile – local always-pass test keys (see section 2 below)
+TURNSTILE_SITE_KEY=1x00000000000000000000AA
+TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
 ```
 
 - `SECRET_KEY`: used by Flask for sessions and security (keep it secret in real deployments).
@@ -202,24 +206,59 @@ FLASK_ENV=development
   - For local SQLite (default): `sqlite:///digital_club_01.db`
   - For PostgreSQL: something like `postgresql+psycopg2://digital_club_user:digital_club_password@db:5432/digital_club_db`
 
-> In `app/__init__.py`, if `DATABASE_URL` is not set, it falls back to `sqlite:///digital_club_01.db` in the project root.
-### 2. Email & SMS (Optional)
+> In `app/__init__.py`, if `DATABASE_URL` is not set, it falls back to `sqlite:///digital_club_01.db`. Flask-SQLAlchemy stores that relative SQLite file under `instance/`.
 
-For email/SMS notifications, configure values in `.env` (copied from `config_example.1env`):
+> **`.env` comments:** use `#` only (not `//`). Otherwise you may see `python-dotenv could not parse statement…`.
+
+### 2. Cloudflare Turnstile (required for login)
+
+Login, registration, and public event RSVP are protected by **Cloudflare Turnstile** (bot check).  
+If the keys are missing, the app **blocks** those forms with:
+
+> Cloudflare Turnstile is not configured yet. Please contact admin.
+
+#### Local development (students) — use test keys
+
+You do **not** need to create a Cloudflare widget or add `localhost` as a hostname for day-to-day learning.
+
+Copy the official Cloudflare **always-pass** test keys into `.env` (already present in `config_example.1env`):
 
 ```env
-BEEM_API_KEY=19example62d4ee1b0726e
-BEEM_SECRET_KEY=example_MGMwNGJlZWM5NNlMDA1YmNiYjk0U4OGZlY2I0OY2MDzY4NWNlNTMzdDZlYjE5NTE1ZWkYTk2MTVlOTQ4YzJhNg==
+TURNSTILE_SITE_KEY=1x00000000000000000000AA
+TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
+```
+
+Then **restart** the app (`Ctrl+C`, then `python main.py` again) so the new env vars load.
+
+These test keys work on any host, including `localhost` / `127.0.0.1`. Docs: [Turnstile testing](https://developers.cloudflare.com/turnstile/troubleshooting/testing/).
+
+#### Production / real site — use real keys
+
+1. In the [Cloudflare dashboard](https://dash.cloudflare.com/) → **Turnstile** → create a widget.
+2. Under **Hostname**, add only your real domain (example: `digitalclub.kiut.ac.tz`).
+   - Use the hostname alone — not `https://`, not a port, not `localhost:5051`.
+   - Adding `localhost` in the Cloudflare Hostname UI often fails or is awkward; for local work prefer the test keys above.
+3. Put the real Site Key and Secret Key in the server `.env` (or Docker env).
+4. Never commit real secret keys to Git. Never use the always-pass test keys on a public production site.
+
+| Environment | Keys to use | Hostname in Cloudflare |
+|-------------|-------------|-------------------------|
+| Student laptop / local | Always-pass test keys above | Not needed |
+| Live `digitalclub.kiut.ac.tz` | Real widget keys | `digitalclub.kiut.ac.tz` |
+
+### 3. Email & SMS (Optional)
+
+For email/SMS notifications, configure values in `.env` (see `config_example.1env`):
+
+```env
+BEEM_API_KEY=…
+BEEM_SECRET_KEY=…
 QUIZ_REMINDER_RUN_ON_REQUEST=1
 QUIZ_REMINDER_INTERVAL_SECONDS=30
 ```
 
-These are used by the `NotificationService` in `app/utils.py` and `app/sms.py` to send emails and SMS (e.g., confirmations, alerts).
-Also used to attach dockerized postgresql in `app/__init__.py`
-> For learning purposes you can skip real credentials and keep email/SMS features disabled; the rest of the app will still work.
-
----
-> For learning purposes you can skip real credentials and keep email/SMS features disabled; the rest of the app will still work.
+These are used by `NotificationService` in `app/utils.py` and `app/sms.py`.  
+For learning purposes you can skip real Beem credentials; the rest of the app will still work.
 
 ---
 
@@ -228,6 +267,27 @@ Also used to attach dockerized postgresql in `app/__init__.py`
 Make sure:
 - Your **virtual environment is active**
 - You are in the project root (`Digital Club`)
+- You have created `.env` (see Configuration above)
+
+### 0. Bootstrap the database (first time after clone)
+
+On a **fresh clone**, the database file is empty (or missing tables). Run this **once** before starting the app:
+
+```bash
+python scripts/bootstrap_db.py
+```
+
+What this does:
+- Creates tables from the current models in `app/models.py`
+- Marks Flask-Migrate / Alembic as up to date (`stamp head`) without replaying old incremental migrations that assume a pre-existing schema
+- Seeds the development super-admin if missing:
+  - Email: `admin@digitalclub.kiut.ac.tz`
+  - Password: `admin123`  
+    (for **development only**, do not use these in production)
+
+If you skip this step, login will fail with errors like `no such table: user`, and `flask db upgrade` will fail with `NoSuchTableError: user`. See [Database setup & migrations](#database-setup--migrations) for why.
+
+You only need this again if you delete your local database and start over.
 
 ### Option 1 – Run via `python main.py`
 
@@ -239,10 +299,7 @@ python main.py
 
 What this does:
 - Imports `create_app()` from `app/__init__.py`
-- Initializes the database and ensures an **admin** user exists:
-  - Email: `admin@digitalclub.kiut.ac.tz`
-  - Password: `admin123`  
-    (for **development only**, do not use these in production)
+- Ensures the admin user still exists (idempotent seed)
 - Starts Flask on `http://0.0.0.0:5051` with `debug=True`
 
 Open your browser and navigate to:
@@ -267,19 +324,51 @@ flask run --port 5051
 
 ---
 
-## Database Migrations (Flask-Migrate)
+## Database setup & migrations
 
-This project includes a `migrations/` folder and uses **Flask-Migrate**:
+This project uses **Flask-Migrate** (Alembic) under `migrations/`. Treat setup in two different cases.
 
-Common commands (from the project root, with venv active):
+### Case A — Fresh local database (after clone)
+
+Do **not** start with `flask db upgrade` on an empty database.
+
+The migration history in this repo is **incremental**: older revisions *alter* tables that were expected to already exist (for example the first revision alters `user.password_hash`; it does not create `user`). On a brand-new empty SQLite file those tables are missing, so upgrade fails with `NoSuchTableError: user`.
+
+**Correct first-time path:**
 
 ```bash
-flask db init        # only once, already done in this repo
-flask db migrate -m "Your message"
+python scripts/bootstrap_db.py
+```
+
+That creates the current schema from models, then runs `stamp head` so Alembic knows you are at the latest revision without replaying incompatible history.
+
+Do **not** run `flask db init` — the `migrations/` folder is already in the repo.
+
+### Case B — You changed models later (ongoing work)
+
+After bootstrap, when *you* edit `app/models.py` and need a schema change:
+
+```bash
+export FLASK_APP=main.py   # once per shell if needed
+flask db migrate -m "short description of your change"
 flask db upgrade
 ```
 
-This lets you evolve the database schema safely as you change the models in `app/models.py`.
+- `migrate` — generates a new revision from model vs DB differences  
+- `upgrade` — applies pending revisions to your database  
+
+If you see `Target database is not up to date`, run `flask db upgrade` before creating another migration (and if upgrade fails on a never-bootstrapped DB, go back to Case A).
+
+### Quick troubleshooting
+
+| Symptom | Likely cause | Fix |
+|---------|--------------|-----|
+| `no such table: user` at login | DB never bootstrapped | `python scripts/bootstrap_db.py` |
+| `NoSuchTableError: user` on `flask db upgrade` | Empty DB + incremental migrations | Bootstrap (Case A), do not only upgrade |
+| `Directory migrations already exists` on `flask db init` | Init already done in repo | Skip `init` |
+| `Target database is not up to date` on `migrate` | Pending revisions not applied | `flask db upgrade` (after Case A if needed) |
+| `Cloudflare Turnstile is not configured yet…` | Missing `TURNSTILE_*` in `.env` | Copy test keys from [section 2](#2-cloudflare-turnstile-required-for-login); restart app |
+| Turnstile hostname / `localhost` rejected in Cloudflare UI | Real widget hostnames are for real domains | Use always-pass test keys locally; real hostname only in production |
 
 ---
 
@@ -478,7 +567,13 @@ This project is an **open learning playground**. Here’s how you can contribute
 - **Q: I get an error about the database. What should I do?**  
   - Ensure your virtual environment is active.
   - Check that `DATABASE_URL` is correct in `.env`.
-  - Delete `instance/digital_club_01.db` (for a clean slate) and run `python main.py` again.
+  - Run `python scripts/bootstrap_db.py`, then `python main.py`.
+  - For a clean slate: delete `instance/digital_club_01.db`, bootstrap again, then start the app.
+
+- **Q: Login says Cloudflare Turnstile is not configured. What should I do?**  
+  - Add the local test keys from [Cloudflare Turnstile](#2-cloudflare-turnstile-required-for-login) to `.env` (or copy from `config_example.1env`).
+  - Restart the app after editing `.env`.
+  - You do not need a Cloudflare account for local student development.
 
 - **Q: Can I use a different port instead of 5051?**  
   - Yes. Set the `PORT` environment variable before running:
